@@ -148,3 +148,84 @@ code {
     padding: 1.5rem 2rem;
     box-sizing: border-box;
 }
+
+/* Three Card Prime wager shapes -- rebuilt for the web version,
+   replacing the desktop's custom-drawn WinForms Panel control. Same
+   visual language: white shape, wager name always visible, a colored
+   pill badge showing the current selection sits on the bottom edge.
+
+   Circles use a plain CSS border-radius, which properly draws a
+   rounded border stroke. Diamonds use an actual SVG polygon instead
+   of CSS clip-path -- clip-path only clips the already-rendered box
+   (background + border) to a shape; it doesn't know how to redraw a
+   border ALONG a diagonal edge, since a CSS border is fundamentally a
+   straight-edged rectangle. The result was a diamond with its border
+   clipped away almost entirely, invisible against the white page.
+   SVG's stroke/fill properly outline any shape, diagonal or not. */
+.wager-shape {
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.wager-circle {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 50%;
+}
+
+.wager-circle.wager-wrong {
+    border: 3px solid black;
+}
+
+.wager-diamond-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 90px;
+    height: 90px;
+}
+
+.wager-label {
+    position: relative;
+    z-index: 1;
+    padding: 0 8px;
+}
+
+.wager-pill {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    border: 1px solid black;
+    border-radius: 8px;
+    padding: 1px 8px;
+    font-size: 0.65rem;
+    font-weight: bold;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+.pill-win {
+    background-color: #0064dc;
+}
+
+.pill-lose {
+    background-color: #c80000;
+}
+
+.pill-push {
+    background-color: #e6c800;
+    color: black;
+}

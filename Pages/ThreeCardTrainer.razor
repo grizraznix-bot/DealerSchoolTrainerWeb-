@@ -1,0 +1,280 @@
+@page "/three-card-trainer"
+@using Microsoft.AspNetCore.Components
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.ThreeCardTrainer
+
+<PageTitle>Three Card Prime</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>THREE CARD PRIME</h1>
+        <p>Tap each wager to cycle Win / Lose / Push, then Submit.</p>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <div style="display: flex; gap: 2rem; margin: 1rem 0; align-items: flex-start;">
+            <div>
+                <h3>Player</h3>
+                <div style="display: flex; gap: 8px;">
+                    @foreach (Card c in _playerCards)
+                    {
+                        <img src="images/cards/@(c.Code).png" alt="@c.Code" style="width: 90px; height: 126px;" />
+                    }
+                </div>
+
+                <h3>Dealer</h3>
+                <div style="display: flex; gap: 8px;">
+                    @foreach (Card c in _dealerCards)
+                    {
+                        <img src="images/cards/@(c.Code).png" alt="@c.Code" style="width: 90px; height: 126px;" />
+                    }
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+                @RenderWager(_play)
+                @RenderWager(_ante)
+                @RenderWager(_pairBonus)
+                <div style="display: flex; gap: 1.5rem;">
+                    @RenderWager(_allSix)
+                    @RenderWager(_prime)
+                </div>
+            </div>
+        </div>
+
+        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
+        <p>@_scoreText</p>
+
+        <div>
+            <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_totalRounds</p>
+        <p>Correct: @_correctCount</p>
+        <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    private sealed class WagerState
+    {
+        public required string Name;
+        public bool IsDiamond;
+        public bool AllowPush;
+        public WagerOutcome? Selection;
+        public bool Wrong;
+    }
+
+    private bool _started;
+
+    private Deck _deck = new();
+    private Card[] _playerCards = Array.Empty<Card>();
+    private Card[] _dealerCards = Array.Empty<Card>();
+
+    private readonly WagerState _play = new() { Name = "Play", IsDiamond = true, AllowPush = true };
+    private readonly WagerState _ante = new() { Name = "Ante", IsDiamond = true, AllowPush = true };
+    private readonly WagerState _pairBonus = new() { Name = "Pair Bonus", AllowPush = false };
+    private readonly WagerState _prime = new() { Name = "Prime", AllowPush = false };
+    private readonly WagerState _allSix = new() { Name = "All 6", AllowPush = false };
+
+    private int _correctCount;
+    private int _totalRounds;
+    private bool _roundScored;
+
+    private bool _submitEnabled;
+    private bool _dealEnabled;
+    private string _resultText = string.Empty;
+    private bool _isCorrect;
+    private string _scoreText = "Score: 0 / 0 (0.0%)";
+    private bool _showSessionSummary;
+
+    private void StartGame()
+    {
+        _started = true;
+        _correctCount = 0;
+        _totalRounds = 0;
+        _scoreText = "Score: 0 / 0 (0.0%)";
+
+        DealNewRound();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void DealNewRound()
+    {
+        _dealEnabled = false;
+
+        _deck = new Deck();
+        _deck.Shuffle();
+
+        _playerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
+        _dealerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
+
+        SortDescending(_playerCards);
+        SortDescending(_dealerCards);
+
+        foreach (WagerState w in new[] { _play, _ante, _pairBonus, _prime, _allSix })
+        {
+            w.Selection = null;
+            w.Wrong = false;
+        }
+
+        _resultText = string.Empty;
+        _roundScored = false;
+        _submitEnabled = true;
+    }
+
+    private void DealAgain() => DealNewRound();
+
+    private static void SortDescending(Card[] cards) =>
+        Array.Sort(cards, (a, b) => ((int)b.Rank).CompareTo((int)a.Rank));
+
+    private void CycleWager(WagerState w)
+    {
+        if (w.AllowPush)
+        {
+            w.Selection = w.Selection switch
+            {
+                null => WagerOutcome.Win,
+                WagerOutcome.Win => WagerOutcome.Lose,
+                WagerOutcome.Lose => WagerOutcome.Push,
+                _ => WagerOutcome.Win
+            };
+        }
+        else
+        {
+            w.Selection = w.Selection switch
+            {
+                null => WagerOutcome.Win,
+                WagerOutcome.Win => WagerOutcome.Lose,
+                _ => WagerOutcome.Win
+            };
+        }
+
+        w.Wrong = false;
+    }
+
+    private void SubmitRound()
+    {
+        WagerState[] all = { _play, _ante, _pairBonus, _prime, _allSix };
+
+        foreach (WagerState w in all)
+        {
+            if (w.Selection is null)
+            {
+                _resultText = "Tap every wager to select an outcome before submitting.";
+                _isCorrect = false;
+                return;
+            }
+        }
+
+        if (_roundScored) return;
+
+        (WagerOutcome anteOutcome, WagerOutcome playOutcome) = ThreeCardEvaluator.ResolveAntePlay(_playerCards, _dealerCards);
+        WagerOutcome pairPlusOutcome = ThreeCardEvaluator.ResolvePairPlus(_playerCards);
+        WagerOutcome primeOutcome = ThreeCardEvaluator.ResolvePrime(_playerCards, _dealerCards);
+        WagerOutcome allSixOutcome = ThreeCardEvaluator.ResolveAllSix(_playerCards, _dealerCards);
+
+        bool allCorrect = true;
+        allCorrect &= GradeWager(_play, playOutcome);
+        allCorrect &= GradeWager(_ante, anteOutcome);
+        allCorrect &= GradeWager(_pairBonus, pairPlusOutcome);
+        allCorrect &= GradeWager(_prime, primeOutcome);
+        allCorrect &= GradeWager(_allSix, allSixOutcome);
+
+        _totalRounds++;
+        if (allCorrect) _correctCount++;
+
+        _isCorrect = allCorrect;
+        _resultText = allCorrect ? "CORRECT" : "INCORRECT";
+
+        string pct = _totalRounds > 0
+            ? ((double)_correctCount / _totalRounds).ToString("0.0%")
+            : "0.0%";
+        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
+
+        _roundScored = true;
+        _submitEnabled = false;
+        _dealEnabled = true;
+    }
+
+    private static bool GradeWager(WagerState w, WagerOutcome actual)
+    {
+        if (w.Selection == actual)
+        {
+            w.Wrong = false;
+            return true;
+        }
+
+        w.Wrong = true;
+        return false;
+    }
+
+    private void EndSession()
+    {
+        if (_totalRounds > 0)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+
+    private RenderFragment RenderWager(WagerState w) =>
+        @<div class="wager-shape @(w.IsDiamond ? "" : "wager-circle") @(w.Wrong && !w.IsDiamond ? "wager-wrong" : "")"
+              @onclick="() => CycleWager(w)">
+            @if (w.IsDiamond)
+            {
+                <svg viewBox="0 0 90 90" class="wager-diamond-svg">
+                    <polygon points="45,3 87,45 45,87 3,45" fill="white" stroke="@(w.Wrong ? "black" : "#999")" stroke-width="@(w.Wrong ? 3 : 1)" />
+                </svg>
+            }
+            <span class="wager-label">@w.Name</span>
+            @if (w.Selection is not null)
+            {
+                <div class="wager-pill @PillClass(w.Selection)">@PillText(w.Selection)</div>
+            }
+        </div>;
+
+    private static string PillClass(WagerOutcome? outcome) => outcome switch
+    {
+        WagerOutcome.Win => "pill-win",
+        WagerOutcome.Lose => "pill-lose",
+        WagerOutcome.Push => "pill-push",
+        _ => ""
+    };
+
+    private static string PillText(WagerOutcome? outcome) => outcome switch
+    {
+        WagerOutcome.Win => "WIN",
+        WagerOutcome.Lose => "LOSE",
+        WagerOutcome.Push => "PUSH",
+        _ => ""
+    };
+}
