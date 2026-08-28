@@ -1,0 +1,264 @@
+@page "/payout-trainer"
+@using DealerSchoolTrainerWeb.Games.PayoutTrainer
+
+<PageTitle>Blackjack - Blackjack Payouts</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>BLACKJACK - BLACKJACK PAYOUTS</h1>
+        <p>Pay each blackjack. Type the payout, then press Enter or Submit.</p>
+
+        <div style="display: flex; gap: 3rem; margin-top: 1rem;">
+            <div>
+                <label style="display: block;">
+                    <input type="radio" name="ratio" checked="@(_ratio == PayoutRatio.ThreeToTwo)" @onchange="() => _ratio = PayoutRatio.ThreeToTwo" />
+                    3:2 Payouts
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="ratio" checked="@(_ratio == PayoutRatio.SixToFive)" @onchange="() => _ratio = PayoutRatio.SixToFive" />
+                    6:5 Payouts
+                </label>
+            </div>
+
+            <div>
+                <label style="display: block;">
+                    <input type="radio" name="difficulty" checked="@(_difficulty == PayoutDifficulty.Beginner)" @onchange="() => _difficulty = PayoutDifficulty.Beginner" />
+                    Beginner
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="difficulty" checked="@(_difficulty == PayoutDifficulty.Intermediate)" @onchange="() => _difficulty = PayoutDifficulty.Intermediate" />
+                    Intermediate
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="difficulty" checked="@(_difficulty == PayoutDifficulty.Advanced)" @onchange="() => _difficulty = PayoutDifficulty.Advanced" />
+                    Advanced
+                </label>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <div style="position: relative; width: 220px; height: 240px; margin: 1rem 0;">
+            <img src="images/cards/AS.png" alt="AS" style="position: absolute; top: 0; left: 0; width: 130px; height: 182px;" />
+            <img src="images/cards/JS.png" alt="JS" style="position: absolute; top: 60px; left: 70px; width: 130px; height: 182px;" />
+        </div>
+
+        <p>Wager: @PayoutWager.FormatCents(_wagerCents)</p>
+
+        <div style="margin: 1rem 0;">
+            <input type="text"
+                   value="@_answerText"
+                   @oninput="HandleAnswerInput"
+                   @onkeydown="HandleAnswerKeyDown"
+                   @ref="_answerInputRef"
+                   readonly="@(!_answerEnabled)"
+                   placeholder="Amount" />
+            <button @onclick="SubmitTypedAnswer" disabled="@(!_submitEnabled)">Submit</button>
+        </div>
+
+        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_promptText</p>
+        <p style="color: red;">@_promptDetailText</p>
+
+        <div>
+            <button @onclick="StartNewRound" disabled="@(!_newRoundEnabled)" @ref="_newRoundButtonRef">New Round</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_totalRounds</p>
+        <p>Correct: @_correctCount</p>
+        <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    private bool _started;
+    private PayoutRatio _ratio = PayoutRatio.ThreeToTwo;
+    private PayoutDifficulty _difficulty = PayoutDifficulty.Beginner;
+
+    private long _wagerCents;
+    private int _correctCount;
+    private int _totalRounds;
+
+    private string _answerText = string.Empty;
+    private bool _answerEnabled;
+    private bool _submitEnabled;
+    private bool _newRoundEnabled;
+    private string _promptText = string.Empty;
+    private string _promptDetailText = string.Empty;
+    private bool _isCorrect;
+    private bool _showSessionSummary;
+
+    private Microsoft.AspNetCore.Components.ElementReference _answerInputRef;
+    private Microsoft.AspNetCore.Components.ElementReference _newRoundButtonRef;
+    private bool _shouldFocusAnswer;
+    private bool _shouldFocusNewRound;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocusAnswer)
+        {
+            _shouldFocusAnswer = false;
+            try { await _answerInputRef.FocusAsync(); } catch { }
+        }
+
+        if (_shouldFocusNewRound)
+        {
+            _shouldFocusNewRound = false;
+            try { await _newRoundButtonRef.FocusAsync(); } catch { }
+        }
+    }
+
+    private void StartGame()
+    {
+        _started = true;
+        _correctCount = 0;
+        _totalRounds = 0;
+        StartNewRound();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void StartNewRound()
+    {
+        _wagerCents = PayoutWager.GenerateWagerCents(_ratio, _difficulty);
+
+        _promptText = string.Empty;
+        _promptDetailText = string.Empty;
+        _answerText = string.Empty;
+
+        _newRoundEnabled = false;
+        _answerEnabled = true;
+        _submitEnabled = true;
+        _shouldFocusAnswer = true;
+    }
+
+    // Mirrors the desktop's txtAnswer_KeyPress character filter: only
+    // digits and a single decimal point are allowed through, and no
+    // more than two digits after the decimal point. WinForms filters
+    // individual keystrokes as they happen; the web equivalent here
+    // re-filters the whole current value on every input event, which
+    // produces the same practical result (invalid characters just
+    // never stick) even though the underlying mechanism is different.
+    private void HandleAnswerInput(Microsoft.AspNetCore.Components.ChangeEventArgs e)
+    {
+        string raw = e.Value?.ToString() ?? string.Empty;
+        System.Text.StringBuilder filtered = new();
+        bool hasDot = false;
+        int decimalDigits = 0;
+
+        foreach (char c in raw)
+        {
+            if (char.IsDigit(c))
+            {
+                if (!hasDot)
+                {
+                    filtered.Append(c);
+                }
+                else if (decimalDigits < 2)
+                {
+                    filtered.Append(c);
+                    decimalDigits++;
+                }
+                // else: silently dropped, matching the desktop's
+                // e.Handled = true for a 3rd decimal digit.
+            }
+            else if (c == '.' && !hasDot)
+            {
+                filtered.Append(c);
+                hasDot = true;
+            }
+            // any other character: silently dropped.
+        }
+
+        _answerText = filtered.ToString();
+    }
+
+    private async Task HandleAnswerKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _submitEnabled)
+        {
+            await SubmitTypedAnswer();
+        }
+    }
+
+    private async Task SubmitTypedAnswer()
+    {
+        string raw = _answerText.Trim();
+
+        if (raw.Length == 0)
+        {
+            _promptText = "Enter an amount before submitting.";
+            _isCorrect = false;
+            return;
+        }
+
+        long userCents = PayoutWager.ParseCents(raw);
+        long correctCents = PayoutWager.CalculatePayoutCents(_wagerCents, _ratio);
+
+        _totalRounds++;
+
+        if (userCents == correctCents)
+        {
+            _correctCount++;
+            _isCorrect = true;
+            _promptText = "CORRECT";
+            _promptDetailText = string.Empty;
+        }
+        else
+        {
+            _isCorrect = false;
+            _promptText = "INCORRECT";
+            _promptDetailText = "Correct payout: " + PayoutWager.FormatCents(correctCents);
+        }
+
+        _answerEnabled = false;
+        _submitEnabled = false;
+        _newRoundEnabled = true;
+        StateHasChanged();
+
+        // Short, invisible delay before shifting focus to New Round --
+        // not a visible pause, just long enough for the browser to
+        // finish dispatching the keyup of the SAME Enter press that
+        // submitted the answer before focus moves. Without this, that
+        // keyup lands on the newly-focused button and triggers an
+        // immediate click, skipping the feedback message entirely.
+        // (Same fix already applied on the Flash Card Trainer page for
+        // the identical symptom.)
+        await Task.Delay(200);
+        _shouldFocusNewRound = true;
+    }
+
+    private void EndSession()
+    {
+        if (_totalRounds > 0)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+}
