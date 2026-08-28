@@ -42,12 +42,15 @@ else
 
         <div style="margin: 1rem 0;">
             <input type="text"
+                   inputmode="numeric"
                    @bind="_answerText"
                    @bind:event="oninput"
                    @onkeydown="HandleAnswerKeyDown"
+                   @ref="_answerInputRef"
                    disabled="@(!_answerEnabled)"
-                   placeholder="Total, or 'Blackjack'" />
+                   placeholder="Total" />
             <button @onclick="SubmitTypedAnswer" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="ClaimBlackjack" disabled="@(!_submitEnabled)">Blackjack</button>
         </div>
 
         <p>@_feedbackText</p>
@@ -55,7 +58,7 @@ else
         <p>Score: @_roundsCorrect / @_roundsPlayed</p>
 
         <div>
-            <button @onclick="StartNewRound" disabled="@(!_newRoundEnabled)">New Round</button>
+            <button @onclick="StartNewRound" disabled="@(!_newRoundEnabled)" @ref="_newRoundButtonRef">New Round</button>
             <button @onclick="EndSession">End Session</button>
         </div>
     </div>
@@ -96,6 +99,30 @@ else
     private bool _newRoundEnabled;
     private bool _showSessionSummary;
 
+    private Microsoft.AspNetCore.Components.ElementReference _answerInputRef;
+    private Microsoft.AspNetCore.Components.ElementReference _newRoundButtonRef;
+    private bool _shouldFocusAnswer;
+    private bool _shouldFocusNewRound;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Focus calls only work once the target element actually
+        // exists in the DOM, which happens after the render this
+        // state change triggered -- not synchronously inside the
+        // event handler that set the flag.
+        if (_shouldFocusAnswer)
+        {
+            _shouldFocusAnswer = false;
+            try { await _answerInputRef.FocusAsync(); } catch { /* element may not be rendered yet on a rapid double-update */ }
+        }
+
+        if (_shouldFocusNewRound)
+        {
+            _shouldFocusNewRound = false;
+            try { await _newRoundButtonRef.FocusAsync(); } catch { /* same */ }
+        }
+    }
+
     private void StartGame()
     {
         _started = true;
@@ -126,15 +153,16 @@ else
 
         _showHint = _hand.HasAce;
         _promptText = "What's the dealer's total?";
+
+        _shouldFocusAnswer = true;
     }
 
     // Enter-to-submit works while the answer box itself is focused and
-    // enabled. The desktop version also lets Enter advance to the next
-    // round even when the answer box is disabled (via WinForms' form-
-    // level AcceptButton) -- a disabled HTML <input> can't receive
-    // keyboard events at all, so that specific behavior doesn't carry
-    // over here. Simplified deliberately rather than chased exactly,
-    // since this app already leans on click/tap for touch devices.
+    // enabled. Advancing to the next round on Enter (matching the
+    // desktop's AcceptButton behavior) works here too, via giving
+    // "New Round" actual keyboard focus once it becomes clickable --
+    // a focused HTML button responds to Enter/Space natively, no
+    // custom key handling needed for that part.
     private void HandleAnswerKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && _submitEnabled)
@@ -149,7 +177,7 @@ else
 
         if (raw.Length == 0)
         {
-            _feedbackText = "Enter a total, or type 'Blackjack'.";
+            _feedbackText = "Enter a total, or tap Blackjack.";
             return;
         }
 
@@ -157,11 +185,7 @@ else
         bool hasNumericValue = false;
         long enteredValue = 0;
 
-        if (string.Equals(raw, "blackjack", StringComparison.OrdinalIgnoreCase))
-        {
-            claimedBlackjack = true;
-        }
-        else if (long.TryParse(raw, out enteredValue))
+        if (long.TryParse(raw, out enteredValue))
         {
             hasNumericValue = true;
             if (enteredValue < 2)
@@ -172,12 +196,17 @@ else
         }
         else
         {
-            _feedbackText = "Enter a number, or type 'Blackjack'.";
+            _feedbackText = "Enter a number, or tap Blackjack.";
             return;
         }
 
         EvaluateAnswer(enteredValue, claimedBlackjack, hasNumericValue);
     }
+
+    // Now a dedicated button rather than needing to type the exact
+    // word "Blackjack" -- pairs with the numeric-optimized answer
+    // field, which no longer needs to accept free text at all.
+    private void ClaimBlackjack() => EvaluateAnswer(0, claimedBlackjack: true, hasNumericValue: false);
 
     private void EvaluateAnswer(long enteredValue, bool claimedBlackjack, bool hasNumericValue)
     {
@@ -232,11 +261,11 @@ else
 
         if (actualBlackjack)
         {
-            EndRound("Dealer has Blackjack. Click New Round for the next hand.");
+            EndRound("Dealer has Blackjack. Press Enter for the next hand.");
         }
         else if (actualBust)
         {
-            EndRound("Dealer busts. Click New Round for the next hand.");
+            EndRound("Dealer busts. Press Enter for the next hand.");
         }
         else if (_hand.MustHit(HitSoft17))
         {
@@ -245,10 +274,11 @@ else
             _promptText = "Dealer hits. What's the new total?";
             _answerEnabled = true;
             _submitEnabled = true;
+            _shouldFocusAnswer = true;
         }
         else
         {
-            EndRound("Dealer stands. Click New Round for the next hand.");
+            EndRound("Dealer stands. Press Enter for the next hand.");
         }
     }
 
@@ -259,6 +289,7 @@ else
 
         _promptText = message;
         _newRoundEnabled = true;
+        _shouldFocusNewRound = true;
     }
 
     // No separate main-menu page exists yet in the web version, so

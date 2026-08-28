@@ -1,3 +1,28 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-@Body
+<div class="page-layout">
+    <nav class="sidebar">
+        <h2>Dealer School Trainer</h2>
+        <ul>
+            <li><NavLink href="" Match="NavLinkMatch.All">Home</NavLink></li>
+        </ul>
+
+        <h3>Games</h3>
+        <ul>
+            <li><NavLink href="flash-card-trainer">Blackjack - Flash Cards</NavLink></li>
+            <li class="coming-soon">Blackjack - Payouts</li>
+            <li class="coming-soon">Blackjack - Side Wagers</li>
+            <li class="coming-soon">Three Card Prime</li>
+            <li class="coming-soon">Pai Gow</li>
+            <li class="coming-soon">Heads-Up Hold'em</li>
+        </ul>
+
+        <ul>
+            <li><NavLink href="about">About</NavLink></li>
+        </ul>
+    </nav>
+
+    <main class="content">
+        @Body
+    </main>
+</div>

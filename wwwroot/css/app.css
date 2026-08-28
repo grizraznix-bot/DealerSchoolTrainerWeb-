@@ -87,3 +87,64 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Persistent sidebar layout -- game list and About stay visible on
+   every page, rather than needing a "back to menu" button repeated
+   on each individual game's start screen. */
+.page-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background-color: #f4f4f4;
+    border-right: 1px solid #ddd;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.sidebar h2 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.sidebar h3 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #888;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    padding: 0.35rem 0;
+}
+
+.sidebar li.coming-soon {
+    color: #aaa;
+    font-style: italic;
+}
+
+.sidebar a {
+    text-decoration: none;
+    color: #333;
+}
+
+.sidebar a.active {
+    font-weight: bold;
+    color: #1b6ec2;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 1.5rem 2rem;
+    box-sizing: border-box;
+}
