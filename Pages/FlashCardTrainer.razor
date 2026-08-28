@@ -1,0 +1,285 @@
+@page "/flash-card-trainer"
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.FlashCardTrainer
+
+<PageTitle>Blackjack - Flash Cards</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>BLACKJACK - FLASH CARDS</h1>
+        <p>Type the dealer's total, press Enter to Submit.</p>
+
+        <label>
+            <input type="checkbox" @bind="_removeTens" />
+            Remove all 10-value cards
+        </label>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <div class="card-row" style="margin: 1rem 0; display: flex; gap: 8px;">
+            @for (int i = 0; i < _hand.Count; i++)
+            {
+                var card = _hand.CardAt(i);
+                <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image" style="width: 90px; height: 126px;" />
+            }
+        </div>
+
+        <p style="font-size: 1.2rem;">@_promptText</p>
+
+        @if (_showHint)
+        {
+            <p style="font-style: italic; color: dimgray;">Remember: an Ace can count as 1 or 11.</p>
+        }
+
+        <div style="margin: 1rem 0;">
+            <input type="text"
+                   @bind="_answerText"
+                   @bind:event="oninput"
+                   @onkeydown="HandleAnswerKeyDown"
+                   disabled="@(!_answerEnabled)"
+                   placeholder="Total, or 'Blackjack'" />
+            <button @onclick="SubmitTypedAnswer" disabled="@(!_submitEnabled)">Submit</button>
+        </div>
+
+        <p>@_feedbackText</p>
+
+        <p>Score: @_roundsCorrect / @_roundsPlayed</p>
+
+        <div>
+            <button @onclick="StartNewRound" disabled="@(!_newRoundEnabled)">New Round</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_roundsPlayed</p>
+        <p>Correct: @_roundsCorrect</p>
+        <p>Incorrect: @(_roundsPlayed - _roundsCorrect)</p>
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    // Dealer hits a soft 17 (H17 house rule) -- matches the desktop
+    // trainer's fixed rule.
+    private const bool HitSoft17 = true;
+
+    private bool _started;
+    private bool _removeTens;
+
+    private BlackjackShoe _shoe = new();
+    private BlackjackHand _hand = new();
+
+    private int _roundsCorrect;
+    private int _roundsPlayed;
+    private bool _roundHasMistake;
+
+    private string _answerText = string.Empty;
+    private string _promptText = string.Empty;
+    private string _feedbackText = string.Empty;
+    private bool _showHint;
+    private bool _answerEnabled;
+    private bool _submitEnabled;
+    private bool _newRoundEnabled;
+    private bool _showSessionSummary;
+
+    private void StartGame()
+    {
+        _started = true;
+        _roundsCorrect = 0;
+        _roundsPlayed = 0;
+
+        _shoe = new BlackjackShoe();
+        if (_removeTens) _shoe.RemoveTenValueCards();
+
+        StartNewRound();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void StartNewRound()
+    {
+        _hand = new BlackjackHand();
+        _hand.AddCard(_shoe.Draw());
+        _hand.AddCard(_shoe.Draw());
+
+        _roundHasMistake = false;
+        _feedbackText = string.Empty;
+        _newRoundEnabled = false;
+
+        _answerText = string.Empty;
+        _answerEnabled = true;
+        _submitEnabled = true;
+
+        _showHint = _hand.HasAce;
+        _promptText = "What's the dealer's total?";
+    }
+
+    // Enter-to-submit works while the answer box itself is focused and
+    // enabled. The desktop version also lets Enter advance to the next
+    // round even when the answer box is disabled (via WinForms' form-
+    // level AcceptButton) -- a disabled HTML <input> can't receive
+    // keyboard events at all, so that specific behavior doesn't carry
+    // over here. Simplified deliberately rather than chased exactly,
+    // since this app already leans on click/tap for touch devices.
+    private void HandleAnswerKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _submitEnabled)
+        {
+            SubmitTypedAnswer();
+        }
+    }
+
+    private void SubmitTypedAnswer()
+    {
+        string raw = _answerText.Trim();
+
+        if (raw.Length == 0)
+        {
+            _feedbackText = "Enter a total, or type 'Blackjack'.";
+            return;
+        }
+
+        bool claimedBlackjack = false;
+        bool hasNumericValue = false;
+        long enteredValue = 0;
+
+        if (string.Equals(raw, "blackjack", StringComparison.OrdinalIgnoreCase))
+        {
+            claimedBlackjack = true;
+        }
+        else if (long.TryParse(raw, out enteredValue))
+        {
+            hasNumericValue = true;
+            if (enteredValue < 2)
+            {
+                _feedbackText = "Enter a valid total.";
+                return;
+            }
+        }
+        else
+        {
+            _feedbackText = "Enter a number, or type 'Blackjack'.";
+            return;
+        }
+
+        EvaluateAnswer(enteredValue, claimedBlackjack, hasNumericValue);
+    }
+
+    private void EvaluateAnswer(long enteredValue, bool claimedBlackjack, bool hasNumericValue)
+    {
+        bool actualBlackjack = _hand.IsBlackjack;
+        int actualTotal = _hand.Total;
+        bool actualBust = _hand.IsBust;
+        bool isCorrect;
+
+        if (actualBlackjack)
+        {
+            // "Blackjack"/"blackjack" or the number 21 both correctly
+            // identify a natural Blackjack.
+            isCorrect = claimedBlackjack || (hasNumericValue && enteredValue == 21);
+        }
+        else if (actualBust)
+        {
+            isCorrect = hasNumericValue && enteredValue == actualTotal;
+        }
+        else if (_hand.MustHit(HitSoft17))
+        {
+            // Hand is a HIT either way -- either the soft or hard
+            // reading is acceptable.
+            isCorrect = hasNumericValue &&
+                        (enteredValue == actualTotal || (_hand.IsSoft && enteredValue == _hand.HardTotal));
+        }
+        else
+        {
+            // Hand is a STAND -- only the actual total is accepted.
+            isCorrect = hasNumericValue && enteredValue == actualTotal;
+        }
+
+        if (!isCorrect)
+        {
+            _roundHasMistake = true;
+            _answerText = string.Empty;
+            _feedbackText = "Incorrect - try again.";
+            return;
+        }
+
+        string msg = actualBlackjack
+            ? "Correct.  Blackjack!"
+            : actualBust
+                ? $"Correct.  Actual: BUST ({actualTotal})"
+                : _hand.IsSoft
+                    ? $"Correct.  Actual total: {actualTotal} soft ({_hand.HardTotal} hard)"
+                    : $"Correct.  Actual total: {actualTotal} (hard)";
+
+        _feedbackText = msg;
+        _answerText = string.Empty;
+        _answerEnabled = false;
+        _submitEnabled = false;
+
+        if (actualBlackjack)
+        {
+            EndRound("Dealer has Blackjack. Click New Round for the next hand.");
+        }
+        else if (actualBust)
+        {
+            EndRound("Dealer busts. Click New Round for the next hand.");
+        }
+        else if (_hand.MustHit(HitSoft17))
+        {
+            _hand.AddCard(_shoe.Draw());
+            _showHint = _hand.HasAce;
+            _promptText = "Dealer hits. What's the new total?";
+            _answerEnabled = true;
+            _submitEnabled = true;
+        }
+        else
+        {
+            EndRound("Dealer stands. Click New Round for the next hand.");
+        }
+    }
+
+    private void EndRound(string message)
+    {
+        _roundsPlayed++;
+        if (!_roundHasMistake) _roundsCorrect++;
+
+        _promptText = message;
+        _newRoundEnabled = true;
+    }
+
+    // No separate main-menu page exists yet in the web version, so
+    // "End Session" shows the summary (if any rounds were played) and
+    // returns to this game's own start screen -- once a real menu page
+    // is built, this will navigate back there instead.
+    private void EndSession()
+    {
+        if (_roundsPlayed > 0)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+}
