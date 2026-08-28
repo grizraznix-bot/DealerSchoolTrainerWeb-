@@ -1,0 +1,239 @@
+@page "/side-wager-trainer"
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.SideWagerTrainer
+
+<PageTitle>Blackjack - Side Wagers</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>BLACKJACK - SIDE WAGERS</h1>
+        <p>For each hand dealt, mark whether Lucky Ladies and/or 21+3 qualify, then Submit.</p>
+
+        <div style="margin-top: 1rem;">
+            <label>
+                Number of Hands (1-6):
+                <input type="number" min="1" max="6" @bind="_handCount" style="width: 4rem;" />
+            </label>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
+            @for (int h = 0; h < _hands.Count; h++)
+            {
+                int handIndex = h;
+                HandState hand = _hands[handIndex];
+
+                <div style="text-align: center;">
+                    <div style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
+
+                    <div style="position: relative; width: 130px; height: 195px;">
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
+                             style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Code"
+                             style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
+                    </div>
+
+                    <div style="margin-top: 0.5rem; @(hand.LuckyLadiesWrong ? "background-color: #f8d0d0;" : "")">
+                        <label>
+                            <input type="checkbox" checked="@hand.LuckyLadiesChecked"
+                                   @onchange="e => hand.LuckyLadiesChecked = (bool)e.Value!" />
+                            Lucky Ladies
+                        </label>
+                    </div>
+
+                    <div style="@(hand.TwentyOnePlus3Wrong ? "background-color: #f8d0d0;" : "")">
+                        <label>
+                            <input type="checkbox" checked="@hand.TwentyOnePlus3Checked"
+                                   @onchange="e => hand.TwentyOnePlus3Checked = (bool)e.Value!" />
+                            21 + 3
+                        </label>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div style="text-align: center;">
+            <div style="color: dimgray; font-size: 0.85rem;">Dealer</div>
+            <img src="images/cards/@(_dealerCard?.Code).png" alt="@_dealerCard?.Code" style="width: 100px; height: 140px;" />
+        </div>
+
+        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
+        <p>@_scoreText</p>
+
+        <div style="margin-top: 1rem;">
+            <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_totalAnswered</p>
+        <p>Correct: @_totalCorrect</p>
+        <p>Incorrect: @(_totalAnswered - _totalCorrect)</p>
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    private sealed class HandState
+    {
+        public Card Card1 = null!;
+        public Card Card2 = null!;
+        public bool LuckyLadiesChecked;
+        public bool TwentyOnePlus3Checked;
+        public bool LuckyLadiesWrong;
+        public bool TwentyOnePlus3Wrong;
+    }
+
+    private bool _started;
+    private int _handCount = 6;
+
+    private Deck _deck = new();
+    private readonly List<HandState> _hands = new();
+    private Card? _dealerCard;
+
+    private int _totalCorrect;
+    private int _totalAnswered;
+
+    private bool _submitEnabled;
+    private bool _dealEnabled;
+    private string _resultText = string.Empty;
+    private bool _isCorrect;
+    private string _scoreText = "Score: 0 / 0 (0.0%)";
+    private bool _showSessionSummary;
+
+    private void StartGame()
+    {
+        _handCount = Math.Clamp(_handCount, 1, 6);
+        _started = true;
+        _totalCorrect = 0;
+        _totalAnswered = 0;
+        _scoreText = "Score: 0 / 0 (0.0%)";
+
+        DealNewRound();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void DealNewRound()
+    {
+        _dealEnabled = false;
+
+        _deck = new Deck();
+        _deck.Shuffle();
+
+        _hands.Clear();
+        for (int h = 0; h < _handCount; h++)
+        {
+            _hands.Add(new HandState
+            {
+                Card1 = _deck.Draw(),
+                Card2 = _deck.Draw()
+            });
+        }
+
+        _dealerCard = _deck.Draw();
+
+        _resultText = string.Empty;
+        _submitEnabled = true;
+    }
+
+    private void DealAgain()
+    {
+        foreach (HandState hand in _hands)
+        {
+            hand.LuckyLadiesChecked = false;
+            hand.TwentyOnePlus3Checked = false;
+            hand.LuckyLadiesWrong = false;
+            hand.TwentyOnePlus3Wrong = false;
+        }
+
+        DealNewRound();
+    }
+
+    private void SubmitRound()
+    {
+        int roundCorrect = 0;
+
+        foreach (HandState hand in _hands)
+        {
+            bool actualLL = SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2);
+            bool actualTC = SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _dealerCard!);
+
+            if (hand.LuckyLadiesChecked == actualLL)
+            {
+                hand.LuckyLadiesWrong = false;
+                roundCorrect++;
+            }
+            else
+            {
+                hand.LuckyLadiesWrong = true;
+            }
+
+            if (hand.TwentyOnePlus3Checked == actualTC)
+            {
+                hand.TwentyOnePlus3Wrong = false;
+                roundCorrect++;
+            }
+            else
+            {
+                hand.TwentyOnePlus3Wrong = true;
+            }
+        }
+
+        _totalAnswered++;
+
+        // A round only counts as correct if every answer across every
+        // dealt hand is correct.
+        if (roundCorrect == _handCount * 2)
+        {
+            _totalCorrect++;
+            _isCorrect = true;
+            _resultText = "CORRECT";
+        }
+        else
+        {
+            _isCorrect = false;
+            _resultText = "INCORRECT";
+        }
+
+        double percentage = (double)_totalCorrect / _totalAnswered;
+        _scoreText = $"Score: {_totalCorrect} / {_totalAnswered} ({percentage:0.0%})";
+
+        _submitEnabled = false;
+        _dealEnabled = true;
+    }
+
+    private void EndSession()
+    {
+        if (_totalAnswered > 0)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+}

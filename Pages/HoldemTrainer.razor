@@ -1,0 +1,265 @@
+@page "/holdem-trainer"
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.HoldemTrainer
+
+<PageTitle>Heads-Up Hold'em</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>HEADS-UP HOLD'EM</h1>
+        <p>Classify each dealt hand using the 5 community cards. Select a rank for every hand, then Submit.</p>
+
+        <div style="margin-top: 1rem;">
+            <label>
+                Number of Hands (1-6):
+                <input type="number" min="1" max="6" @bind="_handCount" style="width: 4rem;" />
+            </label>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
+            @for (int h = 0; h < _hands.Count; h++)
+            {
+                int handIndex = h;
+                HandState hand = _hands[handIndex];
+
+                <div style="text-align: center;">
+                    <div style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
+
+                    <div style="position: relative; width: 130px; height: 195px;">
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
+                             style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Code"
+                             style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
+                    </div>
+
+                    <select @bind="hand.SelectedRankIndex" style="margin-top: 0.5rem; @(hand.Wrong ? "background-color: #f8d0d0;" : "")">
+                        @for (int i = 0; i < RankComboItems.Length; i++)
+                        {
+                            <option value="@i">@RankComboItems[i]</option>
+                        }
+                    </select>
+                </div>
+            }
+        </div>
+
+        <div style="display: flex; gap: 1rem; align-items: flex-end; margin: 1rem 0;">
+            @foreach (Card? c in _community)
+            {
+                <div style="text-align: center;">
+                    <img src="images/cards/@(c?.Code).png" alt="@c?.Code" style="width: 100px; height: 140px;" />
+                </div>
+            }
+        </div>
+
+        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
+
+        @if (_mistakesText.Length > 0)
+        {
+            <p style="white-space: pre-line;">Incorrect. What each hand actually was:@("\n")@_mistakesText</p>
+        }
+
+        <p>@_scoreText</p>
+
+        <div>
+            <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_totalRounds</p>
+        <p>Correct: @_correctCount</p>
+        <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    private const int CommunityCount = 5;
+
+    private static readonly string[] RankComboItems =
+    {
+        "Select Rank",
+        "High Card",
+        "Pair",
+        "Two Pair",
+        "Three of a Kind",
+        "Straight",
+        "Flush",
+        "Full House",
+        "Four of a Kind",
+        "Straight Flush",
+        "Royal Flush"
+    };
+
+    private sealed class HandState
+    {
+        public Card Card1 = null!;
+        public Card Card2 = null!;
+        public int SelectedRankIndex; // 0 = unselected, 1-10 matches HandRank
+        public bool Wrong;
+    }
+
+    private bool _started;
+    private int _handCount = 6;
+
+    private Deck _deck = new();
+    private readonly Card?[] _community = new Card?[CommunityCount];
+    private readonly List<HandState> _hands = new();
+
+    private int _correctCount;
+    private int _totalRounds;
+    private bool _roundScored;
+
+    private bool _submitEnabled;
+    private bool _dealEnabled;
+    private string _resultText = string.Empty;
+    private bool _isCorrect;
+    private string _mistakesText = string.Empty;
+    private string _scoreText = "Score: 0 / 0 (0.0%)";
+    private bool _showSessionSummary;
+
+    private void StartGame()
+    {
+        _handCount = Math.Clamp(_handCount, 1, 6);
+        _started = true;
+        _correctCount = 0;
+        _totalRounds = 0;
+        _roundScored = false;
+        _scoreText = "Score: 0 / 0 (0.0%)";
+
+        DealNewRound();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void DealNewRound()
+    {
+        _dealEnabled = false;
+
+        _deck = new Deck();
+        _deck.Shuffle();
+
+        for (int i = 0; i < CommunityCount; i++)
+            _community[i] = _deck.Draw();
+
+        _hands.Clear();
+        for (int h = 0; h < _handCount; h++)
+        {
+            _hands.Add(new HandState
+            {
+                Card1 = _deck.Draw(),
+                Card2 = _deck.Draw()
+            });
+        }
+
+        _resultText = string.Empty;
+        _mistakesText = string.Empty;
+        _roundScored = false;
+        _submitEnabled = true;
+    }
+
+    private void DealAgain() => DealNewRound();
+
+    private void SubmitRound()
+    {
+        // Require every hand to have a real selection first.
+        foreach (HandState hand in _hands)
+        {
+            if (hand.SelectedRankIndex <= 0)
+            {
+                _resultText = "Select a rank for every hand before submitting.";
+                _isCorrect = false;
+                return;
+            }
+        }
+
+        if (_roundScored) return; // prevent double-scoring the same deal
+
+        bool allCorrect = true;
+        System.Text.StringBuilder mistakes = new();
+
+        for (int h = 0; h < _hands.Count; h++)
+        {
+            HandState hand = _hands[h];
+
+            Card[] sevenCards =
+            {
+                hand.Card1, hand.Card2,
+                _community[0]!, _community[1]!, _community[2]!, _community[3]!, _community[4]!
+            };
+
+            HandRank actualRank = HandEvaluator.BestHandRank(sevenCards);
+
+            if (hand.SelectedRankIndex == (int)actualRank)
+            {
+                hand.Wrong = false;
+            }
+            else
+            {
+                hand.Wrong = true;
+                allCorrect = false;
+                mistakes.AppendLine($"Hand {h + 1}: {HandEvaluator.HandRankName(actualRank)}");
+            }
+        }
+
+        _totalRounds++;
+        if (allCorrect) _correctCount++;
+
+        if (allCorrect)
+        {
+            _isCorrect = true;
+            _resultText = "CORRECT";
+            _mistakesText = string.Empty;
+        }
+        else
+        {
+            _isCorrect = false;
+            _resultText = "INCORRECT";
+            _mistakesText = mistakes.ToString();
+        }
+
+        string pct = _totalRounds > 0
+            ? ((double)_correctCount / _totalRounds).ToString("0.0%")
+            : "0.0%";
+        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
+
+        _roundScored = true;
+        _submitEnabled = false;
+        _dealEnabled = true;
+    }
+
+    private void EndSession()
+    {
+        if (_totalRounds > 0)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+}
