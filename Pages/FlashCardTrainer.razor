@@ -42,15 +42,13 @@ else
 
         <div style="margin: 1rem 0;">
             <input type="text"
-                   inputmode="numeric"
                    @bind="_answerText"
                    @bind:event="oninput"
                    @onkeydown="HandleAnswerKeyDown"
                    @ref="_answerInputRef"
                    disabled="@(!_answerEnabled)"
-                   placeholder="Total" />
+                   placeholder="Total, or 'Blackjack'" />
             <button @onclick="SubmitTypedAnswer" disabled="@(!_submitEnabled)">Submit</button>
-            <button @onclick="ClaimBlackjack" disabled="@(!_submitEnabled)">Blackjack</button>
         </div>
 
         <p>@_feedbackText</p>
@@ -163,21 +161,21 @@ else
     // "New Round" actual keyboard focus once it becomes clickable --
     // a focused HTML button responds to Enter/Space natively, no
     // custom key handling needed for that part.
-    private void HandleAnswerKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    private async Task HandleAnswerKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && _submitEnabled)
         {
-            SubmitTypedAnswer();
+            await SubmitTypedAnswer();
         }
     }
 
-    private void SubmitTypedAnswer()
+    private async Task SubmitTypedAnswer()
     {
         string raw = _answerText.Trim();
 
         if (raw.Length == 0)
         {
-            _feedbackText = "Enter a total, or tap Blackjack.";
+            _feedbackText = "Enter a total, or type 'Blackjack'.";
             return;
         }
 
@@ -185,7 +183,11 @@ else
         bool hasNumericValue = false;
         long enteredValue = 0;
 
-        if (long.TryParse(raw, out enteredValue))
+        if (string.Equals(raw, "blackjack", StringComparison.OrdinalIgnoreCase))
+        {
+            claimedBlackjack = true;
+        }
+        else if (long.TryParse(raw, out enteredValue))
         {
             hasNumericValue = true;
             if (enteredValue < 2)
@@ -196,19 +198,14 @@ else
         }
         else
         {
-            _feedbackText = "Enter a number, or tap Blackjack.";
+            _feedbackText = "Enter a number, or type 'Blackjack'.";
             return;
         }
 
-        EvaluateAnswer(enteredValue, claimedBlackjack, hasNumericValue);
+        await EvaluateAnswer(enteredValue, claimedBlackjack, hasNumericValue);
     }
 
-    // Now a dedicated button rather than needing to type the exact
-    // word "Blackjack" -- pairs with the numeric-optimized answer
-    // field, which no longer needs to accept free text at all.
-    private void ClaimBlackjack() => EvaluateAnswer(0, claimedBlackjack: true, hasNumericValue: false);
-
-    private void EvaluateAnswer(long enteredValue, bool claimedBlackjack, bool hasNumericValue)
+    private async Task EvaluateAnswer(long enteredValue, bool claimedBlackjack, bool hasNumericValue)
     {
         bool actualBlackjack = _hand.IsBlackjack;
         int actualTotal = _hand.Total;
@@ -261,11 +258,11 @@ else
 
         if (actualBlackjack)
         {
-            EndRound("Dealer has Blackjack. Press Enter for the next hand.");
+            await EndRound("Dealer has Blackjack. Press Enter for the next hand.");
         }
         else if (actualBust)
         {
-            EndRound("Dealer busts. Press Enter for the next hand.");
+            await EndRound("Dealer busts. Press Enter for the next hand.");
         }
         else if (_hand.MustHit(HitSoft17))
         {
@@ -278,17 +275,37 @@ else
         }
         else
         {
-            EndRound("Dealer stands. Press Enter for the next hand.");
+            await EndRound("Dealer stands. Press Enter for the next hand.");
         }
     }
 
-    private void EndRound(string message)
+    // Deliberately waits before allowing the round to advance, rather
+    // than enabling/focusing "New Round" immediately. Fixes a real
+    // bug: focusing that button right away let the SAME physical
+    // Enter keypress that submitted the answer bleed through and
+    // auto-advance the round -- a browser fires a click on whatever
+    // button currently has focus when Enter is released, and that
+    // release was landing on the newly-focused button before the
+    // feedback was ever actually seen. Waiting this long guarantees
+    // that original keypress is long over by the time focus shifts.
+    private async Task EndRound(string message)
     {
         _roundsPlayed++;
         if (!_roundHasMistake) _roundsCorrect++;
 
         _promptText = message;
         _newRoundEnabled = true;
+        StateHasChanged();
+
+        // Short, invisible delay before shifting focus -- not a visible
+        // countdown, just long enough for the browser to fully finish
+        // dispatching the keyup of the SAME Enter press that submitted
+        // the answer before focus moves to New Round. Without this,
+        // that keyup was landing on the newly-focused button and
+        // triggering an immediate click, skipping the feedback
+        // entirely -- 200ms is imperceptible to a person but plenty for
+        // that to clear.
+        await Task.Delay(200);
         _shouldFocusNewRound = true;
     }
 
