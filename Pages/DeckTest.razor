@@ -1,0 +1,38 @@
+﻿@page "/deck-test"
+@using DealerSchoolTrainerWeb.Core
+
+<PageTitle>Deck Test</PageTitle>
+
+<h1>Deck Test</h1>
+
+<p>
+    Proves the ported Card/Deck logic (copied over from the desktop
+    app's Core/ classes, unchanged apart from the namespace) actually
+    runs correctly once compiled to WebAssembly and executed in the
+    browser — not just that it compiles.
+</p>
+
+<button class="btn btn-primary" @onclick="DealFive">Shuffle and deal 5 cards</button>
+
+@if (_dealtCards.Count > 0)
+{
+    <p style="margin-top: 1rem; font-size: 1.5rem; font-family: monospace;">
+        @string.Join("  ", _dealtCards.Select(c => c.Code))
+    </p>
+}
+
+@code {
+    private readonly List<Card> _dealtCards = new();
+
+    private void DealFive()
+    {
+        Deck deck = new();
+        deck.Shuffle();
+
+        _dealtCards.Clear();
+        for (int i = 0; i < 5; i++)
+        {
+            _dealtCards.Add(deck.Draw());
+        }
+    }
+}
