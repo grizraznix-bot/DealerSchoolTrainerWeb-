@@ -51,8 +51,10 @@ else
             </div>
         </div>
 
-        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
-        <p>@_scoreText</p>
+        <div class="feedback-area">
+            <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
+            <p>@_scoreText</p>
+        </div>
 
         <div>
             <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
@@ -64,7 +66,7 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+    <div class="session-summary">
         <h3>Session Summary</h3>
         <p>Rounds Played: @_totalRounds</p>
         <p>Correct: @_correctCount</p>

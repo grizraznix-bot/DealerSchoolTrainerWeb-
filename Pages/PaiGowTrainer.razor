@@ -44,21 +44,63 @@ else
             </div>
         }
 
-        <h3 style="margin-top: 1rem;">Low Hand</h3>
-        <div style="display: flex; gap: 8px; margin-bottom: 1rem;">
-            @for (int slot = 1; slot <= 2; slot++)
-            {
-                int lowSlot = slot;
-                int cardAtSlot = CardAtLowPosition(lowSlot);
-
-                <div @onclick="() => ReturnLowSlotToHand(lowSlot)"
-                     style="width: 100px; height: 140px; border: 1px solid #999; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                    @if (cardAtSlot >= 0)
+        <div style="display: flex; align-items: flex-start; gap: 1rem;">
+            <div>
+                <h3 style="margin-top: 1rem;">Low Hand</h3>
+                <div style="display: flex; gap: 8px;">
+                    @for (int slot = 1; slot <= 2; slot++)
                     {
-                        <img src="images/cards/@(_cards[cardAtSlot].ImageCode).png" alt="@_cards[cardAtSlot].ImageCode" style="width: 100%; height: 100%;" />
+                        int lowSlot = slot;
+                        int cardAtSlot = CardAtLowPosition(lowSlot);
+
+                        <div @onclick="() => ReturnLowSlotToHand(lowSlot)"
+                             style="width: 100px; height: 140px; border: 1px solid #999; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            @if (cardAtSlot >= 0)
+                            {
+                                <img src="images/cards/@(_cards[cardAtSlot].ImageCode).png" alt="@_cards[cardAtSlot].ImageCode" style="width: 100%; height: 100%;" />
+                            }
+                        </div>
                     }
                 </div>
-            }
+            </div>
+
+            <!-- Positioned beside the Low hand, spaced out to land roughly
+                 under where cards 6-7 of the row below sit, rather than
+                 stacking below everything. Your-hand and correct-hand info
+                 sit as two side-by-side columns rather than stacked, so the
+                 combined block stays roughly half as tall. Font kept small
+                 too -- at normal text size this was still taller than the
+                 Low hand's 140px cards, stretching this whole row (and
+                 pushing the 7-card hand and everything below it down). -->
+            <div class="feedback-area" style="margin-left: 320px; max-width: 550px; margin-top: 1rem; font-size: 0.75rem;">
+                @if (_errorText.Length > 0)
+                {
+                    <p style="color: red;">@_errorText</p>
+                }
+
+                @if (_resultHeader.Length > 0)
+                {
+                    <p style="font-weight: bold; color: @(_resultIsCorrect ? "blue" : "red"); margin: 0 0 0.35rem 0;">@_resultHeader</p>
+                }
+
+                @if (_showComparison)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.1rem 1.5rem; white-space: pre-line;">
+                        <div style="font-weight: bold; color: red;">YOUR LOW HAND</div>
+                        <div style="font-weight: bold; color: darkgreen;">CORRECT LOW HAND</div>
+                        <div style="color: red;">@_yourLowLabel</div>
+                        <div style="color: darkgreen;">@_correctLowLabel</div>
+                        <div style="font-weight: bold; color: red; margin-top: 0.4rem;">YOUR HIGH HAND</div>
+                        <div style="font-weight: bold; color: darkgreen; margin-top: 0.4rem;">CORRECT HIGH HAND</div>
+                        <div style="color: red;">@_yourHighDescription</div>
+                        <div style="color: darkgreen;">@_correctHighDescription</div>
+                    </div>
+                }
+                else if (_singleBody.Length > 0)
+                {
+                    <div style="white-space: pre-line; font-weight: bold; color: @(_resultIsCorrect ? "blue" : "red");">@_singleBody</div>
+                }
+            </div>
         </div>
 
         <h3>Your 7 Cards</h3>
@@ -70,19 +112,9 @@ else
 
                 <img src="images/cards/@(_cards[cardIndex].ImageCode).png" alt="@_cards[cardIndex].ImageCode"
                      @onclick="() => CardClicked(cardIndex)"
-                     style="width: 100px; height: 140px; cursor: pointer; @(inLow ? "opacity: 0.35;" : "")" />
+                     style="width: 100px; height: 140px; cursor: pointer; @(inLow ? "opacity: 0;" : "")" />
             }
         </div>
-
-        @if (_errorText.Length > 0)
-        {
-            <p style="color: red;">@_errorText</p>
-        }
-
-        @if (_resultText.Length > 0)
-        {
-            <div style="white-space: pre-line; font-weight: bold; color: @(_resultIsCorrect ? "blue" : "red");">@_resultText</div>
-        }
 
         <p>@_scoreText</p>
 
@@ -97,7 +129,7 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+    <div class="session-summary">
         <h3>Session Summary</h3>
         <p>Rounds Played: @_totalRounds</p>
         <p>Correct: @_correctCount</p>
@@ -130,7 +162,13 @@ else
     private bool _submitEnabled;
     private bool _dealEnabled;
     private string _errorText = string.Empty;
-    private string _resultText = string.Empty;
+    private string _resultHeader = string.Empty;
+    private bool _showComparison;
+    private string _singleBody = string.Empty;
+    private string _yourLowLabel = string.Empty;
+    private string _correctLowLabel = string.Empty;
+    private string _yourHighDescription = string.Empty;
+    private string _correctHighDescription = string.Empty;
     private bool _resultIsCorrect;
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
@@ -151,7 +189,9 @@ else
     {
         _dealEnabled = false;
         _errorText = string.Empty;
-        _resultText = string.Empty;
+        _resultHeader = string.Empty;
+        _showComparison = false;
+        _singleBody = string.Empty;
 
         _deck = new PaiGowDeck();
 
@@ -295,19 +335,27 @@ else
         if (result.IsFoul)
         {
             _resultIsCorrect = false;
-            _resultText = $"INCORRECT HAND\n\nYour hand is FOUL.\nThe Low Hand is higher than the High Hand.\n\n" +
-                           $"LOW HAND: {result.UserLowLabel}\nHIGH HAND: {result.UserHighDescription}";
+            _resultHeader = "INCORRECT HAND - FOUL";
+            _showComparison = false;
+            _singleBody = $"Your hand is FOUL.\nThe Low Hand is higher than the High Hand.\n\n" +
+                          $"LOW HAND: {result.UserLowLabel}\nHIGH HAND: {result.UserHighDescription}";
         }
         else if (result.IsCorrect)
         {
             _resultIsCorrect = true;
-            _resultText = $"CORRECT\n\nLOW HAND\n{result.CorrectLowLabel}\n\nHIGH HAND\n{result.CorrectHighDescription}";
+            _resultHeader = "CORRECT";
+            _showComparison = false;
+            _singleBody = $"LOW HAND\n{result.CorrectLowLabel}\n\nHIGH HAND\n{result.CorrectHighDescription}";
         }
         else
         {
             _resultIsCorrect = false;
-            _resultText = $"INCORRECT\n\nYOUR LOW HAND\n{result.UserLowLabel}\n\nYOUR HIGH HAND\n{result.UserHighDescription}\n\n" +
-                           $"CORRECT LOW HAND\n{result.CorrectLowLabel}\n\nCORRECT HIGH HAND\n{result.CorrectHighDescription}";
+            _resultHeader = "INCORRECT";
+            _showComparison = true;
+            _yourLowLabel = result.UserLowLabel;
+            _correctLowLabel = result.CorrectLowLabel;
+            _yourHighDescription = result.UserHighDescription;
+            _correctHighDescription = result.CorrectHighDescription;
         }
     }
 

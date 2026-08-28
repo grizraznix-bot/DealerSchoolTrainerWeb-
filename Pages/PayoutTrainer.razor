@@ -56,6 +56,7 @@ else
 
         <div style="margin: 1rem 0;">
             <input type="text"
+                   inputmode="decimal"
                    value="@_answerText"
                    @oninput="HandleAnswerInput"
                    @onkeydown="HandleAnswerKeyDown"
@@ -63,10 +64,18 @@ else
                    readonly="@(!_answerEnabled)"
                    placeholder="Amount" />
             <button @onclick="SubmitTypedAnswer" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="() => _showKeypad = !_showKeypad">123</button>
         </div>
 
-        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_promptText</p>
-        <p style="color: red;">@_promptDetailText</p>
+        @if (_showKeypad)
+        {
+            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_answerText" />
+        }
+
+        <div class="feedback-area">
+            <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_promptText</p>
+            <p style="color: red;">@_promptDetailText</p>
+        </div>
 
         <div>
             <button @onclick="StartNewRound" disabled="@(!_newRoundEnabled)" @ref="_newRoundButtonRef">New Round</button>
@@ -77,7 +86,7 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+    <div class="session-summary">
         <h3>Session Summary</h3>
         <p>Rounds Played: @_totalRounds</p>
         <p>Correct: @_correctCount</p>
@@ -98,6 +107,7 @@ else
     private string _answerText = string.Empty;
     private bool _answerEnabled;
     private bool _submitEnabled;
+    private bool _showKeypad;
     private bool _newRoundEnabled;
     private string _promptText = string.Empty;
     private string _promptDetailText = string.Empty;

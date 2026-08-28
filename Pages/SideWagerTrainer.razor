@@ -43,16 +43,16 @@ else
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
-                    <div style="margin-top: 0.5rem; @(hand.LuckyLadiesWrong ? "background-color: #f8d0d0;" : "")">
-                        <label>
+                    <div style="margin-top: 0.5rem; text-align: left; @(hand.LuckyLadiesWrong ? "background-color: #f8d0d0;" : "")">
+                        <label style="display: block;">
                             <input type="checkbox" checked="@hand.LuckyLadiesChecked"
                                    @onchange="e => hand.LuckyLadiesChecked = (bool)e.Value!" />
                             Lucky Ladies
                         </label>
                     </div>
 
-                    <div style="@(hand.TwentyOnePlus3Wrong ? "background-color: #f8d0d0;" : "")">
-                        <label>
+                    <div style="text-align: left; @(hand.TwentyOnePlus3Wrong ? "background-color: #f8d0d0;" : "")">
+                        <label style="display: block;">
                             <input type="checkbox" checked="@hand.TwentyOnePlus3Checked"
                                    @onchange="e => hand.TwentyOnePlus3Checked = (bool)e.Value!" />
                             21 + 3
@@ -62,15 +62,19 @@ else
             }
         </div>
 
-        <div style="text-align: center;">
-            <div style="color: dimgray; font-size: 0.85rem;">Dealer</div>
-            <img src="images/cards/@(_dealerCard?.Code).png" alt="@_dealerCard?.Code" style="width: 100px; height: 140px;" />
+        <div style="display: flex; align-items: flex-end; gap: 1.5rem; margin: 0.25rem 0;">
+            <div style="text-align: center;">
+                <div style="color: dimgray; font-size: 0.85rem;">Dealer</div>
+                <img src="images/cards/@(_dealerCard?.Code).png" alt="@_dealerCard?.Code" style="width: 100px; height: 140px;" />
+            </div>
+
+            <div class="feedback-area" style="min-height: 0;">
+                <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red"); margin: 0; height: 1.5rem;">@_resultText</p>
+                <p style="margin: 0.25rem 0 0 0;">@_scoreText</p>
+            </div>
         </div>
 
-        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
-        <p>@_scoreText</p>
-
-        <div style="margin-top: 1rem;">
+        <div>
             <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
             <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
             <button @onclick="EndSession">End Session</button>
@@ -80,7 +84,7 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+    <div class="session-summary">
         <h3>Session Summary</h3>
         <p>Rounds Played: @_totalAnswered</p>
         <p>Correct: @_totalCorrect</p>

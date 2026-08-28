@@ -1,0 +1,66 @@
+@* Reusable on-screen numeric keypad -- click/tap entry as an
+   alternative to typing, usable with a mouse on PC as well as touch.
+   Two-way bindable: use @bind-Value="_answerText" from the parent.
+   MaxDecimalDigits enforces a digit limit after the decimal point
+   (e.g. cents); leave it null for no limit. *@
+
+<div class="numeric-keypad">
+    @for (int row = 0; row < 3; row++)
+    {
+        int r = row;
+        <div class="numeric-keypad-row">
+            @for (int col = 1; col <= 3; col++)
+            {
+                int digit = r * 3 + col;
+                <button type="button" @onclick="() => AppendDigit(digit)">@digit</button>
+            }
+        </div>
+    }
+    <div class="numeric-keypad-row">
+        @if (AllowDecimal)
+        {
+            <button type="button" @onclick="AppendDecimalPoint">.</button>
+        }
+        else
+        {
+            <span></span>
+        }
+        <button type="button" @onclick="() => AppendDigit(0)">0</button>
+        <button type="button" @onclick="Backspace">⌫</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool AllowDecimal { get; set; }
+    [Parameter] public int? MaxDecimalDigits { get; set; }
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private async Task AppendDigit(int digit)
+    {
+        int dotIndex = Value.IndexOf('.');
+        if (dotIndex >= 0 && MaxDecimalDigits is int max)
+        {
+            int decimalDigitsSoFar = Value.Length - dotIndex - 1;
+            if (decimalDigitsSoFar >= max) return;
+        }
+
+        await SetValue(Value + digit);
+    }
+
+    private async Task AppendDecimalPoint()
+    {
+        if (!AllowDecimal || Value.Contains('.')) return;
+        await SetValue(Value + ".");
+    }
+
+    private async Task Backspace()
+    {
+        if (Value.Length > 0)
+        {
+            await SetValue(Value[..^1]);
+        }
+    }
+
+    private async Task SetValue(string newValue) => await ValueChanged.InvokeAsync(newValue);
+}

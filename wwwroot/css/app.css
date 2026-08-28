@@ -125,22 +125,40 @@ code {
 }
 
 .sidebar li {
-    padding: 0.35rem 0;
+    margin-bottom: 0.4rem;
 }
 
 .sidebar li.coming-soon {
     color: #aaa;
     font-style: italic;
+    padding: 0.5rem 0.75rem;
 }
 
+/* Sidebar links styled as real buttons -- a modern app-shell look
+   rather than plain text links, with a clear highlighted state for
+   whichever page is currently open. NavLink applies the "active"
+   class automatically based on the current URL, so no manual
+   highlighting logic is needed here. */
 .sidebar a {
+    display: block;
     text-decoration: none;
     color: #333;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.sidebar a:hover {
+    background: #eef3fa;
+    border-color: #b8d0ec;
 }
 
 .sidebar a.active {
-    font-weight: bold;
-    color: #1b6ec2;
+    background: #1b6ec2;
+    color: white;
+    border-color: #1b6ec2;
 }
 
 .content {
@@ -215,6 +233,44 @@ code {
     font-weight: bold;
     white-space: nowrap;
     z-index: 2;
+}
+
+/* Shared across all six games -- was previously duplicated as inline
+   styles on each page individually. */
+.session-summary {
+    border: 1px solid #ccc;
+    background-color: #eef2f6;
+    padding: 1rem;
+    margin-top: 1rem;
+    max-width: 320px;
+    border-radius: 6px;
+}
+
+/* Reserves consistent vertical space for feedback text so the
+   Submit/Deal/End Session button row doesn't shift up and down
+   depending on whether there's a short result or a longer message. */
+.feedback-area {
+    min-height: 3.5rem;
+}
+
+/* Reusable on-screen numeric keypad -- shared by Flash Card Trainer
+   and Payout Trainer. */
+.numeric-keypad {
+    display: inline-block;
+    margin-top: 0.5rem;
+}
+
+.numeric-keypad-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.numeric-keypad-row button,
+.numeric-keypad-row span {
+    width: 44px;
+    height: 44px;
+    font-size: 1.1rem;
 }
 
 .pill-win {

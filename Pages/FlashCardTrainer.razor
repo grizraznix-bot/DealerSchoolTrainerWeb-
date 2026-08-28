@@ -42,16 +42,25 @@ else
 
         <div style="margin: 1rem 0;">
             <input type="text"
+                   inputmode="numeric"
                    @bind="_answerText"
                    @bind:event="oninput"
                    @onkeydown="HandleAnswerKeyDown"
                    @ref="_answerInputRef"
                    disabled="@(!_answerEnabled)"
-                   placeholder="Total, or 'Blackjack'" />
+                   placeholder="Total" />
             <button @onclick="SubmitTypedAnswer" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="() => _showKeypad = !_showKeypad">123</button>
         </div>
 
-        <p>@_feedbackText</p>
+        @if (_showKeypad)
+        {
+            <NumericKeypad AllowDecimal="false" @bind-Value="_answerText" />
+        }
+
+        <div class="feedback-area">
+            <p>@_feedbackText</p>
+        </div>
 
         <p>Score: @_roundsCorrect / @_roundsPlayed</p>
 
@@ -64,7 +73,7 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+    <div class="session-summary">
         <h3>Session Summary</h3>
         <p>Rounds Played: @_roundsPlayed</p>
         <p>Correct: @_roundsCorrect</p>
@@ -94,6 +103,7 @@ else
     private bool _showHint;
     private bool _answerEnabled;
     private bool _submitEnabled;
+    private bool _showKeypad;
     private bool _newRoundEnabled;
     private bool _showSessionSummary;
 
@@ -175,37 +185,20 @@ else
 
         if (raw.Length == 0)
         {
-            _feedbackText = "Enter a total, or type 'Blackjack'.";
+            _feedbackText = "Enter the dealer's total.";
             return;
         }
 
-        bool claimedBlackjack = false;
-        bool hasNumericValue = false;
-        long enteredValue = 0;
-
-        if (string.Equals(raw, "blackjack", StringComparison.OrdinalIgnoreCase))
+        if (!long.TryParse(raw, out long enteredValue) || enteredValue < 2)
         {
-            claimedBlackjack = true;
-        }
-        else if (long.TryParse(raw, out enteredValue))
-        {
-            hasNumericValue = true;
-            if (enteredValue < 2)
-            {
-                _feedbackText = "Enter a valid total.";
-                return;
-            }
-        }
-        else
-        {
-            _feedbackText = "Enter a number, or type 'Blackjack'.";
+            _feedbackText = "Enter a valid total.";
             return;
         }
 
-        await EvaluateAnswer(enteredValue, claimedBlackjack, hasNumericValue);
+        await EvaluateAnswer(enteredValue);
     }
 
-    private async Task EvaluateAnswer(long enteredValue, bool claimedBlackjack, bool hasNumericValue)
+    private async Task EvaluateAnswer(long enteredValue)
     {
         bool actualBlackjack = _hand.IsBlackjack;
         int actualTotal = _hand.Total;
@@ -214,25 +207,22 @@ else
 
         if (actualBlackjack)
         {
-            // "Blackjack"/"blackjack" or the number 21 both correctly
-            // identify a natural Blackjack.
-            isCorrect = claimedBlackjack || (hasNumericValue && enteredValue == 21);
+            isCorrect = enteredValue == 21;
         }
         else if (actualBust)
         {
-            isCorrect = hasNumericValue && enteredValue == actualTotal;
+            isCorrect = enteredValue == actualTotal;
         }
         else if (_hand.MustHit(HitSoft17))
         {
             // Hand is a HIT either way -- either the soft or hard
             // reading is acceptable.
-            isCorrect = hasNumericValue &&
-                        (enteredValue == actualTotal || (_hand.IsSoft && enteredValue == _hand.HardTotal));
+            isCorrect = enteredValue == actualTotal || (_hand.IsSoft && enteredValue == _hand.HardTotal);
         }
         else
         {
             // Hand is a STAND -- only the actual total is accepted.
-            isCorrect = hasNumericValue && enteredValue == actualTotal;
+            isCorrect = enteredValue == actualTotal;
         }
 
         if (!isCorrect)

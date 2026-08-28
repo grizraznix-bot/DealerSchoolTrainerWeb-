@@ -43,7 +43,7 @@ else
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
-                    <select @bind="hand.SelectedRankIndex" style="margin-top: 0.5rem; @(hand.Wrong ? "background-color: #f8d0d0;" : "")">
+                    <select @bind="hand.SelectedRankIndex" style="margin-top: 0.5rem; @(hand.Wrong ? "background-color: #f8d0d0;" : (hand.SelectedRankIndex > 0 ? "background-color: #d0e0f8;" : ""))">
                         @for (int i = 0; i < RankComboItems.Length; i++)
                         {
                             <option value="@i">@RankComboItems[i]</option>
@@ -53,23 +53,41 @@ else
             }
         </div>
 
-        <div style="display: flex; gap: 1rem; align-items: flex-end; margin: 1rem 0;">
-            @foreach (Card? c in _community)
-            {
-                <div style="text-align: center;">
-                    <img src="images/cards/@(c?.Code).png" alt="@c?.Code" style="width: 100px; height: 140px;" />
+        <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+            <div style="display: flex; gap: 1rem; align-items: flex-end; margin: 1rem 0;">
+                @foreach (Card? c in _community)
+                {
+                    <div style="text-align: center;">
+                        <img src="images/cards/@(c?.Code).png" alt="@c?.Code" style="width: 100px; height: 140px;" />
+                    </div>
+                }
+            </div>
+
+            <!-- Positioned beside the community cards rather than stacked
+                 above the button row -- with up to 6 hands, the mistakes
+                 list can run to 6 lines, and sitting directly above the
+                 buttons in the normal flow was pushing them down
+                 substantially. Font kept small so this block doesn't grow
+                 taller than the 140px cards next to it and stretch the row
+                 itself -- the same fix already applied to Pai Gow's result
+                 text for the identical reason. -->
+            <!-- Positioned beside the community cards rather than stacked
+                 above the button row -- with up to 6 hands, the mistakes
+                 list can run to 6 lines, and sitting directly above the
+                 buttons in the normal flow was pushing them down
+                 substantially. Font kept small too, matching the same fix
+                 applied to Pai Gow's result text for the identical reason. -->
+            <div class="feedback-area" style="max-width: 320px; margin-top: 1rem; font-size: 0.75rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <div style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</div>
+                    @if (_mistakesText.Length > 0)
+                    {
+                        <div style="white-space: pre-line;">What each hand actually was:@("\n")@_mistakesText</div>
+                    }
                 </div>
-            }
+                <p style="margin: 0.25rem 0 0 0;">@_scoreText</p>
+            </div>
         </div>
-
-        <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
-
-        @if (_mistakesText.Length > 0)
-        {
-            <p style="white-space: pre-line;">Incorrect. What each hand actually was:@("\n")@_mistakesText</p>
-        }
-
-        <p>@_scoreText</p>
 
         <div>
             <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
@@ -81,7 +99,7 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+    <div class="session-summary">
         <h3>Session Summary</h3>
         <p>Rounds Played: @_totalRounds</p>
         <p>Correct: @_correctCount</p>
