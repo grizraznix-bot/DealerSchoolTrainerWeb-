@@ -1,0 +1,331 @@
+@page "/pai-gow-trainer"
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.PaiGowTrainer
+
+<PageTitle>Pai Gow</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>PAI GOW</h1>
+        <p>Arrange your 7 cards into a 5-card High hand and a 2-card Low hand per the House Way, then Submit.</p>
+
+        <div style="margin-top: 1rem;">
+            <p style="margin-bottom: 0.25rem;">Joker Frequency:</p>
+            <label style="display: block;">
+                <input type="radio" name="joker" checked="@(_jokerFrequencyLevel == 0)" @onchange="() => _jokerFrequencyLevel = 0" />
+                Default
+            </label>
+            <label style="display: block;">
+                <input type="radio" name="joker" checked="@(_jokerFrequencyLevel == 1)" @onchange="() => _jokerFrequencyLevel = 1" />
+                +25%
+            </label>
+            <label style="display: block;">
+                <input type="radio" name="joker" checked="@(_jokerFrequencyLevel == 2)" @onchange="() => _jokerFrequencyLevel = 2" />
+                +50%
+            </label>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+        <button @onclick="() => _showHouseWays = !_showHouseWays">@(_showHouseWays ? "Hide" : "Show") House Ways</button>
+
+        @if (_showHouseWays)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/HouseWays.png" alt="Pai Gow House Ways" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
+
+        <h3 style="margin-top: 1rem;">Low Hand</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 1rem;">
+            @for (int slot = 1; slot <= 2; slot++)
+            {
+                int lowSlot = slot;
+                int cardAtSlot = CardAtLowPosition(lowSlot);
+
+                <div @onclick="() => ReturnLowSlotToHand(lowSlot)"
+                     style="width: 100px; height: 140px; border: 1px solid #999; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    @if (cardAtSlot >= 0)
+                    {
+                        <img src="images/cards/@(_cards[cardAtSlot].ImageCode).png" alt="@_cards[cardAtSlot].ImageCode" style="width: 100%; height: 100%;" />
+                    }
+                </div>
+            }
+        </div>
+
+        <h3>Your 7 Cards</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 1rem;">
+            @for (int i = 0; i < _cards.Count; i++)
+            {
+                int cardIndex = i;
+                bool inLow = _cardPosition[cardIndex] != 0;
+
+                <img src="images/cards/@(_cards[cardIndex].ImageCode).png" alt="@_cards[cardIndex].ImageCode"
+                     @onclick="() => CardClicked(cardIndex)"
+                     style="width: 100px; height: 140px; cursor: pointer; @(inLow ? "opacity: 0.35;" : "")" />
+            }
+        </div>
+
+        @if (_errorText.Length > 0)
+        {
+            <p style="color: red;">@_errorText</p>
+        }
+
+        @if (_resultText.Length > 0)
+        {
+            <div style="white-space: pre-line; font-weight: bold; color: @(_resultIsCorrect ? "blue" : "red");">@_resultText</div>
+        }
+
+        <p>@_scoreText</p>
+
+        <div style="margin-top: 1rem;">
+            <button @onclick="SortHand" disabled="@(!_sortEnabled)">Sort</button>
+            <button @onclick="SubmitHand" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary" style="border: 1px solid #ccc; padding: 1rem; margin-top: 1rem; max-width: 320px;">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_totalRounds</p>
+        <p>Correct: @_correctCount</p>
+        <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    private const int CardCount = 7;
+
+    private bool _started;
+    private int _jokerFrequencyLevel;
+    private bool _showHouseWays;
+
+    private PaiGowDeck _deck = new();
+    private readonly PaiGowSolver _solver = new();
+    private List<PaiGowCard> _cards = new();
+
+    // 0 = still in hand, 1 = Low slot 1, 2 = Low slot 2. 0-based card
+    // indexes here (unlike the desktop's 1-based array), since there's
+    // no VBA-heritage indexing quirk to preserve in a fresh web build.
+    private readonly int[] _cardPosition = new int[CardCount];
+
+    private int _correctCount;
+    private int _totalRounds;
+    private bool _roundScored;
+
+    private bool _sortEnabled;
+    private bool _submitEnabled;
+    private bool _dealEnabled;
+    private string _errorText = string.Empty;
+    private string _resultText = string.Empty;
+    private bool _resultIsCorrect;
+    private string _scoreText = "Score: 0 / 0 (0.0%)";
+    private bool _showSessionSummary;
+
+    private void StartGame()
+    {
+        _started = true;
+        _correctCount = 0;
+        _totalRounds = 0;
+        _scoreText = "Score: 0 / 0 (0.0%)";
+
+        DealNewRound();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void DealNewRound()
+    {
+        _dealEnabled = false;
+        _errorText = string.Empty;
+        _resultText = string.Empty;
+
+        _deck = new PaiGowDeck();
+
+        // Joker inclusion probability: natural odds (7/53, the chance a
+        // freely-shuffled 7-card hand happens to include the one real
+        // Joker) boosted by the session's chosen level.
+        const double naturalJokerProbability = 7.0 / 53.0;
+        double boost = _jokerFrequencyLevel switch
+        {
+            1 => 0.25,
+            2 => 0.50,
+            _ => 0.0
+        };
+        double jokerProbability = naturalJokerProbability * (1 + boost);
+
+        _cards = _deck.DealSevenCardsWithJokerBias(jokerProbability);
+        Array.Clear(_cardPosition);
+
+        _solver.SetCards(_cards);
+
+        _roundScored = false;
+        _submitEnabled = true;
+        _sortEnabled = true;
+    }
+
+    private void DealAgain() => DealNewRound();
+
+    private int CardAtLowPosition(int lowPosition)
+    {
+        for (int i = 0; i < _cards.Count; i++)
+        {
+            if (_cardPosition[i] == lowPosition) return i;
+        }
+        return -1;
+    }
+
+    private void CardClicked(int cardIndex)
+    {
+        if (_cardPosition[cardIndex] != 0) return; // already placed in Low
+
+        int targetLow;
+        if (CardAtLowPosition(1) < 0) targetLow = 1;
+        else if (CardAtLowPosition(2) < 0) targetLow = 2;
+        else
+        {
+            _errorText = "Low hand is full. Click a Low card to return it first.";
+            return;
+        }
+
+        _errorText = string.Empty;
+        _cardPosition[cardIndex] = targetLow;
+    }
+
+    private void ReturnLowSlotToHand(int lowPosition)
+    {
+        int cardIndex = CardAtLowPosition(lowPosition);
+        if (cardIndex < 0) return;
+
+        _cardPosition[cardIndex] = 0;
+    }
+
+    private void SortHand()
+    {
+        for (int i = 0; i < _cards.Count; i++)
+        {
+            if (_cardPosition[i] != 0)
+            {
+                _errorText = "Return the Low cards before sorting.";
+                return;
+            }
+        }
+
+        // Stable descending sort by display sort value (Joker sorts as
+        // an Ace here) -- matches the desktop's own local CardSortValue
+        // used specifically for "arrange my hand" display.
+        _cards = _cards.OrderByDescending(CardSortValue).ToList();
+        _solver.SetCards(_cards);
+
+        _errorText = string.Empty;
+        _sortEnabled = false; // only reachable once the sort actually ran
+    }
+
+    private static int CardSortValue(PaiGowCard card) => card.Rank switch
+    {
+        "JOKER" => 14,
+        "A" => 14,
+        "K" => 13,
+        "Q" => 12,
+        "J" => 11,
+        "T" => 10,
+        _ => int.TryParse(card.Rank, out int n) ? n : 0
+    };
+
+    private void SubmitHand()
+    {
+        if (_roundScored) return; // prevent double-scoring the same deal
+
+        int lowCard1 = CardAtLowPosition(1);
+        int lowCard2 = CardAtLowPosition(2);
+
+        List<int> userHighList = new();
+        for (int i = 0; i < _cards.Count; i++)
+        {
+            if (_cardPosition[i] == 0) userHighList.Add(i);
+        }
+
+        if (lowCard1 < 0 || lowCard2 < 0 || userHighList.Count != 5)
+        {
+            _errorText = "You must place two cards in the Low hand before submitting.";
+            return;
+        }
+
+        // The solver's SubmitHand signature (ported unchanged from
+        // desktop) expects 1-based indexes into a 1-7 array, matching
+        // its own internal GetCorrectHand() indexing -- translate this
+        // page's 0-based indexes into that shape rather than changing
+        // the solver itself, since the solver is a direct, unmodified
+        // port and shouldn't need its own indexing convention altered
+        // just to suit this page.
+        int[] userHigh = new int[6];
+        for (int k = 0; k < 5; k++) userHigh[k + 1] = userHighList[k] + 1;
+
+        PaiGowSubmitResult result = _solver.SubmitHand(lowCard1 + 1, lowCard2 + 1, userHigh);
+
+        if (result.ValidationError is not null)
+        {
+            _errorText = result.ValidationError;
+            return;
+        }
+
+        _errorText = string.Empty;
+        _totalRounds++;
+        if (result.IsCorrect) _correctCount++;
+
+        _roundScored = true;
+        _submitEnabled = false;
+        _dealEnabled = true;
+
+        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({(double)_correctCount / _totalRounds:0.0%})";
+
+        if (result.IsFoul)
+        {
+            _resultIsCorrect = false;
+            _resultText = $"INCORRECT HAND\n\nYour hand is FOUL.\nThe Low Hand is higher than the High Hand.\n\n" +
+                           $"LOW HAND: {result.UserLowLabel}\nHIGH HAND: {result.UserHighDescription}";
+        }
+        else if (result.IsCorrect)
+        {
+            _resultIsCorrect = true;
+            _resultText = $"CORRECT\n\nLOW HAND\n{result.CorrectLowLabel}\n\nHIGH HAND\n{result.CorrectHighDescription}";
+        }
+        else
+        {
+            _resultIsCorrect = false;
+            _resultText = $"INCORRECT\n\nYOUR LOW HAND\n{result.UserLowLabel}\n\nYOUR HIGH HAND\n{result.UserHighDescription}\n\n" +
+                           $"CORRECT LOW HAND\n{result.CorrectLowLabel}\n\nCORRECT HIGH HAND\n{result.CorrectHighDescription}";
+        }
+    }
+
+    private void EndSession()
+    {
+        if (_totalRounds > 0)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+}
