@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish
+        run: dotnet publish DealerSchoolTrainerWeb.csproj -c Release -o release --nologo
+
+      # GitHub Pages serves this site from a subpath (e.g.
+      # username.github.io/DealerSchoolTrainerWeb/), not the domain
+      # root -- without this, every CSS/JS asset link breaks once
+      # deployed, even though it works fine running locally.
+      - name: Fix base href for the Pages subpath
+        run: sed -i "s|<base href=\"/\" />|<base href=\"/${{ github.event.repository.name }}/\" />|g" release/wwwroot/index.html
+
+      # GitHub Pages runs Jekyll by default, which ignores any folder
+      # starting with an underscore -- exactly what Blazor's own
+      # _framework folder is named. Without this file, Pages silently
+      # drops that whole folder and the site fails to load at all.
+      - name: Add .nojekyll (Pages ignores underscore-prefixed folders otherwise, breaking Blazor's _framework folder)
+        run: touch release/wwwroot/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: release/wwwroot
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
