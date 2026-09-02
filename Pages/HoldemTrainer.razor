@@ -26,6 +26,14 @@ else
 {
     <div class="play-screen">
         <button @onclick="BackToStart">Back</button>
+        <button @onclick="() => _showHandRankings = !_showHandRankings">@(_showHandRankings ? "Hide" : "Show") Hand Rankings</button>
+
+        @if (_showHandRankings)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/HandRankings.png" alt="Hold'em Hand Rankings" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
 
         <div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
             @for (int h = 0; h < _hands.Count; h++)
@@ -152,6 +160,7 @@ else
     private string _mistakesText = string.Empty;
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
+    private bool _showHandRankings;
 
     private void StartGame()
     {

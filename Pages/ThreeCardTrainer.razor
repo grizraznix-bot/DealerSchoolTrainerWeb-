@@ -20,6 +20,14 @@ else
 {
     <div class="play-screen">
         <button @onclick="BackToStart">Back</button>
+        <button @onclick="() => _showWagerRules = !_showWagerRules">@(_showWagerRules ? "Hide" : "Show") Wager Rules</button>
+
+        @if (_showWagerRules)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/ThreeCardWagerRules.png" alt="Three Card Prime Wager Rules" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
 
         <div style="display: flex; gap: 2rem; margin: 1rem 0; align-items: flex-start;">
             <div>
@@ -109,6 +117,7 @@ else
     private bool _isCorrect;
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
+    private bool _showWagerRules;
 
     private void StartGame()
     {
