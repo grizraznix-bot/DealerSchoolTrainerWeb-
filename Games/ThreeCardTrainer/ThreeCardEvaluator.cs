@@ -167,4 +167,16 @@ public static class ThreeCardEvaluator
         HandRank best = HandEvaluator.BestHandRank(sixCards);
         return best >= HandRank.ThreeOfAKind ? WagerOutcome.Win : WagerOutcome.Lose;
     }
+
+    /// <summary>
+    /// Ante Bonus: pays on a Straight, Three of a Kind, or Straight
+    /// Flush, regardless of whether the Ante wager itself wins or
+    /// loses against the dealer -- it's judged on the player's hand
+    /// alone. Those three categories are exactly the top three values
+    /// in ThreeCardCategory's ordering (Straight=4, ThreeOfAKind=5,
+    /// StraightFlush=6), so ">= Straight" captures all three and
+    /// nothing else.
+    /// </summary>
+    public static bool QualifiesAnteBonus(IReadOnlyList<Card> playerCards) =>
+        GetCategory(playerCards) >= ThreeCardCategory.Straight;
 }

@@ -52,7 +52,23 @@ else
 
             <div style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
                 @RenderWager(_play)
-                @RenderWager(_ante)
+
+                <!-- The Ante shape's box is kept at a fixed 90px width,
+                     matching its actual size, so the outer column centers
+                     it identically to Play/Pair Bonus above/below --
+                     otherwise the checkbox's extra width would get
+                     included in what's being centered and visibly shift
+                     the diamond itself to the left. The checkbox is
+                     positioned as an absolute overlay outside that box
+                     instead, so it never factors into the centering. -->
+                <div style="position: relative; width: 90px;">
+                    @RenderWager(_ante)
+                    <label style="position: absolute; left: 100%; top: 50%; transform: translateY(-50%); margin-left: 0.75rem; white-space: nowrap; @(_anteBonusWrong ? "background-color: #f8d0d0;" : "")">
+                        <input type="checkbox" @bind="_anteBonusChecked" @bind:after="() => _anteBonusWrong = false" />
+                        Ante Bonus
+                    </label>
+                </div>
+
                 @RenderWager(_pairBonus)
                 <div style="display: flex; gap: 1.5rem;">
                     @RenderWager(_allSix)
@@ -110,6 +126,8 @@ else
     private int _correctCount;
     private int _totalRounds;
     private bool _roundScored;
+    private bool _anteBonusChecked;
+    private bool _anteBonusWrong;
 
     private bool _submitEnabled;
     private bool _dealEnabled;
@@ -149,6 +167,9 @@ else
             w.Selection = null;
             w.Wrong = false;
         }
+
+        _anteBonusChecked = false;
+        _anteBonusWrong = false;
 
         _resultText = string.Empty;
         _roundScored = false;
@@ -212,6 +233,17 @@ else
         allCorrect &= GradeWager(_pairBonus, pairPlusOutcome);
         allCorrect &= GradeWager(_prime, primeOutcome);
         allCorrect &= GradeWager(_allSix, allSixOutcome);
+
+        bool anteBonusActual = ThreeCardEvaluator.QualifiesAnteBonus(_playerCards);
+        if (_anteBonusChecked == anteBonusActual)
+        {
+            _anteBonusWrong = false;
+        }
+        else
+        {
+            _anteBonusWrong = true;
+            allCorrect = false;
+        }
 
         _totalRounds++;
         if (allCorrect) _correctCount++;
