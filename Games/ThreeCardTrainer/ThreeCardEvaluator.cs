@@ -18,13 +18,6 @@ public enum ThreeCardCategory
     StraightFlush = 6
 }
 
-public enum WagerOutcome
-{
-    Win = 1,
-    Lose = 2,
-    Push = 3
-}
-
 /// <summary>
 /// Direct translation of modTCHandEvaluator.bas. The All 6 wager's
 /// best-5-of-6 poker rank reuses Games.HoldemTrainer.HandEvaluator

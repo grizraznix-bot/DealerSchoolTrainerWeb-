@@ -1,0 +1,79 @@
+@* Reusable clickable wager indicator: a shape (circle or diamond)
+   that cycles through Win/Lose (and optionally Push) on click, with
+   a colored pill badge showing the current selection. Same visual
+   language originally built for Three Card Prime, extracted here so
+   new features (Side Wagers, the planned Pai Gow wager expansion)
+   can reuse it instead of duplicating the shape/pill markup. *@
+@using DealerSchoolTrainerWeb.Core
+
+<div class="wager-shape @(IsDiamond ? "" : "wager-circle") @(Wrong && !IsDiamond ? "wager-wrong" : "")"
+     style="@(SizePx is int s ? $"width: {s}px; height: {s}px;" : "")"
+     @onclick="Cycle">
+    @if (IsDiamond)
+    {
+        <svg viewBox="0 0 90 90" class="wager-diamond-svg">
+            <polygon points="45,3 87,45 45,87 3,45" fill="white" stroke="@(Wrong ? "black" : "#999")" stroke-width="@(Wrong ? 3 : 1)" />
+        </svg>
+    }
+    <span class="wager-label">@ChildContent</span>
+    @if (Selection is not null)
+    {
+        <div class="wager-pill @PillClass(Selection)">@PillText(Selection)</div>
+    }
+</div>
+
+@code {
+    [Parameter] public bool IsDiamond { get; set; }
+    [Parameter] public bool AllowPush { get; set; }
+    [Parameter] public bool Wrong { get; set; }
+    [Parameter] public int? SizePx { get; set; }
+    [Parameter] public WagerOutcome? Selection { get; set; }
+    [Parameter] public EventCallback<WagerOutcome?> SelectionChanged { get; set; }
+    [Parameter] public EventCallback OnCycled { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private async Task Cycle()
+    {
+        WagerOutcome? next;
+
+        if (AllowPush)
+        {
+            next = Selection switch
+            {
+                null => WagerOutcome.Win,
+                WagerOutcome.Win => WagerOutcome.Lose,
+                WagerOutcome.Lose => WagerOutcome.Push,
+                _ => WagerOutcome.Win
+            };
+        }
+        else
+        {
+            next = Selection switch
+            {
+                null => WagerOutcome.Win,
+                WagerOutcome.Win => WagerOutcome.Lose,
+                _ => WagerOutcome.Win
+            };
+        }
+
+        Selection = next;
+        await SelectionChanged.InvokeAsync(next);
+        await OnCycled.InvokeAsync();
+    }
+
+    private static string PillClass(WagerOutcome? outcome) => outcome switch
+    {
+        WagerOutcome.Win => "pill-win",
+        WagerOutcome.Lose => "pill-lose",
+        WagerOutcome.Push => "pill-push",
+        _ => ""
+    };
+
+    private static string PillText(WagerOutcome? outcome) => outcome switch
+    {
+        WagerOutcome.Win => "WIN",
+        WagerOutcome.Lose => "LOSE",
+        WagerOutcome.Push => "PUSH",
+        _ => ""
+    };
+}

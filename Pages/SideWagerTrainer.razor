@@ -51,20 +51,22 @@ else
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
-                    <div style="margin-top: 0.5rem; text-align: left; @(hand.LuckyLadiesWrong ? "background-color: #f8d0d0;" : "")">
-                        <label style="display: block;">
-                            <input type="checkbox" checked="@hand.LuckyLadiesChecked"
-                                   @onchange="e => hand.LuckyLadiesChecked = (bool)e.Value!" />
-                            Lucky Ladies
-                        </label>
-                    </div>
+                    <div style="margin-top: 0.5rem; display: flex; gap: 8px; justify-content: center;">
+                        <WagerShape IsDiamond="false" AllowPush="false" SizePx="56"
+                                    Wrong="hand.LuckyLadiesWrong"
+                                    Selection="hand.LuckyLadiesSelection"
+                                    SelectionChanged="v => hand.LuckyLadiesSelection = v"
+                                    OnCycled="() => hand.LuckyLadiesWrong = false">
+                            Lucky<br />Ladies
+                        </WagerShape>
 
-                    <div style="text-align: left; @(hand.TwentyOnePlus3Wrong ? "background-color: #f8d0d0;" : "")">
-                        <label style="display: block;">
-                            <input type="checkbox" checked="@hand.TwentyOnePlus3Checked"
-                                   @onchange="e => hand.TwentyOnePlus3Checked = (bool)e.Value!" />
+                        <WagerShape IsDiamond="false" AllowPush="false" SizePx="56"
+                                    Wrong="hand.TwentyOnePlus3Wrong"
+                                    Selection="hand.TwentyOnePlus3Selection"
+                                    SelectionChanged="v => hand.TwentyOnePlus3Selection = v"
+                                    OnCycled="() => hand.TwentyOnePlus3Wrong = false">
                             21 + 3
-                        </label>
+                        </WagerShape>
                     </div>
                 </div>
             }
@@ -106,8 +108,8 @@ else
     {
         public Card Card1 = null!;
         public Card Card2 = null!;
-        public bool LuckyLadiesChecked;
-        public bool TwentyOnePlus3Checked;
+        public WagerOutcome? LuckyLadiesSelection;
+        public WagerOutcome? TwentyOnePlus3Selection;
         public bool LuckyLadiesWrong;
         public bool TwentyOnePlus3Wrong;
     }
@@ -170,8 +172,8 @@ else
     {
         foreach (HandState hand in _hands)
         {
-            hand.LuckyLadiesChecked = false;
-            hand.TwentyOnePlus3Checked = false;
+            hand.LuckyLadiesSelection = null;
+            hand.TwentyOnePlus3Selection = null;
             hand.LuckyLadiesWrong = false;
             hand.TwentyOnePlus3Wrong = false;
         }
@@ -181,6 +183,16 @@ else
 
     private void SubmitRound()
     {
+        foreach (HandState hand in _hands)
+        {
+            if (hand.LuckyLadiesSelection is null || hand.TwentyOnePlus3Selection is null)
+            {
+                _resultText = "Tap every wager to select an outcome before submitting.";
+                _isCorrect = false;
+                return;
+            }
+        }
+
         int roundCorrect = 0;
 
         foreach (HandState hand in _hands)
@@ -188,7 +200,10 @@ else
             bool actualLL = SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2);
             bool actualTC = SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _dealerCard!);
 
-            if (hand.LuckyLadiesChecked == actualLL)
+            WagerOutcome actualLLOutcome = actualLL ? WagerOutcome.Win : WagerOutcome.Lose;
+            WagerOutcome actualTCOutcome = actualTC ? WagerOutcome.Win : WagerOutcome.Lose;
+
+            if (hand.LuckyLadiesSelection == actualLLOutcome)
             {
                 hand.LuckyLadiesWrong = false;
                 roundCorrect++;
@@ -198,7 +213,7 @@ else
                 hand.LuckyLadiesWrong = true;
             }
 
-            if (hand.TwentyOnePlus3Checked == actualTC)
+            if (hand.TwentyOnePlus3Selection == actualTCOutcome)
             {
                 hand.TwentyOnePlus3Wrong = false;
                 roundCorrect++;
