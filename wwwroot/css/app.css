@@ -192,6 +192,28 @@ code {
     position: relative;
     user-select: none;
     box-sizing: border-box;
+    transition: background-color 0.1s ease;
+}
+
+/* Signals every wager shape is clickable before the user has ever
+   tapped one. Circles: plain background-color. Diamonds: the SVG
+   polygon's fill is set via an inline attribute, which CSS still
+   overrides correctly since SVG presentation attributes sit lower
+   than stylesheet rules in the cascade -- targeted via a descendant
+   selector from the hovered ancestor. Applies everywhere at once:
+   both the shared WagerShape component (Side Wagers) and Three Card
+   Prime's own local copy of this same markup use this identical base
+   class. */
+.wager-circle:hover {
+    background-color: #d0e0f8;
+}
+
+.wager-diamond-svg polygon {
+    transition: fill 0.1s ease;
+}
+
+.wager-shape:hover .wager-diamond-svg polygon {
+    fill: #d0e0f8;
 }
 
 .wager-circle {
@@ -240,6 +262,16 @@ code {
     font-weight: bold;
     white-space: nowrap;
     z-index: 2;
+}
+
+/* Pai Gow - Hand Setting: dark border on hover for the clickable
+   cards (both the 7-card hand row and the Low slots), signaling
+   they're interactive before the user has ever clicked one. Outline
+   rather than border/border-width, since outline never consumes
+   layout space -- a hover-only border would otherwise shift the
+   card's position by its own width the instant the mouse arrives. */
+.pai-gow-card:hover {
+    outline: 3px solid #333;
 }
 
 /* Shared across all six games -- was previously duplicated as inline

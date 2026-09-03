@@ -54,6 +54,7 @@ else
                         int cardAtSlot = CardAtLowPosition(lowSlot);
 
                         <div @onclick="() => ReturnLowSlotToHand(lowSlot)"
+                             class="pai-gow-card"
                              style="width: 100px; height: 140px; border: 1px solid #999; cursor: pointer; display: flex; align-items: center; justify-content: center;">
                             @if (cardAtSlot >= 0)
                             {
@@ -112,6 +113,7 @@ else
 
                 <img src="images/cards/@(_cards[cardIndex].ImageCode).png" alt="@_cards[cardIndex].ImageCode"
                      @onclick="() => CardClicked(cardIndex)"
+                     class="pai-gow-card"
                      style="width: 100px; height: 140px; cursor: pointer; @(inLow ? "opacity: 0;" : "")" />
             }
         </div>
