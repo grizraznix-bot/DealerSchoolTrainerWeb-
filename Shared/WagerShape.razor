@@ -6,7 +6,7 @@
    can reuse it instead of duplicating the shape/pill markup. *@
 @using DealerSchoolTrainerWeb.Core
 
-<div class="wager-shape @(IsDiamond ? "" : "wager-circle") @(Wrong && !IsDiamond ? "wager-wrong" : "")"
+<div class="wager-shape @(IsDiamond ? "" : "wager-circle") @(Wrong && !IsDiamond ? "wager-wrong" : "") @ShadingClass"
      style="@(SizePx is int s ? $"width: {s}px; height: {s}px;" : "")"
      @onclick="Cycle">
     @if (IsDiamond)
@@ -27,10 +27,29 @@
     [Parameter] public bool AllowPush { get; set; }
     [Parameter] public bool Wrong { get; set; }
     [Parameter] public int? SizePx { get; set; }
+
+    // Opt-in only -- off by default so this never changes how Three Card
+    // Prime's circles look, even though it shares this same component.
+    // When enabled (after grading, not while the user is still picking an
+    // answer), shows a light red fill for a wrong circle answer or a
+    // light green fill for a correct one, in addition to the existing
+    // bold-border wrong indicator.
+    [Parameter] public bool ShowWrongShading { get; set; }
+
     [Parameter] public WagerOutcome? Selection { get; set; }
     [Parameter] public EventCallback<WagerOutcome?> SelectionChanged { get; set; }
     [Parameter] public EventCallback OnCycled { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string ShadingClass
+    {
+        get
+        {
+            if (IsDiamond || !ShowWrongShading) return "";
+            if (Wrong) return "wager-shaded-wrong";
+            return "";
+        }
+    }
 
     private async Task Cycle()
     {

@@ -206,6 +206,13 @@ code {
     border: 3px solid black;
 }
 
+/* Opt-in fill shading (Side Wagers only, via ShowWrongShading) --
+   deliberately much lighter than the pill's own red (#c80000) so the
+   pill still reads clearly against the shape behind it. */
+.wager-circle.wager-shaded-wrong {
+    background-color: #f8d0d0;
+}
+
 .wager-diamond-svg {
     position: absolute;
     top: 0;
