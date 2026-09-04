@@ -254,6 +254,171 @@ public sealed class PaiGowSolver
     /// <summary>Detailed High hand description (e.g. "Two Pair — Aces and Kings", "Flush — King high") -- same description Hand Setting shows for a submitted or correct High hand.</summary>
     public string HighHandDescription(int[] indexes) => DescribeHighHand(indexes);
 
+    /// <summary>
+    /// "Ace High Pai Gow": true if this specific 5-card High hand (as
+    /// actually arranged, not "best of any 5 of 7") has no pair at all
+    /// and its highest card is an Ace (a Joker acting as one counts) --
+    /// the worst possible non-foul hand a dealer can hold. Some
+    /// casinos push every wager when the dealer's High hand qualifies
+    /// as this.
+    /// </summary>
+    public bool IsAceHighPaiGow(int[] fiveCardIndexes)
+    {
+        EvaluateFive(fiveCardIndexes[1], fiveCardIndexes[2], fiveCardIndexes[3], fiveCardIndexes[4], fiveCardIndexes[5], out int category, out _);
+        if (category != 0) return false;
+
+        int topRank = 0;
+        for (int i = 1; i <= 5; i++)
+        {
+            int rank = HouseRank(fiveCardIndexes[i]);
+            if (rank > topRank) topRank = rank;
+        }
+        return topRank == 14;
+    }
+
+    /// <summary>
+    /// "7 Card Straight Flush" (no Joker): all 7 dealt cards are real
+    /// (the Joker isn't among them at all), share one suit, and their
+    /// ranks form exactly 7 consecutive values (including the Ace-low
+    /// wheel extension, e.g. A-2-3-4-5-6-7).
+    /// </summary>
+    public bool IsSevenCardStraightFlushNoJoker()
+    {
+        if (HasJoker()) return false;
+
+        string suit = _cards[1]!.Suit;
+        for (int i = 2; i <= 7; i++)
+        {
+            if (_cards[i]!.Suit != suit) return false;
+        }
+
+        List<int> ranks = new();
+        for (int i = 1; i <= 7; i++) ranks.Add(_cards[i]!.RankOrder);
+        ranks.Sort();
+
+        if (FormsConsecutiveRun(ranks)) return true;
+
+        List<int> wheelRanks = ranks.Select(r => r == 14 ? 1 : r).OrderBy(r => r).ToList();
+        return FormsConsecutiveRun(wheelRanks);
+    }
+
+    /// <summary>
+    /// "7 Card Straight Flush" (with Joker): the Joker IS among the 7
+    /// dealt cards, the 6 real cards share one suit, and their ranks
+    /// span exactly 7 consecutive values with the Joker filling the one
+    /// missing rank (including the Ace-low wheel extension).
+    /// </summary>
+    public bool IsSevenCardStraightFlushWithJoker()
+    {
+        if (!HasJoker()) return false;
+
+        List<PaiGowCard> realCards = new();
+        for (int i = 1; i <= 7; i++)
+        {
+            if (!_cards[i]!.IsJoker) realCards.Add(_cards[i]!);
+        }
+
+        if (realCards.Count != 6) return false;
+
+        string suit = realCards[0].Suit;
+        if (realCards.Any(c => c.Suit != suit)) return false;
+
+        List<int> ranks = realCards.Select(c => c.RankOrder).OrderBy(r => r).ToList();
+        if (FormsRunWithOneJokerGap(ranks)) return true;
+
+        List<int> wheelRanks = ranks.Select(r => r == 14 ? 1 : r).OrderBy(r => r).ToList();
+        return FormsRunWithOneJokerGap(wheelRanks);
+    }
+
+    /// <summary>
+    /// A Royal Flush (T-J-Q-K-A of one suit, the Joker may complete
+    /// one missing card) among the 7 cards, PLUS at least one of the
+    /// two leftover cards being an Ace or King of a DIFFERENT suit
+    /// than the Royal Flush itself.
+    /// </summary>
+    public bool IsRoyalFlushWithExtraAceOrKing()
+    {
+        string[] suits = { "S", "H", "D", "C" };
+        HashSet<string> royalRanks = new() { "T", "J", "Q", "K", "A" };
+
+        foreach (string suit in suits)
+        {
+            List<int> matchingIndexes = new();
+            HashSet<string> foundRanks = new();
+            int jokerIndex = 0;
+            bool hasJoker = false;
+
+            for (int i = 1; i <= 7; i++)
+            {
+                PaiGowCard c = _cards[i]!;
+                if (c.IsJoker) { hasJoker = true; jokerIndex = i; continue; }
+                if (c.Suit == suit && royalRanks.Contains(c.Rank))
+                {
+                    matchingIndexes.Add(i);
+                    foundRanks.Add(c.Rank);
+                }
+            }
+
+            List<int> usedIndexes = new(matchingIndexes);
+            bool complete = foundRanks.Count == 5 || (foundRanks.Count == 4 && hasJoker);
+            if (!complete) continue;
+            if (foundRanks.Count == 4) usedIndexes.Add(jokerIndex);
+
+            for (int i = 1; i <= 7; i++)
+            {
+                if (usedIndexes.Contains(i)) continue;
+                PaiGowCard c = _cards[i]!;
+                if (!c.IsJoker && (c.Rank == "A" || c.Rank == "K") && c.Suit != suit)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Emperor's Treasure's category name for feedback -- checks the
+    /// three specialty hands first (most specific/rare to least),
+    /// falling back to the standard best-of-7 category name otherwise.
+    /// All specialty hands here are strict supersets of an already-
+    /// qualifying standard category (e.g. a 7-card straight flush
+    /// necessarily contains a plain straight flush), so this only
+    /// affects the DISPLAYED name, not whether the wager qualifies at
+    /// all -- QualifiesEmperorsTreasure() doesn't need to change.
+    /// </summary>
+    public string EmperorsTreasureCategoryName()
+    {
+        if (IsSevenCardStraightFlushNoJoker()) return "7 Card Straight Flush (No Joker)";
+        if (IsRoyalFlushWithExtraAceOrKing()) return "Royal Flush with Additional Ace/King Suited";
+        if (IsSevenCardStraightFlushWithJoker()) return "7 Card Straight Flush (with Joker)";
+        return BestSevenCardCategoryName();
+    }
+
+    private static bool FormsConsecutiveRun(List<int> sortedRanks)
+    {
+        for (int i = 1; i < sortedRanks.Count; i++)
+        {
+            if (sortedRanks[i] != sortedRanks[i - 1] + 1) return false;
+        }
+        return true;
+    }
+
+    private static bool FormsRunWithOneJokerGap(List<int> sortedRanks)
+    {
+        if (sortedRanks.Count != 6) return false;
+        if (sortedRanks.Distinct().Count() != 6) return false;
+
+        int span = sortedRanks[^1] - sortedRanks[0];
+        // 5: six already-consecutive ranks (Joker extends the run by
+        // one card at either end). 6: one single gap within a 7-wide
+        // span (Joker fills that gap) -- six distinct ranks fitting a
+        // 7-wide span with no duplicates has exactly one gap by
+        // construction.
+        return span == 5 || span == 6;
+    }
+
     private string TwoCardRankLabel(int card1, int card2) => $"{DisplayRank(card1)}, {DisplayRank(card2)}";
 
     private string DisplayRank(int cardIndex) => _cards[cardIndex]!.Rank == "T" ? "10" : _cards[cardIndex]!.Rank;

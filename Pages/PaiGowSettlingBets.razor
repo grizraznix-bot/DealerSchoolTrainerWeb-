@@ -101,7 +101,7 @@ else
                         Selection="_insurance.Selection" SelectionChanged="v => _insurance.Selection = v"
                         Wrong="_insurance.Wrong" OnCycled="() => { _insurance.Wrong = false; ResetFoul(); }"
                         ShowWrongShading="_roundScored">
-                Insurance
+                Pai Gow Insurance
             </WagerShape>
 
             <!-- Foul is deliberately NOT a WagerShape instance -- it's a
@@ -125,6 +125,8 @@ else
                 </div>
             }
         </div>
+
+        <p style="font-weight: bold; font-size: 1.5rem;">All Hands Push with a Dealer Ace-High Pai Gow</p>
 
         <h3>Dealer</h3>
         <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
@@ -340,9 +342,9 @@ else
     // escalating further for more intensive practice.
     private static double ComputeFoulProbability(int level) => level switch
     {
-        1 => 0.25,
-        2 => 0.40,
-        _ => 0.15
+        1 => 0.40,
+        2 => 0.60,
+        _ => 0.20
     };
 
     // Sorts a group of cards so higher-count ranks (a pair, trips, a
@@ -473,14 +475,54 @@ else
 
     private void SubmitRound()
     {
+        if (_roundScored) return;
+
+        // Flagging Foul is a complete, standalone submission on its
+        // own -- a genuine foul voids the three wagers entirely (which
+        // is also why clicking Foul already resets them to unselected
+        // rather than requiring them to be separately answered). The
+        // only judgment being graded here is whether Foul itself was
+        // correctly called.
+        if (_foulFlagged)
+        {
+            bool foulCorrect = _isPlayerFoul;
+            _foulWrong = !foulCorrect;
+
+            _totalRounds++;
+            if (foulCorrect) _correctCount++;
+
+            _isCorrect = foulCorrect;
+            _resultText = foulCorrect ? "CORRECT" : "INCORRECT";
+
+            if (!foulCorrect)
+            {
+                _winningWagerLines.Add(("This hand was not actually Foul.", "red"));
+            }
+
+            string foulPct = _totalRounds > 0
+                ? ((double)_correctCount / _totalRounds).ToString("0.0%")
+                : "0.0%";
+            _scoreText = $"Score: {_correctCount} / {_totalRounds} ({foulPct})";
+
+            _playerLowLabel = _playerSolver.LowHandLabel(_playerLow1, _playerLow2);
+            _playerHighLabel = _playerSolver.HighHandDescription(_playerHigh);
+            _dealerLowLabel = _dealerSolver.LowHandLabel(_dealerLow1, _dealerLow2);
+            _dealerHighLabel = _dealerSolver.HighHandDescription(_dealerHigh);
+
+            _roundScored = true;
+            _submitEnabled = false;
+            _dealEnabled = true;
+            return;
+        }
+
+        // Foul not flagged -- normal full grading of all three wagers,
+        // each requiring an answer first.
         if (_insurance.Selection is null || _mainWager.Selection is null || _emperorsTreasure.Selection is null)
         {
             _resultText = "Tap every wager to select an outcome before submitting.";
             _isCorrect = false;
             return;
         }
-
-        if (_roundScored) return;
 
         bool allCorrect = true;
 
@@ -490,15 +532,23 @@ else
         bool emperorsActual = _playerSolver.QualifiesEmperorsTreasure();
         allCorrect &= GradeWager(_emperorsTreasure, emperorsActual ? WagerOutcome.Win : WagerOutcome.Lose);
 
-        // Main Wager: a foul is an automatic loss regardless of the
-        // Low/High comparison (standard house rule). Otherwise: win
-        // both comparisons to win, lose both to lose, split to push.
-        // Ties on either comparison go to the dealer (standard house
-        // rule) -- reflected here as ">" rather than ">=".
+        // Main Wager priority: a foul is an automatic loss regardless
+        // of anything else (standard house rule). Otherwise, if the
+        // dealer's hand is "Ace High Pai Gow" (their High hand has no
+        // pair at all and its top card is an Ace), every wager pushes
+        // regardless of the player's hand -- also a standard house
+        // rule. Otherwise: win both comparisons to win, lose both to
+        // lose, split to push. Ties on either comparison go to the
+        // dealer (standard house rule) -- reflected here as ">" rather
+        // than ">=".
         WagerOutcome mainOutcome;
         if (_isPlayerFoul)
         {
             mainOutcome = WagerOutcome.Lose;
+        }
+        else if (_dealerSolver.IsAceHighPaiGow(_dealerHigh))
+        {
+            mainOutcome = WagerOutcome.Push;
         }
         else
         {
@@ -562,12 +612,12 @@ else
 
         if (insuranceActual)
         {
-            _winningWagerLines.Add(("Insurance: WIN — High Card", "blue"));
+            _winningWagerLines.Add(("Pai Gow Insurance: WIN — High Card", "blue"));
         }
 
         if (emperorsActual)
         {
-            _winningWagerLines.Add(($"Emperor's Treasure: WIN — {_playerSolver.BestSevenCardCategoryName()}", "blue"));
+            _winningWagerLines.Add(($"Emperor's Treasure: WIN — {_playerSolver.EmperorsTreasureCategoryName()}", "blue"));
         }
 
         _roundScored = true;
