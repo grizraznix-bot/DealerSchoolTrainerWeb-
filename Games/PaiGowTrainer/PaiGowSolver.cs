@@ -167,6 +167,93 @@ public sealed class PaiGowSolver
     // TWO-CARD RANK LABEL / DISPLAY
     // ============================================================
 
+    // ============================================================
+    // PUBLIC EVALUATION HELPERS FOR PAI GOW - SETTLING BETS
+    // ============================================================
+    // Purely additive wrappers around existing private scoring/
+    // detection logic below -- nothing above this point is modified,
+    // so Pai Gow - Hand Setting's existing behavior is unaffected.
+    // These let a caller evaluate an ARBITRARY Low/High split (not
+    // just the single House-Way-correct one from GetCorrectHand),
+    // needed to generate varied, non-House-Way-bound hands and to
+    // grade the Insurance/Main Wager/Emperor's Treasure side bets.
+
+    /// <summary>Raw strength score for an arbitrary 2-card Low selection. Comparable across different PaiGowSolver instances (i.e. player vs dealer), since the scoring formula itself doesn't depend on which solver instance computed it.</summary>
+    public double ScoreLowHand(int card1, int card2) => TwoCardScore(card1, card2);
+
+    /// <summary>Raw strength score for an arbitrary 5-card High selection (1-based indexes, slots 1-5 used in a size-6 array matching GetCorrectHand's own convention).</summary>
+    public double ScoreHighHand(int[] fiveCardIndexes) => FiveCardScoreFromIndexes(fiveCardIndexes);
+
+    /// <summary>True if this Low/High split is legal (High outranks or matches Low) -- false means it's a foul.</summary>
+    public bool IsLegalSplit(int low1, int low2, int[] high) => ScoreHighHand(high) >= ScoreLowHand(low1, low2);
+
+    /// <summary>
+    /// Insurance wager: wins if the BEST possible 5-card hand from any
+    /// 5 of the combined 7 cards is High Card -- i.e. nothing better
+    /// is achievable at all, not even by using a completely different
+    /// 5 of the 7 than whatever the actual Low/High split happens to
+    /// use. Corrected from an earlier version that only checked for
+    /// pairs/trips/quads/full-house and missed Straight and Flush
+    /// entirely (both of which also outrank High Card and would have
+    /// wrongly still qualified).
+    /// </summary>
+    public bool QualifiesInsurance() => BestSevenCardCategory() == 0;
+
+    /// <summary>
+    /// Emperor's Treasure wager: wins if the BEST possible 5-card hand
+    /// from any 5 of the combined 7 cards is Three of a Kind or
+    /// better (category 3+), per standard poker hand ranking. Corrected
+    /// from an earlier version that only checked for trips/quads/full-
+    /// house/five-aces and missed Straight, Flush, and Straight Flush
+    /// (categories 4, 5, 8) -- all of which also rank above Three of a
+    /// Kind and would have wrongly NOT qualified, e.g. a genuine 7-card
+    /// straight flush using cards outside whatever the specific Low/
+    /// High split happens to be.
+    /// </summary>
+    public bool QualifiesEmperorsTreasure() => BestSevenCardCategory() >= 3;
+
+    /// <summary>Name of the best possible 5-card category achievable from any 5 of the combined 7 cards (e.g. "Straight Flush", "Three of a Kind", "High Card") -- for showing WHY Emperor's Treasure/Insurance won, not just that it did.</summary>
+    public string BestSevenCardCategoryName() => BestSevenCardCategory() switch
+    {
+        10 => "Five Aces",
+        9 => "Royal Flush",
+        8 => "Straight Flush",
+        7 => "Four of a Kind",
+        6 => "Full House",
+        5 => "Flush",
+        4 => "Straight",
+        3 => "Three of a Kind",
+        2 => "Two Pair",
+        1 => "Pair",
+        _ => "High Card"
+    };
+
+    // Enumerates all C(7,5)=21 possible 5-card subsets of the 7 dealt
+    // cards and returns the highest category found among them -- the
+    // true best hand achievable from the 7 cards as a whole, entirely
+    // independent of whatever specific Low/High split is actually in
+    // play. 21 evaluations once per Submit is computationally trivial.
+    private int BestSevenCardCategory()
+    {
+        int best = 0;
+        for (int a = 1; a <= 7; a++)
+        for (int b = a + 1; b <= 7; b++)
+        for (int c = b + 1; c <= 7; c++)
+        for (int d = c + 1; d <= 7; d++)
+        for (int e = d + 1; e <= 7; e++)
+        {
+            EvaluateFive(a, b, c, d, e, out int category, out _);
+            if (category > best) best = category;
+        }
+        return best;
+    }
+
+    /// <summary>Detailed Low hand label (e.g. "Pair of Kings", "Ace high") -- same description Hand Setting shows for a submitted or correct Low hand.</summary>
+    public string LowHandLabel(int card1, int card2) => DescribeLowHand(card1, card2);
+
+    /// <summary>Detailed High hand description (e.g. "Two Pair — Aces and Kings", "Flush — King high") -- same description Hand Setting shows for a submitted or correct High hand.</summary>
+    public string HighHandDescription(int[] indexes) => DescribeHighHand(indexes);
+
     private string TwoCardRankLabel(int card1, int card2) => $"{DisplayRank(card1)}, {DisplayRank(card2)}";
 
     private string DisplayRank(int cardIndex) => _cards[cardIndex]!.Rank == "T" ? "10" : _cards[cardIndex]!.Rank;

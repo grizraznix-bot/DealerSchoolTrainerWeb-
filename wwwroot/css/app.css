@@ -228,11 +228,19 @@ code {
     border: 3px solid black;
 }
 
-/* Opt-in fill shading (Side Wagers only, via ShowWrongShading) --
-   deliberately much lighter than the pill's own red (#c80000) so the
-   pill still reads clearly against the shape behind it. */
+/* Opt-in fill shading (via ShowWrongShading) -- deliberately much
+   lighter than the pill's own red (#c80000) so the pill still reads
+   clearly against the shape behind it. Used by Side Wagers, Three
+   Card Prime, and Pai Gow - Settling Bets. */
 .wager-circle.wager-shaded-wrong {
     background-color: #f8d0d0;
+}
+
+/* Pai Gow - Settling Bets: persistent fill while the Foul circle is
+   flagged (not a hover state, not a pill -- Foul is a simple
+   declare/undeclare toggle, not a Win/Lose/Push cycle). */
+.foul-flagged {
+    background-color: #a8c8f0;
 }
 
 .wager-diamond-svg {

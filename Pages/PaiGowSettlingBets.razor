@@ -1,0 +1,607 @@
+@page "/pai-gow-settling-bets"
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.PaiGowTrainer
+
+<PageTitle>Pai Gow - Settling Bets</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>PAI GOW - SETTLING BETS</h1>
+        <p>Both hands are already dealt and set. Judge each wager's outcome, flag the hand as Foul if it is one, then Submit.</p>
+
+        <div style="display: flex; gap: 3rem; margin-top: 1rem;">
+            <div>
+                <p style="margin-bottom: 0.25rem;">Joker Frequency:</p>
+                <label style="display: block;">
+                    <input type="radio" name="joker" checked="@(_jokerFrequencyLevel == 0)" @onchange="() => _jokerFrequencyLevel = 0" />
+                    Default
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="joker" checked="@(_jokerFrequencyLevel == 1)" @onchange="() => _jokerFrequencyLevel = 1" />
+                    +25%
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="joker" checked="@(_jokerFrequencyLevel == 2)" @onchange="() => _jokerFrequencyLevel = 2" />
+                    +50%
+                </label>
+            </div>
+
+            <div>
+                <p style="margin-bottom: 0.25rem;">Foul Frequency:</p>
+                <label style="display: block;">
+                    <input type="radio" name="foul" checked="@(_foulFrequencyLevel == 0)" @onchange="() => _foulFrequencyLevel = 0" />
+                    Rare (Default)
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="foul" checked="@(_foulFrequencyLevel == 1)" @onchange="() => _foulFrequencyLevel = 1" />
+                    Occasional
+                </label>
+                <label style="display: block;">
+                    <input type="radio" name="foul" checked="@(_foulFrequencyLevel == 2)" @onchange="() => _foulFrequencyLevel = 2" />
+                    Frequent
+                </label>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <h3 style="margin-top: 1rem;">Player</h3>
+        <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+            <div>
+                <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                    @foreach (PaiGowCard c in _playerHighSorted)
+                    {
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                    }
+                </div>
+                <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
+                <div style="display: flex; gap: 8px;">
+                    @foreach (PaiGowCard c in _playerLowSorted)
+                    {
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                    }
+                </div>
+            </div>
+
+            @if (_roundScored)
+            {
+                <div class="feedback-area" style="margin-top: 1.25rem;">
+                    <p style="margin: 0;">High Hand: @_playerHighLabel</p>
+                    <p style="margin: 0.25rem 0 0 0;">Low Hand: @_playerLowLabel</p>
+                </div>
+            }
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1.5rem; margin: 1.5rem 0;">
+            <WagerShape IsDiamond="false" AllowPush="false"
+                        Selection="_emperorsTreasure.Selection" SelectionChanged="v => _emperorsTreasure.Selection = v"
+                        Wrong="_emperorsTreasure.Wrong" OnCycled="() => { _emperorsTreasure.Wrong = false; ResetFoul(); }"
+                        ShowWrongShading="_roundScored">
+                Emperor's Treasure
+            </WagerShape>
+
+            <WagerShape IsDiamond="false" AllowPush="true"
+                        Selection="_mainWager.Selection" SelectionChanged="v => _mainWager.Selection = v"
+                        Wrong="_mainWager.Wrong" OnCycled="() => { _mainWager.Wrong = false; ResetFoul(); }"
+                        ShowWrongShading="_roundScored">
+                Main Wager
+            </WagerShape>
+
+            <WagerShape IsDiamond="false" AllowPush="false"
+                        Selection="_insurance.Selection" SelectionChanged="v => _insurance.Selection = v"
+                        Wrong="_insurance.Wrong" OnCycled="() => { _insurance.Wrong = false; ResetFoul(); }"
+                        ShowWrongShading="_roundScored">
+                Insurance
+            </WagerShape>
+
+            <!-- Foul is deliberately NOT a WagerShape instance -- it's a
+                 simple flag (declared / not declared), not a Win/Lose/
+                 Push cycle, so it has no pill. Reuses the same base CSS
+                 classes directly for consistent sizing and hover
+                 behavior with the wager shapes beside it. -->
+            <div class="wager-shape wager-circle @(_foulFlagged ? "foul-flagged" : "") @(_roundScored && _foulWrong ? "wager-wrong wager-shaded-wrong" : "")"
+                 style="margin-left: 1.5rem;"
+                 @onclick="ToggleFoul">
+                Foul
+            </div>
+
+            @if (_roundScored && _winningWagerLines.Count > 0)
+            {
+                <div class="feedback-area" style="margin-left: 1.5rem; min-height: 0;">
+                    @foreach ((string text, string color) in _winningWagerLines)
+                    {
+                        <p style="margin: 0; font-weight: bold; color: @color;">@text</p>
+                    }
+                </div>
+            }
+        </div>
+
+        <h3>Dealer</h3>
+        <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+            <div>
+                <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                    @foreach (PaiGowCard c in _dealerLowSorted)
+                    {
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                    }
+                </div>
+                <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
+                <div style="display: flex; gap: 8px;">
+                    @foreach (PaiGowCard c in _dealerHighSorted)
+                    {
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                    }
+                </div>
+            </div>
+
+            @if (_roundScored)
+            {
+                <div class="feedback-area" style="margin-top: 1.25rem;">
+                    <p style="margin: 0;">Low Hand: @_dealerLowLabel</p>
+                    <p style="margin: 0.25rem 0 0 0;">High Hand: @_dealerHighLabel</p>
+                </div>
+            }
+        </div>
+
+        <div class="feedback-area" style="margin-top: 1rem;">
+            <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
+            <p>@_scoreText</p>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_totalRounds</p>
+        <p>Correct: @_correctCount</p>
+        <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    private sealed class WagerState
+    {
+        public WagerOutcome? Selection;
+        public bool Wrong;
+    }
+
+    private bool _started;
+    private int _jokerFrequencyLevel;
+    private int _foulFrequencyLevel;
+
+    private PaiGowDeck _playerDeck = new();
+    private PaiGowDeck _dealerDeck = new();
+    private readonly PaiGowSolver _playerSolver = new();
+    private readonly PaiGowSolver _dealerSolver = new();
+
+    private List<PaiGowCard> _playerCards = new();
+    private List<PaiGowCard> _dealerCards = new();
+
+    private int _playerLow1, _playerLow2;
+    private int[] _playerHigh = new int[6];
+    private bool _isPlayerFoul;
+
+    private int _dealerLow1, _dealerLow2;
+    private int[] _dealerHigh = new int[6];
+
+    // Derived, display-only card lists -- sorted so pairs/trips/etc.
+    // appear first (left) and unrelated kicker cards follow (right),
+    // rather than in whatever order the House Way solver happened to
+    // pick them. Kept entirely separate from _dealerLow1/_dealerLow2/
+    // _dealerHigh, which remain untouched and continue to drive
+    // grading (ScoreLowHand/ScoreHighHand need the original indexes
+    // matching the solver's own internal card order) -- reordering
+    // the display never risks disturbing that.
+    private List<PaiGowCard> _dealerLowSorted = new();
+    private List<PaiGowCard> _dealerHighSorted = new();
+
+    // Same idea, applied to the player's cards -- an average player
+    // groups their own pairs/trips together when arranging a hand
+    // rather than laying cards out in raw deal order.
+    private List<PaiGowCard> _playerLowSorted = new();
+    private List<PaiGowCard> _playerHighSorted = new();
+
+    private readonly WagerState _insurance = new();
+    private readonly WagerState _mainWager = new();
+    private readonly WagerState _emperorsTreasure = new();
+
+    private bool _foulFlagged;
+    private bool _foulWrong;
+
+    private int _correctCount;
+    private int _totalRounds;
+    private bool _roundScored;
+
+    private bool _submitEnabled;
+    private bool _dealEnabled;
+    private string _resultText = string.Empty;
+
+    // Detailed Low/High hand descriptions -- same style Hand Setting
+    // shows for a submitted hand. Populated only after Submit, not on
+    // deal, since showing these upfront would hand the trainee the
+    // answer to the exact judgment this exercise is testing.
+    private string _playerLowLabel = string.Empty;
+    private string _playerHighLabel = string.Empty;
+    private string _dealerLowLabel = string.Empty;
+    private string _dealerHighLabel = string.Empty;
+
+    // Populated after Submit -- lists only the wager(s) that actually
+    // won this round (not all three), with the relevant hand context
+    // for Emperor's Treasure/Insurance specifically, since "why" is
+    // more useful to see than just "which."
+    private readonly List<(string Text, string Color)> _winningWagerLines = new();
+    private bool _isCorrect;
+    private string _scoreText = "Score: 0 / 0 (0.0%)";
+    private bool _showSessionSummary;
+
+    private void StartGame()
+    {
+        _started = true;
+        _correctCount = 0;
+        _totalRounds = 0;
+        _scoreText = "Score: 0 / 0 (0.0%)";
+
+        DealNewRound();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void DealNewRound()
+    {
+        _dealEnabled = false;
+
+        double jokerProbability = ComputeJokerProbability(_jokerFrequencyLevel);
+
+        // Dealer: dealt and arranged per House Way, exactly like Pai Gow
+        // - Hand Setting. Player: dealt from a SEPARATE deck instance
+        // (not one shared 53-card deck split between the two) -- a
+        // simplification, consistent with how Hand Setting itself
+        // never models other players/hands sharing a single deck
+        // either, so this isn't a new inconsistency being introduced.
+        _dealerDeck = new PaiGowDeck();
+        _dealerCards = _dealerDeck.DealSevenCardsWithJokerBias(jokerProbability);
+        _dealerSolver.SetCards(_dealerCards);
+        (_dealerLow1, _dealerLow2, _dealerHigh) = _dealerSolver.GetCorrectHand();
+
+        _dealerLowSorted = SortByRankGroupThenRank(new List<PaiGowCard>
+        {
+            _dealerCards[_dealerLow1 - 1],
+            _dealerCards[_dealerLow2 - 1]
+        });
+
+        List<PaiGowCard> dealerHighCards = new();
+        for (int i = 1; i <= 5; i++)
+            dealerHighCards.Add(_dealerCards[_dealerHigh[i] - 1]);
+        _dealerHighSorted = SortByRankGroupThenRank(dealerHighCards);
+
+        _playerDeck = new PaiGowDeck();
+        _playerCards = _playerDeck.DealSevenCardsWithJokerBias(jokerProbability);
+        _playerSolver.SetCards(_playerCards);
+
+        double foulProbability = ComputeFoulProbability(_foulFrequencyLevel);
+        bool shouldBeFoul = Random.Shared.NextDouble() < foulProbability;
+        GeneratePlayerSplit(shouldBeFoul);
+
+        _insurance.Selection = null; _insurance.Wrong = false;
+        _mainWager.Selection = null; _mainWager.Wrong = false;
+        _emperorsTreasure.Selection = null; _emperorsTreasure.Wrong = false;
+        _foulFlagged = false;
+        _foulWrong = false;
+
+        _resultText = string.Empty;
+        _playerLowLabel = string.Empty;
+        _playerHighLabel = string.Empty;
+        _dealerLowLabel = string.Empty;
+        _dealerHighLabel = string.Empty;
+        _winningWagerLines.Clear();
+        _roundScored = false;
+        _submitEnabled = true;
+    }
+
+    private void DealAgain() => DealNewRound();
+
+    private static double ComputeJokerProbability(int level)
+    {
+        // Same formula as Pai Gow - Hand Setting: natural odds (7/53,
+        // the chance a freely-shuffled 7-card hand happens to include
+        // the one real Joker) boosted by the chosen level.
+        const double naturalJokerProbability = 7.0 / 53.0;
+        double boost = level switch { 1 => 0.25, 2 => 0.50, _ => 0.0 };
+        return naturalJokerProbability * (1 + boost);
+    }
+
+    // Absolute probabilities (not relative boosts like Joker
+    // Frequency) since there's no single well-defined "natural" foul
+    // rate to scale from. Originally set to a realistic live-table
+    // rate (5%), then deliberately raised -- this is a training tool,
+    // and a purely realistic default meant a trainee could go many
+    // rounds without ever seeing a foul to actually practice catching
+    // one. All three tiers now favor practice reps over realism, each
+    // escalating further for more intensive practice.
+    private static double ComputeFoulProbability(int level) => level switch
+    {
+        1 => 0.25,
+        2 => 0.40,
+        _ => 0.15
+    };
+
+    // Sorts a group of cards so higher-count ranks (a pair, trips, a
+    // full house's trip-then-pair) appear first (left) and unrelated
+    // kicker cards follow (right) -- e.g. a Low hand of K,K sorts
+    // trivially, but a High hand of Q,Q,7,7,2 (two pair) sorts as
+    // Q,Q,7,7,2, not card-by-card descending. Same rank-value mapping
+    // already established by Hand Setting's own Sort button (Joker
+    // and Ace share a value of 14, grouping them together for display
+    // purposes), reused here for consistency rather than inventing a
+    // separate convention.
+    private static List<PaiGowCard> SortByRankGroupThenRank(List<PaiGowCard> cards)
+    {
+        Dictionary<int, int> rankCounts = new();
+        foreach (PaiGowCard c in cards)
+        {
+            int rank = CardSortValue(c);
+            rankCounts[rank] = rankCounts.GetValueOrDefault(rank) + 1;
+        }
+
+        return cards
+            .OrderByDescending(c => rankCounts[CardSortValue(c)])
+            .ThenByDescending(CardSortValue)
+            .ToList();
+    }
+
+    private static int CardSortValue(PaiGowCard card) => card.Rank switch
+    {
+        "JOKER" => 14,
+        "A" => 14,
+        "K" => 13,
+        "Q" => 12,
+        "J" => 11,
+        "T" => 10,
+        _ => int.TryParse(card.Rank, out int n) ? n : 0
+    };
+
+    // Enumerates all 21 possible 2-card Low selections from the 7
+    // dealt cards, splits them into legal and foul pools using the
+    // solver's own scoring (the same primitives SubmitHand itself
+    // relies on for foul detection, on Hand Setting), then picks from
+    // whichever pool this round calls for. Within the chosen pool,
+    // picks randomly from the top third by High-hand strength rather
+    // than uniformly across ALL legal splits -- giving genuine
+    // round-to-round variety (not always the single House-Way-optimal
+    // pick) while still avoiding a bizarre-looking "legal but terrible"
+    // arrangement a real player would be unlikely to actually set.
+    private void GeneratePlayerSplit(bool shouldBeFoul)
+    {
+        List<(int Low1, int Low2, int[] High, bool Legal, double HighScore)> candidates = new();
+
+        for (int a = 1; a <= 7; a++)
+        {
+            for (int b = a + 1; b <= 7; b++)
+            {
+                int[] high = new int[6];
+                int idx = 1;
+                for (int c = 1; c <= 7; c++)
+                {
+                    if (c == a || c == b) continue;
+                    high[idx++] = c;
+                }
+
+                bool legal = _playerSolver.IsLegalSplit(a, b, high);
+                double highScore = _playerSolver.ScoreHighHand(high);
+                candidates.Add((a, b, high, legal, highScore));
+            }
+        }
+
+        List<(int Low1, int Low2, int[] High, bool Legal, double HighScore)> pool =
+            shouldBeFoul
+                ? candidates.Where(c => !c.Legal).ToList()
+                : candidates.Where(c => c.Legal).ToList();
+
+        // Fallback: some hands (e.g. Five Aces) may have no possible
+        // foul split at all -- if a foul was requested but genuinely
+        // impossible for these specific 7 cards, fall back to a legal
+        // split rather than leaving the round in a broken state.
+        if (pool.Count == 0)
+        {
+            pool = candidates.Where(c => c.Legal).ToList();
+            shouldBeFoul = false;
+        }
+
+        List<(int Low1, int Low2, int[] High, bool Legal, double HighScore)> ranked =
+            pool.OrderByDescending(c => c.HighScore).ToList();
+        int topCount = Math.Max(1, ranked.Count / 3);
+        (int Low1, int Low2, int[] High, bool Legal, double HighScore) chosen = ranked[Random.Shared.Next(topCount)];
+
+        _playerLow1 = chosen.Low1;
+        _playerLow2 = chosen.Low2;
+        _playerHigh = chosen.High;
+        _isPlayerFoul = shouldBeFoul;
+
+        _playerLowSorted = SortByRankGroupThenRank(new List<PaiGowCard>
+        {
+            _playerCards[_playerLow1 - 1],
+            _playerCards[_playerLow2 - 1]
+        });
+
+        List<PaiGowCard> playerHighCards = new();
+        for (int i = 1; i <= 5; i++)
+            playerHighCards.Add(_playerCards[_playerHigh[i] - 1]);
+        _playerHighSorted = SortByRankGroupThenRank(playerHighCards);
+    }
+
+    // Clicking Foul also resets the three wager shapes back to their
+    // default (unselected, no pill) appearance -- flagging a hand as
+    // Foul is a significant enough judgment that any wager calls
+    // already made are worth reconsidering from scratch rather than
+    // silently carried over. The reverse applies too, via ResetFoul
+    // below: clicking any wager shape resets the Foul flag.
+    private void ToggleFoul()
+    {
+        _foulFlagged = !_foulFlagged;
+        _foulWrong = false;
+
+        _insurance.Selection = null; _insurance.Wrong = false;
+        _mainWager.Selection = null; _mainWager.Wrong = false;
+        _emperorsTreasure.Selection = null; _emperorsTreasure.Wrong = false;
+    }
+
+    private void ResetFoul()
+    {
+        _foulFlagged = false;
+        _foulWrong = false;
+    }
+
+    private void SubmitRound()
+    {
+        if (_insurance.Selection is null || _mainWager.Selection is null || _emperorsTreasure.Selection is null)
+        {
+            _resultText = "Tap every wager to select an outcome before submitting.";
+            _isCorrect = false;
+            return;
+        }
+
+        if (_roundScored) return;
+
+        bool allCorrect = true;
+
+        bool insuranceActual = _playerSolver.QualifiesInsurance();
+        allCorrect &= GradeWager(_insurance, insuranceActual ? WagerOutcome.Win : WagerOutcome.Lose);
+
+        bool emperorsActual = _playerSolver.QualifiesEmperorsTreasure();
+        allCorrect &= GradeWager(_emperorsTreasure, emperorsActual ? WagerOutcome.Win : WagerOutcome.Lose);
+
+        // Main Wager: a foul is an automatic loss regardless of the
+        // Low/High comparison (standard house rule). Otherwise: win
+        // both comparisons to win, lose both to lose, split to push.
+        // Ties on either comparison go to the dealer (standard house
+        // rule) -- reflected here as ">" rather than ">=".
+        WagerOutcome mainOutcome;
+        if (_isPlayerFoul)
+        {
+            mainOutcome = WagerOutcome.Lose;
+        }
+        else
+        {
+            double playerLowScore = _playerSolver.ScoreLowHand(_playerLow1, _playerLow2);
+            double playerHighScore = _playerSolver.ScoreHighHand(_playerHigh);
+            double dealerLowScore = _dealerSolver.ScoreLowHand(_dealerLow1, _dealerLow2);
+            double dealerHighScore = _dealerSolver.ScoreHighHand(_dealerHigh);
+
+            bool winsLow = playerLowScore > dealerLowScore;
+            bool winsHigh = playerHighScore > dealerHighScore;
+
+            mainOutcome = (winsLow, winsHigh) switch
+            {
+                (true, true) => WagerOutcome.Win,
+                (false, false) => WagerOutcome.Lose,
+                _ => WagerOutcome.Push
+            };
+        }
+        allCorrect &= GradeWager(_mainWager, mainOutcome);
+
+        if (_foulFlagged == _isPlayerFoul)
+        {
+            _foulWrong = false;
+        }
+        else
+        {
+            _foulWrong = true;
+            allCorrect = false;
+        }
+
+        _totalRounds++;
+        if (allCorrect) _correctCount++;
+
+        _isCorrect = allCorrect;
+        _resultText = allCorrect ? "CORRECT" : "INCORRECT";
+
+        string pct = _totalRounds > 0
+            ? ((double)_correctCount / _totalRounds).ToString("0.0%")
+            : "0.0%";
+        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
+
+        _playerLowLabel = _playerSolver.LowHandLabel(_playerLow1, _playerLow2);
+        _playerHighLabel = _playerSolver.HighHandDescription(_playerHigh);
+        _dealerLowLabel = _dealerSolver.LowHandLabel(_dealerLow1, _dealerLow2);
+        _dealerHighLabel = _dealerSolver.HighHandDescription(_dealerHigh);
+
+        // If the user got Main Wager wrong, reveal the actual correct
+        // outcome (Win, Lose, or Push) rather than just showing the
+        // wrong-answer highlight with no way to see what it should
+        // have been. If they got it right and it was a Win, still note
+        // that -- matches the same "only mention an actual win"
+        // pattern already used for Insurance/Emperor's Treasure below.
+        if (_mainWager.Wrong)
+        {
+            _winningWagerLines.Add(($"Main Wager: INCORRECT — Correct answer: {mainOutcome}", "red"));
+        }
+        else if (mainOutcome == WagerOutcome.Win)
+        {
+            _winningWagerLines.Add(("Main Wager: WIN", "blue"));
+        }
+
+        if (insuranceActual)
+        {
+            _winningWagerLines.Add(("Insurance: WIN — High Card", "blue"));
+        }
+
+        if (emperorsActual)
+        {
+            _winningWagerLines.Add(($"Emperor's Treasure: WIN — {_playerSolver.BestSevenCardCategoryName()}", "blue"));
+        }
+
+        _roundScored = true;
+        _submitEnabled = false;
+        _dealEnabled = true;
+    }
+
+    private static bool GradeWager(WagerState w, WagerOutcome actual)
+    {
+        if (w.Selection == actual)
+        {
+            w.Wrong = false;
+            return true;
+        }
+
+        w.Wrong = true;
+        return false;
+    }
+
+    private void EndSession()
+    {
+        if (_totalRounds > 0)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+}
