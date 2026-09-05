@@ -332,3 +332,20 @@ code {
     background-color: #e6c800;
     color: black;
 }
+
+/* Blazor's built-in FocusOnNavigate feature deliberately sends
+   keyboard focus to the page's <h1> after each navigation, so screen
+   readers announce "you're on a new page" -- genuinely helpful for
+   accessibility, so it should stay. But it also shows a visible focus
+   outline around a plain heading, which reads as if the title got
+   accidentally "selected." Suppressed unconditionally here (not via
+   :focus-visible, whose heuristics for programmatic focus turned out
+   to be inconsistent and still showed the outline in practice) --
+   safe to do since an <h1> has no default tabindex and is never
+   reachable by genuine keyboard Tab navigation anyway; the only way
+   it receives focus at all is this specific programmatic call. */
+h1:focus {
+    outline: none;
+    box-shadow: none;
+    border: none;
+}

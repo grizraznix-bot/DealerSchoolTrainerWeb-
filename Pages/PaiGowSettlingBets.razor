@@ -8,7 +8,7 @@
 {
     <div class="start-screen">
         <h1>PAI GOW - SETTLING BETS</h1>
-        <p>Both hands are already dealt and set. Judge each wager's outcome, flag the hand as Foul if it is one, then Submit.</p>
+        <p>Both dealer and player hands are already dealt and set. Judge each wager's outcome, flag the hand as Foul if it is one, then Submit.</p>
 
         <div style="display: flex; gap: 3rem; margin-top: 1rem;">
             <div>
@@ -52,7 +52,17 @@
 else
 {
     <div class="play-screen">
-        <button @onclick="BackToStart">Back</button>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button @onclick="BackToStart">Back</button>
+            <button @onclick="() => _showWagerRules = !_showWagerRules">@(_showWagerRules ? "Hide" : "Show") Wager Rules</button>
+        </div>
+
+        @if (_showWagerRules)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/SettlingBetsWagerRules.png" alt="Pai Gow - Settling Bets Wager Rules" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
 
         <h3 style="margin-top: 1rem;">Player</h3>
         <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
@@ -110,9 +120,18 @@ else
                  classes directly for consistent sizing and hover
                  behavior with the wager shapes beside it. -->
             <div class="wager-shape wager-circle @(_foulFlagged ? "foul-flagged" : "") @(_roundScored && _foulWrong ? "wager-wrong wager-shaded-wrong" : "")"
-                 style="margin-left: 1.5rem;"
                  @onclick="ToggleFoul">
                 Foul
+            </div>
+
+            <div style="margin-left: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;">
+                <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red"); margin: 0;">@_resultText</p>
+                <div>
+                    <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+                    <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+                    <button @onclick="EndSession">End Session</button>
+                </div>
+                <p style="margin: 0;">@_scoreText</p>
             </div>
 
             @if (_roundScored && _winningWagerLines.Count > 0)
@@ -155,17 +174,6 @@ else
                 </div>
             }
         </div>
-
-        <div class="feedback-area" style="margin-top: 1rem;">
-            <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
-            <p>@_scoreText</p>
-        </div>
-
-        <div style="margin-top: 1rem;">
-            <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
-            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
-            <button @onclick="EndSession">End Session</button>
-        </div>
     </div>
 }
 
@@ -191,8 +199,6 @@ else
     private int _jokerFrequencyLevel;
     private int _foulFrequencyLevel;
 
-    private PaiGowDeck _playerDeck = new();
-    private PaiGowDeck _dealerDeck = new();
     private readonly PaiGowSolver _playerSolver = new();
     private readonly PaiGowSolver _dealerSolver = new();
 
@@ -255,6 +261,7 @@ else
     private bool _isCorrect;
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
+    private bool _showWagerRules;
 
     private void StartGame()
     {
@@ -274,14 +281,16 @@ else
 
         double jokerProbability = ComputeJokerProbability(_jokerFrequencyLevel);
 
-        // Dealer: dealt and arranged per House Way, exactly like Pai Gow
-        // - Hand Setting. Player: dealt from a SEPARATE deck instance
-        // (not one shared 53-card deck split between the two) -- a
-        // simplification, consistent with how Hand Setting itself
-        // never models other players/hands sharing a single deck
-        // either, so this isn't a new inconsistency being introduced.
-        _dealerDeck = new PaiGowDeck();
-        _dealerCards = _dealerDeck.DealSevenCardsWithJokerBias(jokerProbability);
+        // Player and dealer are dealt from ONE SHARED deck (14 cards
+        // total dealt, no overlaps possible) -- matching a genuine
+        // single-deck pai gow table. An earlier version used two
+        // separate PaiGowDeck instances, which could (and did) deal
+        // the same physical card into both hands, since each instance
+        // believed it had the entire deck to itself; that was a real
+        // bug, not a safe simplification.
+        PaiGowDeck sharedDeck = new PaiGowDeck();
+        (_playerCards, _dealerCards) = sharedDeck.DealTwoSevenCardHandsWithJokerBias(jokerProbability);
+
         _dealerSolver.SetCards(_dealerCards);
         (_dealerLow1, _dealerLow2, _dealerHigh) = _dealerSolver.GetCorrectHand();
 
@@ -296,8 +305,6 @@ else
             dealerHighCards.Add(_dealerCards[_dealerHigh[i] - 1]);
         _dealerHighSorted = SortByRankGroupThenRank(dealerHighCards);
 
-        _playerDeck = new PaiGowDeck();
-        _playerCards = _playerDeck.DealSevenCardsWithJokerBias(jokerProbability);
         _playerSolver.SetCards(_playerCards);
 
         double foulProbability = ComputeFoulProbability(_foulFrequencyLevel);

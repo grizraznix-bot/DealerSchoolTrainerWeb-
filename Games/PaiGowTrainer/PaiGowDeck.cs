@@ -90,4 +90,51 @@ public sealed class PaiGowDeck
 
         return hand;
     }
+
+    /// <summary>
+    /// Deals TWO non-overlapping 7-card hands (player + dealer) from
+    /// this SAME shuffled 53-card deck. Calling DealSevenCardsWithJokerBias
+    /// twice on two separate deck instances can't guarantee the same
+    /// card doesn't appear in both hands, since each instance believes
+    /// it has the entire deck to itself -- this correctly models a
+    /// single real deck shared between both hands, which a genuine
+    /// pai gow table always is. The one real Joker's inclusion
+    /// probability is set explicitly, same idea as the single-hand
+    /// version; if included, a coin flip decides which of the two
+    /// hands receives it, since there's only one Joker to give to
+    /// either. Call this instead of DealSevenCardsWithJokerBias
+    /// whenever two simultaneous hands need to come from one deck.
+    /// </summary>
+    public (List<PaiGowCard> Hand1, List<PaiGowCard> Hand2) DealTwoSevenCardHandsWithJokerBias(double jokerInclusionProbability)
+    {
+        PaiGowCard joker = _cards.First(c => c.IsJoker);
+        List<PaiGowCard> nonJokerCards = _cards.Where(c => !c.IsJoker).ToList();
+
+        bool includeJoker = Rng.NextDouble() < jokerInclusionProbability;
+        bool jokerGoesToHand1 = Rng.NextDouble() < 0.5;
+
+        List<PaiGowCard> hand1 = new(7);
+        List<PaiGowCard> hand2 = new(7);
+        int cursor = 0;
+
+        if (includeJoker && jokerGoesToHand1)
+        {
+            hand1.Add(joker);
+            hand1.AddRange(nonJokerCards.GetRange(cursor, 6)); cursor += 6;
+            hand2.AddRange(nonJokerCards.GetRange(cursor, 7));
+        }
+        else if (includeJoker)
+        {
+            hand1.AddRange(nonJokerCards.GetRange(cursor, 7)); cursor += 7;
+            hand2.Add(joker);
+            hand2.AddRange(nonJokerCards.GetRange(cursor, 6));
+        }
+        else
+        {
+            hand1.AddRange(nonJokerCards.GetRange(cursor, 7)); cursor += 7;
+            hand2.AddRange(nonJokerCards.GetRange(cursor, 7));
+        }
+
+        return (hand1, hand2);
+    }
 }
