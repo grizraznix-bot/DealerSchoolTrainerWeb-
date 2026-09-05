@@ -1,0 +1,788 @@
+@page "/blackjack-trainer"
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.FlashCardTrainer
+@using DealerSchoolTrainerWeb.Games.PayoutTrainer
+@using DealerSchoolTrainerWeb.Games.SideWagerTrainer
+
+<PageTitle>Blackjack</PageTitle>
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>BLACKJACK</h1>
+
+        <!-- Three genuinely independent trainers sharing one start
+             screen and one page, each mode's own options always
+             visible rather than toggling based on the current
+             selection -- matching the same combined-trainer pattern
+             established for Heads-Up Hold'em and Pai Gow. -->
+        <div style="margin-top: 1rem;">
+            <div class="mode-card">
+                <label class="mode-title" style="display: block;">
+                    <input type="radio" name="mode" checked="@(_mode == BlackjackMode.FlashCards)" @onchange="() => _mode = BlackjackMode.FlashCards" />
+                    Flash Cards
+                </label>
+                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
+                    Type the dealer's total, press Enter to Submit.
+                </p>
+                <label style="margin-left: 1.5rem;">
+                    <input type="checkbox" @bind="_fcRemoveTens" />
+                    Remove all 10-value cards
+                </label>
+            </div>
+
+            <div class="mode-card">
+                <label class="mode-title" style="display: block;">
+                    <input type="radio" name="mode" checked="@(_mode == BlackjackMode.Payouts)" @onchange="() => _mode = BlackjackMode.Payouts" />
+                    Blackjack Payouts
+                </label>
+                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
+                    Pay each blackjack. Type the payout, then press Enter or Submit.
+                </p>
+                <div style="display: flex; gap: 3rem; margin-left: 1.5rem;">
+                    <div>
+                        <label style="display: block;">
+                            <input type="radio" name="ratio" checked="@(_poRatio == PayoutRatio.ThreeToTwo)" @onchange="() => _poRatio = PayoutRatio.ThreeToTwo" />
+                            3:2 Payouts
+                        </label>
+                        <label style="display: block;">
+                            <input type="radio" name="ratio" checked="@(_poRatio == PayoutRatio.SixToFive)" @onchange="() => _poRatio = PayoutRatio.SixToFive" />
+                            6:5 Payouts
+                        </label>
+                    </div>
+                    <div>
+                        <label style="display: block;">
+                            <input type="radio" name="difficulty" checked="@(_poDifficulty == PayoutDifficulty.Beginner)" @onchange="() => _poDifficulty = PayoutDifficulty.Beginner" />
+                            Beginner
+                        </label>
+                        <label style="display: block;">
+                            <input type="radio" name="difficulty" checked="@(_poDifficulty == PayoutDifficulty.Intermediate)" @onchange="() => _poDifficulty = PayoutDifficulty.Intermediate" />
+                            Intermediate
+                        </label>
+                        <label style="display: block;">
+                            <input type="radio" name="difficulty" checked="@(_poDifficulty == PayoutDifficulty.Advanced)" @onchange="() => _poDifficulty = PayoutDifficulty.Advanced" />
+                            Advanced
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mode-card">
+                <label class="mode-title" style="display: block;">
+                    <input type="radio" name="mode" checked="@(_mode == BlackjackMode.SideWagers)" @onchange="() => _mode = BlackjackMode.SideWagers" />
+                    Side Wagers
+                </label>
+                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
+                    Settle the outcome of each side wager by tapping the wager to cycle Win / Lose, then Submit.
+                </p>
+                <label style="margin-left: 1.5rem;">
+                    Number of Hands (1-6):
+                    <input type="number" min="1" max="6" @bind="_swHandCount" style="width: 4rem;" />
+                </label>
+            </div>
+        </div>
+
+        <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+        </div>
+    </div>
+}
+else if (_mode == BlackjackMode.FlashCards)
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <div class="card-row" style="margin: 1rem 0; display: flex; gap: 8px;">
+            @for (int i = 0; i < _fcHand.Count; i++)
+            {
+                var card = _fcHand.CardAt(i);
+                <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image" style="width: 90px; height: 126px;" />
+            }
+        </div>
+
+        <p style="font-weight: bold;">DEALER MUST HIT SOFT 17</p>
+
+        <p style="font-size: 1.2rem;">@_fcPromptText</p>
+
+        @if (_fcShowHint)
+        {
+            <p style="font-style: italic; color: dimgray;">Remember: an Ace can count as 1 or 11.</p>
+        }
+
+        <div style="margin: 1rem 0;">
+            <input type="text"
+                   inputmode="numeric"
+                   @bind="_fcAnswerText"
+                   @bind:event="oninput"
+                   @onkeydown="FcHandleAnswerKeyDown"
+                   @ref="_fcAnswerInputRef"
+                   disabled="@(!_fcAnswerEnabled)"
+                   placeholder="Total" />
+            <button @onclick="FcSubmitTypedAnswer" disabled="@(!_fcSubmitEnabled)">Submit</button>
+            <button @onclick="() => _fcShowKeypad = !_fcShowKeypad">123</button>
+        </div>
+
+        @if (_fcShowKeypad)
+        {
+            <NumericKeypad AllowDecimal="false" @bind-Value="_fcAnswerText" />
+        }
+
+        <div class="feedback-area">
+            <p>@_fcFeedbackText</p>
+        </div>
+
+        <p>Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
+
+        <div>
+            <button @onclick="FcStartNewRound" disabled="@(!_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">New Round</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+else if (_mode == BlackjackMode.Payouts)
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+
+        <div style="position: relative; width: 220px; height: 240px; margin: 1rem 0;">
+            <img src="images/cards/AS.png" alt="AS" style="position: absolute; top: 0; left: 0; width: 130px; height: 182px;" />
+            <img src="images/cards/JS.png" alt="JS" style="position: absolute; top: 60px; left: 70px; width: 130px; height: 182px;" />
+        </div>
+
+        <p style="font-weight: bold;">BLACKJACK PAYS @(_poRatio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
+
+        <p>Wager: @PayoutWager.FormatCents(_poWagerCents)</p>
+
+        <div style="margin: 1rem 0;">
+            <input type="text"
+                   inputmode="decimal"
+                   value="@_poAnswerText"
+                   @oninput="PoHandleAnswerInput"
+                   @onkeydown="PoHandleAnswerKeyDown"
+                   @ref="_poAnswerInputRef"
+                   readonly="@(!_poAnswerEnabled)"
+                   placeholder="Amount" />
+            <button @onclick="PoSubmitTypedAnswer" disabled="@(!_poSubmitEnabled)">Submit</button>
+            <button @onclick="() => _poShowKeypad = !_poShowKeypad">123</button>
+        </div>
+
+        @if (_poShowKeypad)
+        {
+            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_poAnswerText" />
+        }
+
+        <div class="feedback-area">
+            <p style="font-weight: bold; color: @(_poIsCorrect ? "blue" : "red");">@_poPromptText</p>
+            <p style="color: red;">@_poPromptDetailText</p>
+        </div>
+
+        <div>
+            <button @onclick="PoStartNewRound" disabled="@(!_poNewRoundEnabled)" @ref="_poNewRoundButtonRef">New Round</button>
+            <button @onclick="EndSession">End Session</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="play-screen">
+        <button @onclick="BackToStart">Back</button>
+        <button @onclick="() => _swShowWagerRules = !_swShowWagerRules">@(_swShowWagerRules ? "Hide" : "Show") Wager Rules</button>
+
+        @if (_swShowWagerRules)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/SideWagerRules.png" alt="Side Wager Rules" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
+
+        <div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
+            @for (int h = 0; h < _swHands.Count; h++)
+            {
+                int handIndex = h;
+                SwHandState hand = _swHands[handIndex];
+
+                <div style="text-align: center;">
+                    <div style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
+
+                    <div style="position: relative; width: 130px; height: 195px;">
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
+                             style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Code"
+                             style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
+                    </div>
+
+                    <div style="margin-top: 0.5rem; display: flex; gap: 8px; justify-content: center;">
+                        <WagerShape IsDiamond="false" AllowPush="false" SizePx="56" ShowWrongShading="_swRoundScored"
+                                    Wrong="hand.LuckyLadiesWrong"
+                                    Selection="hand.LuckyLadiesSelection"
+                                    SelectionChanged="v => hand.LuckyLadiesSelection = v"
+                                    OnCycled="() => hand.LuckyLadiesWrong = false">
+                            Lucky<br />Ladies
+                        </WagerShape>
+
+                        <WagerShape IsDiamond="false" AllowPush="false" SizePx="56" ShowWrongShading="_swRoundScored"
+                                    Wrong="hand.TwentyOnePlus3Wrong"
+                                    Selection="hand.TwentyOnePlus3Selection"
+                                    SelectionChanged="v => hand.TwentyOnePlus3Selection = v"
+                                    OnCycled="() => hand.TwentyOnePlus3Wrong = false">
+                            21 + 3
+                        </WagerShape>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div style="width: 900px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 1.5rem;">
+            <div style="justify-self: end;">
+                <button @onclick="SwSubmitRound" disabled="@(!_swSubmitEnabled)">Submit</button>
+                <button @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Deal</button>
+                <button @onclick="EndSession">End Session</button>
+            </div>
+
+            <div style="text-align: center;">
+                <h3 style="color: black; margin: 0;">Dealer</h3>
+                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Code" style="width: 100px; height: 140px;" />
+            </div>
+
+            <div class="feedback-area" style="min-height: 0; justify-self: start;">
+                <p style="font-weight: bold; color: @(_swIsCorrect ? "blue" : "red"); margin: 0; height: 1.5rem;">@_swResultText</p>
+                <p style="margin: 0.25rem 0 0 0;">@_swScoreText</p>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary">
+        <h3>Session Summary</h3>
+        @if (_mode == BlackjackMode.FlashCards)
+        {
+            <p>Rounds Played: @_fcRoundsPlayed</p>
+            <p>Correct: @_fcRoundsCorrect</p>
+            <p>Incorrect: @(_fcRoundsPlayed - _fcRoundsCorrect)</p>
+        }
+        else if (_mode == BlackjackMode.Payouts)
+        {
+            <p>Rounds Played: @_poTotalRounds</p>
+            <p>Correct: @_poCorrectCount</p>
+            <p>Incorrect: @(_poTotalRounds - _poCorrectCount)</p>
+        }
+        else
+        {
+            <p>Rounds Played: @_swTotalAnswered</p>
+            <p>Correct: @_swTotalCorrect</p>
+            <p>Incorrect: @(_swTotalAnswered - _swTotalCorrect)</p>
+        }
+        <button @onclick="CloseSummary">OK</button>
+    </div>
+}
+
+@code {
+    private enum BlackjackMode { FlashCards, Payouts, SideWagers }
+
+    // Shared across all three modes -- which start screen/play screen
+    // to show, and the session-summary overlay.
+    private bool _started;
+    private BlackjackMode _mode = BlackjackMode.FlashCards;
+    private bool _showSessionSummary;
+
+    private void BackToStart() => _started = false;
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        _started = false;
+    }
+
+    private void StartGame()
+    {
+        _started = true;
+
+        switch (_mode)
+        {
+            case BlackjackMode.FlashCards: FcStartGame(); break;
+            case BlackjackMode.Payouts: PoStartGame(); break;
+            default: SwStartGame(); break;
+        }
+    }
+
+    private void EndSession()
+    {
+        bool anyRoundsPlayed = _mode switch
+        {
+            BlackjackMode.FlashCards => _fcRoundsPlayed > 0,
+            BlackjackMode.Payouts => _poTotalRounds > 0,
+            _ => _swTotalAnswered > 0
+        };
+
+        if (anyRoundsPlayed)
+        {
+            _showSessionSummary = true;
+        }
+        else
+        {
+            _started = false;
+        }
+    }
+
+    // ============================================================
+    // FLASH CARDS (Fc prefix)
+    // ============================================================
+
+    private const bool FcHitSoft17 = true;
+
+    private bool _fcRemoveTens;
+    private BlackjackShoe _fcShoe = new();
+    private BlackjackHand _fcHand = new();
+
+    private int _fcRoundsCorrect;
+    private int _fcRoundsPlayed;
+    private bool _fcRoundHasMistake;
+
+    private string _fcAnswerText = string.Empty;
+    private string _fcPromptText = string.Empty;
+    private string _fcFeedbackText = string.Empty;
+    private bool _fcShowHint;
+    private bool _fcAnswerEnabled;
+    private bool _fcSubmitEnabled;
+    private bool _fcShowKeypad;
+    private bool _fcNewRoundEnabled;
+
+    private Microsoft.AspNetCore.Components.ElementReference _fcAnswerInputRef;
+    private Microsoft.AspNetCore.Components.ElementReference _fcNewRoundButtonRef;
+    private bool _fcShouldFocusAnswer;
+    private bool _fcShouldFocusNewRound;
+
+    private void FcStartGame()
+    {
+        _fcRoundsCorrect = 0;
+        _fcRoundsPlayed = 0;
+
+        _fcShoe = new BlackjackShoe();
+        if (_fcRemoveTens) _fcShoe.RemoveTenValueCards();
+
+        FcStartNewRound();
+    }
+
+    private void FcStartNewRound()
+    {
+        _fcHand = new BlackjackHand();
+        _fcHand.AddCard(_fcShoe.Draw());
+        _fcHand.AddCard(_fcShoe.Draw());
+
+        _fcRoundHasMistake = false;
+        _fcFeedbackText = string.Empty;
+        _fcNewRoundEnabled = false;
+
+        _fcAnswerText = string.Empty;
+        _fcAnswerEnabled = true;
+        _fcSubmitEnabled = true;
+
+        _fcShowHint = _fcHand.HasAce;
+        _fcPromptText = "What's the dealer's total?";
+
+        _fcShouldFocusAnswer = true;
+    }
+
+    private async Task FcHandleAnswerKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _fcSubmitEnabled)
+        {
+            await FcSubmitTypedAnswer();
+        }
+    }
+
+    private async Task FcSubmitTypedAnswer()
+    {
+        string raw = _fcAnswerText.Trim();
+
+        if (raw.Length == 0)
+        {
+            _fcFeedbackText = "Enter the dealer's total.";
+            return;
+        }
+
+        if (!long.TryParse(raw, out long enteredValue) || enteredValue < 2)
+        {
+            _fcFeedbackText = "Enter a valid total.";
+            return;
+        }
+
+        await FcEvaluateAnswer(enteredValue);
+    }
+
+    private async Task FcEvaluateAnswer(long enteredValue)
+    {
+        bool actualBlackjack = _fcHand.IsBlackjack;
+        int actualTotal = _fcHand.Total;
+        bool actualBust = _fcHand.IsBust;
+        bool isCorrect;
+
+        if (actualBlackjack)
+        {
+            isCorrect = enteredValue == 21;
+        }
+        else if (actualBust)
+        {
+            isCorrect = enteredValue == actualTotal;
+        }
+        else if (_fcHand.MustHit(FcHitSoft17))
+        {
+            isCorrect = enteredValue == actualTotal || (_fcHand.IsSoft && enteredValue == _fcHand.HardTotal);
+        }
+        else
+        {
+            isCorrect = enteredValue == actualTotal;
+        }
+
+        if (!isCorrect)
+        {
+            _fcRoundHasMistake = true;
+            _fcAnswerText = string.Empty;
+            _fcFeedbackText = "Incorrect - try again.";
+            return;
+        }
+
+        string msg = actualBlackjack
+            ? "Correct.  Blackjack!"
+            : actualBust
+                ? $"Correct.  Actual: BUST ({actualTotal})"
+                : _fcHand.IsSoft
+                    ? $"Correct.  Actual total: {actualTotal} soft ({_fcHand.HardTotal} hard)"
+                    : $"Correct.  Actual total: {actualTotal} (hard)";
+
+        _fcFeedbackText = msg;
+        _fcAnswerText = string.Empty;
+        _fcAnswerEnabled = false;
+        _fcSubmitEnabled = false;
+
+        if (actualBlackjack)
+        {
+            await FcEndRound("Dealer has Blackjack. Press Enter for the next hand.");
+        }
+        else if (actualBust)
+        {
+            await FcEndRound("Dealer busts. Press Enter for the next hand.");
+        }
+        else if (_fcHand.MustHit(FcHitSoft17))
+        {
+            _fcHand.AddCard(_fcShoe.Draw());
+            _fcShowHint = _fcHand.HasAce;
+            _fcPromptText = "Dealer hits. What's the new total?";
+            _fcAnswerEnabled = true;
+            _fcSubmitEnabled = true;
+            _fcShouldFocusAnswer = true;
+        }
+        else
+        {
+            await FcEndRound("Dealer stands. Press Enter for the next hand.");
+        }
+    }
+
+    private async Task FcEndRound(string message)
+    {
+        _fcRoundsPlayed++;
+        if (!_fcRoundHasMistake) _fcRoundsCorrect++;
+
+        _fcPromptText = message;
+        _fcNewRoundEnabled = true;
+        StateHasChanged();
+
+        await Task.Delay(200);
+        _fcShouldFocusNewRound = true;
+    }
+
+    // ============================================================
+    // PAYOUTS (Po prefix)
+    // ============================================================
+
+    private PayoutRatio _poRatio = PayoutRatio.ThreeToTwo;
+    private PayoutDifficulty _poDifficulty = PayoutDifficulty.Beginner;
+
+    private long _poWagerCents;
+    private int _poCorrectCount;
+    private int _poTotalRounds;
+
+    private string _poAnswerText = string.Empty;
+    private bool _poAnswerEnabled;
+    private bool _poSubmitEnabled;
+    private bool _poShowKeypad;
+    private bool _poNewRoundEnabled;
+    private string _poPromptText = string.Empty;
+    private string _poPromptDetailText = string.Empty;
+    private bool _poIsCorrect;
+
+    private Microsoft.AspNetCore.Components.ElementReference _poAnswerInputRef;
+    private Microsoft.AspNetCore.Components.ElementReference _poNewRoundButtonRef;
+    private bool _poShouldFocusAnswer;
+    private bool _poShouldFocusNewRound;
+
+    private void PoStartGame()
+    {
+        _poCorrectCount = 0;
+        _poTotalRounds = 0;
+        PoStartNewRound();
+    }
+
+    private void PoStartNewRound()
+    {
+        _poWagerCents = PayoutWager.GenerateWagerCents(_poRatio, _poDifficulty);
+
+        _poPromptText = string.Empty;
+        _poPromptDetailText = string.Empty;
+        _poAnswerText = string.Empty;
+
+        _poNewRoundEnabled = false;
+        _poAnswerEnabled = true;
+        _poSubmitEnabled = true;
+        _poShouldFocusAnswer = true;
+    }
+
+    private void PoHandleAnswerInput(Microsoft.AspNetCore.Components.ChangeEventArgs e)
+    {
+        string raw = e.Value?.ToString() ?? string.Empty;
+        System.Text.StringBuilder filtered = new();
+        bool hasDot = false;
+        int decimalDigits = 0;
+
+        foreach (char c in raw)
+        {
+            if (char.IsDigit(c))
+            {
+                if (!hasDot)
+                {
+                    filtered.Append(c);
+                }
+                else if (decimalDigits < 2)
+                {
+                    filtered.Append(c);
+                    decimalDigits++;
+                }
+            }
+            else if (c == '.' && !hasDot)
+            {
+                filtered.Append(c);
+                hasDot = true;
+            }
+        }
+
+        _poAnswerText = filtered.ToString();
+    }
+
+    private async Task PoHandleAnswerKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && _poSubmitEnabled)
+        {
+            await PoSubmitTypedAnswer();
+        }
+    }
+
+    private async Task PoSubmitTypedAnswer()
+    {
+        string raw = _poAnswerText.Trim();
+
+        if (raw.Length == 0)
+        {
+            _poPromptText = "Enter an amount before submitting.";
+            _poIsCorrect = false;
+            return;
+        }
+
+        long userCents = PayoutWager.ParseCents(raw);
+        long correctCents = PayoutWager.CalculatePayoutCents(_poWagerCents, _poRatio);
+
+        _poTotalRounds++;
+
+        if (userCents == correctCents)
+        {
+            _poCorrectCount++;
+            _poIsCorrect = true;
+            _poPromptText = "CORRECT";
+            _poPromptDetailText = string.Empty;
+        }
+        else
+        {
+            _poIsCorrect = false;
+            _poPromptText = "INCORRECT";
+            _poPromptDetailText = "Correct payout: " + PayoutWager.FormatCents(correctCents);
+        }
+
+        _poAnswerEnabled = false;
+        _poSubmitEnabled = false;
+        _poNewRoundEnabled = true;
+        StateHasChanged();
+
+        await Task.Delay(200);
+        _poShouldFocusNewRound = true;
+    }
+
+    // ============================================================
+    // SIDE WAGERS (Sw prefix)
+    // ============================================================
+
+    private sealed class SwHandState
+    {
+        public Card Card1 = null!;
+        public Card Card2 = null!;
+        public WagerOutcome? LuckyLadiesSelection;
+        public WagerOutcome? TwentyOnePlus3Selection;
+        public bool LuckyLadiesWrong;
+        public bool TwentyOnePlus3Wrong;
+    }
+
+    private int _swHandCount = 6;
+    private Deck _swDeck = new();
+    private readonly List<SwHandState> _swHands = new();
+    private Card? _swDealerCard;
+
+    private int _swTotalCorrect;
+    private int _swTotalAnswered;
+
+    private bool _swSubmitEnabled;
+    private bool _swRoundScored;
+    private bool _swDealEnabled;
+    private string _swResultText = string.Empty;
+    private bool _swIsCorrect;
+    private string _swScoreText = "Score: 0 / 0 (0.0%)";
+    private bool _swShowWagerRules;
+
+    private void SwStartGame()
+    {
+        _swHandCount = Math.Clamp(_swHandCount, 1, 6);
+        _swTotalCorrect = 0;
+        _swTotalAnswered = 0;
+        _swScoreText = "Score: 0 / 0 (0.0%)";
+
+        SwDealNewRound();
+    }
+
+    private void SwDealNewRound()
+    {
+        _swDealEnabled = false;
+
+        _swDeck = new Deck();
+        _swDeck.Shuffle();
+
+        _swHands.Clear();
+        for (int h = 0; h < _swHandCount; h++)
+        {
+            _swHands.Add(new SwHandState
+            {
+                Card1 = _swDeck.Draw(),
+                Card2 = _swDeck.Draw()
+            });
+        }
+
+        _swDealerCard = _swDeck.Draw();
+
+        _swResultText = string.Empty;
+        _swRoundScored = false;
+        _swSubmitEnabled = true;
+    }
+
+    private void SwDealAgain()
+    {
+        foreach (SwHandState hand in _swHands)
+        {
+            hand.LuckyLadiesSelection = null;
+            hand.TwentyOnePlus3Selection = null;
+            hand.LuckyLadiesWrong = false;
+            hand.TwentyOnePlus3Wrong = false;
+        }
+
+        SwDealNewRound();
+    }
+
+    private void SwSubmitRound()
+    {
+        foreach (SwHandState hand in _swHands)
+        {
+            if (hand.LuckyLadiesSelection is null || hand.TwentyOnePlus3Selection is null)
+            {
+                _swResultText = "Tap every wager to select an outcome before submitting.";
+                _swIsCorrect = false;
+                return;
+            }
+        }
+
+        int roundCorrect = 0;
+
+        foreach (SwHandState hand in _swHands)
+        {
+            bool actualLL = SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2);
+            bool actualTC = SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _swDealerCard!);
+
+            WagerOutcome actualLLOutcome = actualLL ? WagerOutcome.Win : WagerOutcome.Lose;
+            WagerOutcome actualTCOutcome = actualTC ? WagerOutcome.Win : WagerOutcome.Lose;
+
+            if (hand.LuckyLadiesSelection == actualLLOutcome)
+            {
+                hand.LuckyLadiesWrong = false;
+                roundCorrect++;
+            }
+            else
+            {
+                hand.LuckyLadiesWrong = true;
+            }
+
+            if (hand.TwentyOnePlus3Selection == actualTCOutcome)
+            {
+                hand.TwentyOnePlus3Wrong = false;
+                roundCorrect++;
+            }
+            else
+            {
+                hand.TwentyOnePlus3Wrong = true;
+            }
+        }
+
+        _swTotalAnswered++;
+
+        if (roundCorrect == _swHandCount * 2)
+        {
+            _swTotalCorrect++;
+            _swIsCorrect = true;
+            _swResultText = "CORRECT";
+        }
+        else
+        {
+            _swIsCorrect = false;
+            _swResultText = "INCORRECT";
+        }
+
+        double percentage = (double)_swTotalCorrect / _swTotalAnswered;
+        _swScoreText = $"Score: {_swTotalCorrect} / {_swTotalAnswered} ({percentage:0.0%})";
+
+        _swRoundScored = true;
+        _swSubmitEnabled = false;
+        _swDealEnabled = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_fcShouldFocusAnswer)
+        {
+            _fcShouldFocusAnswer = false;
+            try { await _fcAnswerInputRef.FocusAsync(); } catch { }
+        }
+
+        if (_fcShouldFocusNewRound)
+        {
+            _fcShouldFocusNewRound = false;
+            try { await _fcNewRoundButtonRef.FocusAsync(); } catch { }
+        }
+
+        if (_poShouldFocusAnswer)
+        {
+            _poShouldFocusAnswer = false;
+            try { await _poAnswerInputRef.FocusAsync(); } catch { }
+        }
+
+        if (_poShouldFocusNewRound)
+        {
+            _poShouldFocusNewRound = false;
+            try { await _poNewRoundButtonRef.FocusAsync(); } catch { }
+        }
+    }
+}

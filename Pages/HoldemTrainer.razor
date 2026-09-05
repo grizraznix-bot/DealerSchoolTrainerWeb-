@@ -8,13 +8,41 @@
 {
     <div class="start-screen">
         <h1>HEADS-UP HOLD'EM</h1>
-        <p>Classify each dealt hand using the 5 community cards. Select a rank for every hand, then Submit.</p>
 
+        <!-- Each mode gets its own always-visible hand-count input,
+             set independently, rather than one shared input that
+             switches based on the current radio selection. Settle the
+             Bets is capped narrower (1-4) than Identify the Hands
+             (1-6) specifically to leave room for the feedback block,
+             which sits beside the hands row rather than below it. -->
         <div style="margin-top: 1rem;">
-            <label>
-                Number of Hands (1-6):
-                <input type="number" min="1" max="6" @bind="_handCount" style="width: 4rem;" />
-            </label>
+            <div class="mode-card">
+                <label class="mode-title" style="display: block;">
+                    <input type="radio" name="mode" checked="@(_mode == TrainerMode.IdentifyHands)" @onchange="() => _mode = TrainerMode.IdentifyHands" />
+                    Identify the Hands
+                </label>
+                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
+                    Classify each dealt hand using the 5 community cards. Select a rank for every hand, then Submit.
+                </p>
+                <label style="margin-left: 1.5rem;">
+                    Number of Hands (1-6):
+                    <input type="number" min="1" max="6" @bind="_handCountIdentify" style="width: 4rem;" />
+                </label>
+            </div>
+
+            <div class="mode-card">
+                <label class="mode-title" style="display: block;">
+                    <input type="radio" name="mode" checked="@(_mode == TrainerMode.SettleBets)" @onchange="() => _mode = TrainerMode.SettleBets" />
+                    Settle the Bets
+                </label>
+                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
+                    A dealer hand is dealt below the community cards. Tap the dealer's own two cards or any community card to mark it as NOT part of the dealer's best hand -- exactly two of the seven will always end up unused. Tap each player hand's circle to call its outcome (Win / Lose / Push) against the dealer's hand, then Submit.
+                </p>
+                <label style="margin-left: 1.5rem;">
+                    Number of Hands (1-4):
+                    <input type="number" min="1" max="4" @bind="_handCountSettleBets" style="width: 4rem;" />
+                </label>
+            </div>
         </div>
 
         <div style="margin-top: 1rem;">
@@ -35,7 +63,8 @@ else
             </div>
         }
 
-        <div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
+        <div style="width: 900px; position: relative;">
+            <div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
             @for (int h = 0; h < _hands.Count; h++)
             {
                 int handIndex = h;
@@ -51,66 +80,110 @@ else
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
-                    <select @bind="hand.SelectedRankIndex" style="margin-top: 0.5rem; @(hand.Wrong ? "background-color: #f8d0d0;" : (hand.SelectedRankIndex > 0 ? "background-color: #d0e0f8;" : ""))">
-                        @for (int i = 0; i < RankComboItems.Length; i++)
-                        {
-                            <option value="@i">@RankComboItems[i]</option>
-                        }
-                    </select>
+                    @if (_mode == TrainerMode.IdentifyHands)
+                    {
+                        <select @bind="hand.SelectedRankIndex" style="margin-top: 0.5rem; @(hand.Wrong ? "background-color: #f8d0d0;" : (hand.SelectedRankIndex > 0 ? "background-color: #d0e0f8;" : ""))">
+                            @for (int i = 0; i < RankComboItems.Length; i++)
+                            {
+                                <option value="@i">@RankComboItems[i]</option>
+                            }
+                        </select>
+                    }
+                    else
+                    {
+                        <div style="margin-top: 0.5rem; display: flex; justify-content: center;">
+                            <WagerShape IsDiamond="false" AllowPush="true"
+                                        Selection="hand.WagerSelection" SelectionChanged="v => hand.WagerSelection = v"
+                                        Wrong="hand.WagerWrong" OnCycled="() => hand.WagerWrong = false"
+                                        ShowWrongShading="_roundScored">
+                                vs Dealer
+                            </WagerShape>
+                        </div>
+                    }
                 </div>
             }
         </div>
 
-        <!-- Community cards are centered within a fixed 900px-wide box --
-             the exact width of a full 6-hand row (6 columns x 130px + 5
-             gaps x 24px) -- rather than centered relative to however many
-             hands actually happen to be dealt right now. This keeps the
-             community cards in a single stable position regardless of
-             hand count, and gives a fixed anchor point the future Dealer
-             Hand section can align under later without needing rework. -->
         <!-- Community cards are centered within a fixed 900px-wide
-             reference (the width of a full 6-hand row), so their position
-             stays stable regardless of how many hands are dealt --
-             achieved here via a centered flex row, with feedback pulled
-             OUT of that flow and absolutely positioned instead, offset
-             from the container's horizontal center by exactly half the
-             5-card row's own width (564px / 2 = 282px) plus a small gap.
-             A symmetric 3-column grid was tried first, but forcing the
-             feedback column to match the empty spacer column's width
-             squeezed it down to roughly 150px, causing severe one-word-
-             per-line wrapping -- this approach gives feedback its full
-             intended width without disturbing the cards' centering,
-             since the two are no longer competing for the same column
-             width. Same general fix (position relative to where content
-             actually renders, not a wider reference box) as Side Wagers'
-             dealer card. -->
-        <div style="width: 900px; position: relative; display: flex; justify-content: center;">
-            <div style="display: flex; flex-direction: column; align-items: center;">
-                <h3 style="margin: 0;">Community Cards</h3>
-                <div style="display: flex; gap: 1rem; align-items: flex-end; margin: 1rem 0;">
-                    @foreach (Card? c in _community)
-                    {
-                        <div style="text-align: center;">
-                            <img src="images/cards/@(c?.Code).png" alt="@c?.Code" style="width: 100px; height: 140px;" />
-                        </div>
-                    }
-                </div>
+             reference (the width of a full 6-hand row), so their
+             position stays stable regardless of how many hands are
+             dealt. Feedback is absolutely positioned rather than
+             placed in the normal flex flow, offset from the
+             container's horizontal center by exactly half the 5-card
+             row's own width (564px / 2 = 282px) plus a small gap --
+             giving it its own full width without disturbing the
+             cards' centering or getting squeezed into a narrow shared
+             column. In Settle the Bets mode, cards become clickable
+             to rotate (marking them unused by the dealer), and the
+             dealer's own two cards appear in a second row below, side
+             by side rather than overlapped like the player hands. -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div style="margin-bottom: 0.5rem;">
+                <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+                <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+                <button @onclick="EndSession">End Session</button>
             </div>
 
-            <div class="feedback-area" style="position: absolute; left: calc(50% + 298px); top: 50%; transform: translateY(-50%); max-width: 320px; font-size: 0.85rem;">
-                <div style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</div>
-                @if (_mistakesText.Length > 0)
+            <h3 style="margin: 0;">Community Cards</h3>
+            <div style="display: flex; gap: @(_mode == TrainerMode.SettleBets ? "3rem" : "1rem"); align-items: flex-end; margin: 1rem 0;">
+                @for (int i = 0; i < _community.Length; i++)
                 {
-                    <div style="white-space: pre-line; margin-top: 0.25rem;">What each hand actually was:@("\n")@_mistakesText</div>
+                    int communityIndex = i;
+                    Card? c = _community[communityIndex];
+
+                    <div style="text-align: center;">
+                        <img src="images/cards/@(c?.Code).png" alt="@c?.Code"
+                             @onclick="() => ToggleCommunityRotation(communityIndex)"
+                             class="pai-gow-card"
+                             style="width: 100px; height: 140px; cursor: @(_mode == TrainerMode.SettleBets ? "pointer" : "default"); @(_mode == TrainerMode.SettleBets && _communityRotated[communityIndex] ? "transform: rotate(45deg);" : "")" />
+                    </div>
                 }
-                <p style="margin: 0.25rem 0 0 0;">@_scoreText</p>
             </div>
+
+            @if (_mode == TrainerMode.SettleBets)
+            {
+                <h3 style="margin: 1rem 0 0 0;">Dealer</h3>
+                <div style="display: flex; gap: 3rem; margin: 1rem 0;">
+                    <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Code"
+                         @onclick="() => { _dealerCard1Rotated = !_dealerCard1Rotated; _dealerExclusionWrong = false; }"
+                         class="pai-gow-card"
+                         style="width: 100px; height: 140px; cursor: pointer; @(_dealerCard1Rotated ? "transform: rotate(45deg);" : "")" />
+                    <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Code"
+                         @onclick="() => { _dealerCard2Rotated = !_dealerCard2Rotated; _dealerExclusionWrong = false; }"
+                         class="pai-gow-card"
+                         style="width: 100px; height: 140px; cursor: pointer; @(_dealerCard2Rotated ? "transform: rotate(45deg);" : "")" />
+                </div>
+            }
         </div>
 
-        <div>
-            <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
-            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
-            <button @onclick="EndSession">End Session</button>
+        <!-- Aligned to the top edge of the player cards above (not the
+             hands row's own outer edge, which includes the small
+             number label sitting above each card) -- offset accounts
+             for the hands row's own top margin (1rem) plus that
+             label's height (~0.85rem line), roughly 36px combined. -->
+        <!-- Positioned dynamically at the "next" hand slot in both
+             modes -- e.g. with 1 hand dealt, feedback appears where
+             hand 2's column would be; with 3 hands, where hand 4 would
+             be. Each hand column is 130px wide with a 1.5rem (24px)
+             gap between them, so N complete columns occupy
+             N*(130+24) = N*154px before the next slot begins. -->
+        <div class="feedback-area" style="position: absolute; left: @(_hands.Count * 154)px; top: 36px; max-width: 320px; font-size: 0.85rem;">
+            <div style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</div>
+            @if (_mistakesText.Length > 0)
+            {
+                <div style="white-space: pre-line; margin-top: 0.25rem;">@_mistakesText</div>
+            }
+            @if (_handRankLines.Count > 0)
+            {
+                <div style="margin-top: 0.25rem;">
+                    @foreach ((string text, string color) in _handRankLines)
+                    {
+                        <p style="margin: 0; font-weight: bold; color: @color;">@text</p>
+                    }
+                </div>
+            }
+            <p style="margin: 0.25rem 0 0 0;">@_scoreText</p>
+        </div>
         </div>
     </div>
 }
@@ -128,6 +201,8 @@ else
 
 @code {
     private const int CommunityCount = 5;
+
+    private enum TrainerMode { IdentifyHands, SettleBets }
 
     private static readonly string[] RankComboItems =
     {
@@ -148,12 +223,18 @@ else
     {
         public Card Card1 = null!;
         public Card Card2 = null!;
-        public int SelectedRankIndex; // 0 = unselected, 1-10 matches HandRank
+        public int SelectedRankIndex; // Identify the Hands mode: 0 = unselected, 1-10 matches HandRank
         public bool Wrong;
+
+        public WagerOutcome? WagerSelection; // Settle the Bets mode: this hand's Win/Lose/Push call against the dealer
+        public bool WagerWrong;
     }
 
     private bool _started;
     private int _handCount = 6;
+    private int _handCountIdentify = 6;
+    private int _handCountSettleBets = 4;
+    private TrainerMode _mode = TrainerMode.IdentifyHands;
 
     private Deck _deck = new();
     private readonly Card?[] _community = new Card?[CommunityCount];
@@ -168,13 +249,30 @@ else
     private string _resultText = string.Empty;
     private bool _isCorrect;
     private string _mistakesText = string.Empty;
+
+    // Settle the Bets mode: each hand's actual poker rank, shown
+    // regardless of whether the round overall was correct or not --
+    // dark blue if that hand's own wager call was correct, red if
+    // wrong (including every hand when the dealer declaration itself
+    // was invalid, since that marks every hand wrong).
+    private readonly List<(string Text, string Color)> _handRankLines = new();
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
     private bool _showHandRankings;
 
+    // Settle the Bets mode state only.
+    private Card? _dealerCard1;
+    private Card? _dealerCard2;
+    private bool _dealerCard1Rotated;
+    private bool _dealerCard2Rotated;
+    private readonly bool[] _communityRotated = new bool[CommunityCount];
+    private bool _dealerExclusionWrong;
+
     private void StartGame()
     {
-        _handCount = Math.Clamp(_handCount, 1, 6);
+        _handCount = _mode == TrainerMode.IdentifyHands
+            ? Math.Clamp(_handCountIdentify, 1, 6)
+            : Math.Clamp(_handCountSettleBets, 1, 4);
         _started = true;
         _correctCount = 0;
         _totalRounds = 0;
@@ -206,15 +304,59 @@ else
             });
         }
 
+        Array.Clear(_communityRotated);
+        _dealerCard1Rotated = false;
+        _dealerCard2Rotated = false;
+        _dealerExclusionWrong = false;
+
+        if (_mode == TrainerMode.SettleBets)
+        {
+            // Dealt immediately -- this mode has no prerequisite step,
+            // unlike an earlier version of this feature.
+            _dealerCard1 = _deck.Draw();
+            _dealerCard2 = _deck.Draw();
+
+            foreach (HandState hand in _hands)
+            {
+                hand.WagerSelection = null;
+                hand.WagerWrong = false;
+            }
+        }
+        else
+        {
+            _dealerCard1 = null;
+            _dealerCard2 = null;
+        }
+
         _resultText = string.Empty;
         _mistakesText = string.Empty;
+        _handRankLines.Clear();
         _roundScored = false;
         _submitEnabled = true;
     }
 
     private void DealAgain() => DealNewRound();
 
+    private void ToggleCommunityRotation(int index)
+    {
+        if (_mode != TrainerMode.SettleBets) return;
+        _communityRotated[index] = !_communityRotated[index];
+        _dealerExclusionWrong = false;
+    }
+
     private void SubmitRound()
+    {
+        if (_mode == TrainerMode.SettleBets)
+        {
+            SubmitSettleBets();
+        }
+        else
+        {
+            SubmitIdentifyHands();
+        }
+    }
+
+    private void SubmitIdentifyHands()
     {
         // Require every hand to have a real selection first.
         foreach (HandState hand in _hands)
@@ -254,6 +396,8 @@ else
                 allCorrect = false;
                 mistakes.AppendLine($"Hand {h + 1}: {HandEvaluator.HandRankName(actualRank)}");
             }
+
+            _handRankLines.Add(($"Hand {h + 1}: {HandEvaluator.HandRankName(actualRank)}", hand.Wrong ? "red" : "darkblue"));
         }
 
         _totalRounds++;
@@ -269,8 +413,135 @@ else
         {
             _isCorrect = false;
             _resultText = "INCORRECT";
-            _mistakesText = mistakes.ToString();
+            _mistakesText = "What each hand actually was:\n" + mistakes.ToString();
         }
+
+        string pct = _totalRounds > 0
+            ? ((double)_correctCount / _totalRounds).ToString("0.0%")
+            : "0.0%";
+        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
+
+        _roundScored = true;
+        _submitEnabled = false;
+        _dealEnabled = true;
+    }
+
+    private void SubmitSettleBets()
+    {
+        foreach (HandState hand in _hands)
+        {
+            if (hand.WagerSelection is null)
+            {
+                _resultText = "Tap every hand's outcome before submitting.";
+                _isCorrect = false;
+                return;
+            }
+        }
+
+        if (_roundScored) return;
+
+        // Full 7-card dealer pool (2 hole + 5 community), regardless of
+        // rotation -- used only to determine the TRUE highest possible
+        // rank, for validating the declaration below.
+        List<Card> dealerFullPool = new()
+        {
+            _dealerCard1!, _dealerCard2!,
+            _community[0]!, _community[1]!, _community[2]!, _community[3]!, _community[4]!
+        };
+        HandRank trueBestRank = HandEvaluator.BestHandRank(dealerFullPool);
+
+        // The dealer's DECLARED hand is whichever 5 of the 7 cards were
+        // left un-rotated. Rotating a card marks it excluded from the
+        // DEALER's hand specifically -- a rotated community card
+        // remains fully valid for every player's own hand, which
+        // always uses all 5 community cards regardless of what the
+        // dealer declaration excludes.
+        List<Card> dealerDeclaredHand = new();
+        if (!_dealerCard1Rotated) dealerDeclaredHand.Add(_dealerCard1!);
+        if (!_dealerCard2Rotated) dealerDeclaredHand.Add(_dealerCard2!);
+        for (int i = 0; i < CommunityCount; i++)
+            if (!_communityRotated[i]) dealerDeclaredHand.Add(_community[i]!);
+
+        // Valid only if exactly 5 cards were left un-rotated AND those
+        // 5 actually achieve the true best-possible rank -- not
+        // compared against one "canonical" designated answer, so any
+        // valid combination that reaches the correct rank counts (a
+        // genuine tie, e.g. a straight flush entirely on the board,
+        // naturally has more than one way to declare it correctly).
+        bool declarationValid = dealerDeclaredHand.Count == 5
+            && HandEvaluator.BestHandRank(dealerDeclaredHand) == trueBestRank;
+
+        _dealerExclusionWrong = !declarationValid;
+
+        bool allCorrect;
+        System.Text.StringBuilder mistakes = new();
+
+        if (!declarationValid)
+        {
+            // An invalid dealer-hand declaration invalidates every
+            // wager call this round, regardless of what was tapped for
+            // each hand -- there is no valid dealer hand to grade them
+            // against.
+            allCorrect = false;
+            mistakes.AppendLine($"Dealer's hand was not set correctly. Highest possible: {HandEvaluator.HandRankName(trueBestRank)}");
+
+            foreach (HandState hand in _hands)
+            {
+                hand.WagerWrong = true;
+            }
+        }
+        else
+        {
+            long dealerScore = HandEvaluator.HandScore(dealerDeclaredHand);
+            allCorrect = true;
+
+            for (int h = 0; h < _hands.Count; h++)
+            {
+                HandState hand = _hands[h];
+                Card[] sevenCards =
+                {
+                    hand.Card1, hand.Card2,
+                    _community[0]!, _community[1]!, _community[2]!, _community[3]!, _community[4]!
+                };
+
+                long playerScore = HandEvaluator.HandScore(HandEvaluator.BestFiveCards(sevenCards));
+
+                WagerOutcome actualOutcome = playerScore > dealerScore ? WagerOutcome.Win
+                    : playerScore < dealerScore ? WagerOutcome.Lose
+                    : WagerOutcome.Push;
+
+                if (hand.WagerSelection == actualOutcome)
+                {
+                    hand.WagerWrong = false;
+                }
+                else
+                {
+                    hand.WagerWrong = true;
+                    allCorrect = false;
+                    mistakes.AppendLine($"Hand {h + 1}: actually a {actualOutcome}");
+                }
+            }
+        }
+
+        for (int h = 0; h < _hands.Count; h++)
+        {
+            HandState hand = _hands[h];
+            Card[] sevenCards =
+            {
+                hand.Card1, hand.Card2,
+                _community[0]!, _community[1]!, _community[2]!, _community[3]!, _community[4]!
+            };
+            HandRank handRank = HandEvaluator.BestHandRank(sevenCards);
+            _handRankLines.Add(($"Hand {h + 1}: {HandEvaluator.HandRankName(handRank)}", hand.WagerWrong ? "red" : "darkblue"));
+        }
+        _handRankLines.Insert(0, ($"Dealer: {HandEvaluator.HandRankName(trueBestRank)}", _dealerExclusionWrong ? "red" : "darkblue"));
+
+        _totalRounds++;
+        if (allCorrect) _correctCount++;
+
+        _isCorrect = allCorrect;
+        _resultText = allCorrect ? "CORRECT" : "INCORRECT";
+        _mistakesText = mistakes.ToString();
 
         string pct = _totalRounds > 0
             ? ((double)_correctCount / _totalRounds).ToString("0.0%")

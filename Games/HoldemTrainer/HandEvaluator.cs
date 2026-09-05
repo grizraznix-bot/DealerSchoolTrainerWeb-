@@ -124,4 +124,149 @@ public static class HandEvaluator
 
         return bestHigh;
     }
+
+    /// <summary>
+    /// Full comparable strength score for an exactly-5-card hand
+    /// (category + kicker tie-breaks), encoded as a single long for
+    /// direct comparison. BestHandRank only returns the category,
+    /// which was sufficient for the original "classify this hand"
+    /// task -- the player-vs-dealer wager comparison (Advanced mode)
+    /// genuinely needs to know which of two same-category hands is
+    /// actually stronger, so this is new, separate logic.
+    /// </summary>
+    public static long HandScore(IReadOnlyList<Card> fiveCards)
+    {
+        HandRank category = BestHandRank(fiveCards);
+        List<int> ranks = fiveCards.Select(c => (int)c.Rank).ToList();
+
+        List<int> kickerOrder;
+        if (category is HandRank.Straight or HandRank.StraightFlush or HandRank.RoyalFlush)
+        {
+            // Straights (including straight flush) compare purely by
+            // high card -- the wheel (A-2-3-4-5) counts its high card
+            // as 5, not 14.
+            int high = HighestStraight(ranks);
+            kickerOrder = new List<int> { high, 0, 0, 0, 0 };
+        }
+        else
+        {
+            Dictionary<int, int> counts = new();
+            foreach (int r in ranks) counts[r] = counts.GetValueOrDefault(r) + 1;
+
+            // Same "group by count first, then rank" convention already
+            // used elsewhere in this project (Three Card Prime, Pai Gow
+            // display sorting) for ordering pairs/trips ahead of kickers.
+            kickerOrder = ranks.Distinct()
+                .OrderByDescending(r => counts[r])
+                .ThenByDescending(r => r)
+                .ToList();
+            while (kickerOrder.Count < 5) kickerOrder.Add(0);
+        }
+
+        long score = (long)category * 100_000_000L;
+        long placeValue = 1_000_000L;
+        foreach (int k in kickerOrder.Take(5))
+        {
+            score += (long)k * placeValue;
+            placeValue /= 100L;
+        }
+
+        return score;
+    }
+
+    /// <summary>
+    /// Determines which of the dealer's 7 cards (2 hole + 5 community)
+    /// should be excluded to form their actual best 5-card hand,
+    /// preferring to exclude BOTH hole cards ("plays the board") when
+    /// the community cards alone already tie the best achievable
+    /// category, then preferring to exclude just ONE hole card over
+    /// using both when that ties the full 7-card best. Category-level
+    /// comparison only (matching BestHandRank's own established
+    /// simplification, no kicker tie-breaking here) -- a genuine tie
+    /// (e.g. a straight flush entirely on the board) is treated as
+    /// exactly one correct declaration, not several equally-valid ones.
+    /// </summary>
+    public static (bool ExcludeHole1, bool ExcludeHole2, bool[] ExcludeCommunity) BestDealerExclusion(
+        Card hole1, Card hole2, IReadOnlyList<Card> community)
+    {
+        HandRank communityOnlyRank = BestHandRank(community);
+        List<Card> fullPool = new List<Card> { hole1, hole2 }.Concat(community).ToList();
+        HandRank fullRank = BestHandRank(fullPool);
+
+        if (communityOnlyRank >= fullRank)
+        {
+            return (true, true, new bool[5]);
+        }
+
+        List<Card> pool1 = new List<Card> { hole1 }.Concat(community).ToList(); // index 0 = hole1, 1-5 = community
+        List<Card> pool2 = new List<Card> { hole2 }.Concat(community).ToList();
+        HandRank withHole1 = BestHandRank(pool1);
+        HandRank withHole2 = BestHandRank(pool2);
+
+        if (withHole1 >= fullRank || withHole2 >= fullRank)
+        {
+            bool useHole1 = withHole1 >= fullRank;
+            List<Card> chosenPool = useHole1 ? pool1 : pool2;
+            List<int> bestIndices = FindBestFiveIndices(chosenPool);
+
+            bool[] excludeCommunity = new bool[5];
+            for (int communityIdx = 0; communityIdx < 5; communityIdx++)
+            {
+                excludeCommunity[communityIdx] = !bestIndices.Contains(communityIdx + 1);
+            }
+
+            return useHole1 ? (false, true, excludeCommunity) : (true, false, excludeCommunity);
+        }
+
+        // Both hole cards genuinely needed -- find the true best-5-of-7.
+        List<int> bestFullIndices = FindBestFiveIndices(fullPool); // index 0=hole1, 1=hole2, 2-6=community
+
+        bool[] excludeCommunityFull = new bool[5];
+        for (int communityIdx = 0; communityIdx < 5; communityIdx++)
+        {
+            excludeCommunityFull[communityIdx] = !bestFullIndices.Contains(communityIdx + 2);
+        }
+
+        return (false, false, excludeCommunityFull);
+    }
+
+    /// <summary>Indices (within pool) of the 5 cards forming the best possible hand -- ties broken by whichever qualifying combination is enumerated first, since only the category is compared, matching this file's established no-kicker-tiebreak convention for anything other than direct HandScore comparisons.</summary>
+    /// <summary>The actual 5 cards (not indices) forming the best possible hand from an arbitrary pool -- used to get a player's best 5-of-7 for HandScore comparison against the dealer in Advanced mode.</summary>
+    public static List<Card> BestFiveCards(IReadOnlyList<Card> pool) =>
+        FindBestFiveIndices(pool).Select(i => pool[i]).ToList();
+
+    private static List<int> FindBestFiveIndices(IReadOnlyList<Card> pool)
+    {
+        List<int> bestCombo = null!;
+        HandRank bestRank = 0;
+
+        foreach (int[] combo in Combinations(pool.Count, 5))
+        {
+            List<Card> fiveCards = combo.Select(i => pool[i]).ToList();
+            HandRank rank = BestHandRank(fiveCards);
+            if (rank > bestRank)
+            {
+                bestRank = rank;
+                bestCombo = combo.ToList();
+            }
+        }
+
+        return bestCombo;
+    }
+
+    private static IEnumerable<int[]> Combinations(int n, int k)
+    {
+        int[] indices = Enumerable.Range(0, k).ToArray();
+        while (true)
+        {
+            yield return (int[])indices.Clone();
+
+            int i = k - 1;
+            while (i >= 0 && indices[i] == n - k + i) i--;
+            if (i < 0) yield break;
+
+            indices[i]++;
+            for (int j = i + 1; j < k; j++) indices[j] = indices[j - 1] + 1;
+        }
+    }
 }

@@ -349,3 +349,20 @@ h1:focus {
     box-shadow: none;
     border: none;
 }
+
+/* Combined start screens (Blackjack, Pai Gow, Heads-Up Hold'em) --
+   each mode's radio label gets a larger, bold title, and each mode's
+   whole block (radio + description + options) sits in its own
+   bordered card so multiple modes on one start screen read as
+   clearly separate choices rather than blurring together. */
+.mode-title {
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+
+.mode-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
