@@ -235,18 +235,25 @@ public static class HandEvaluator
     public static List<Card> BestFiveCards(IReadOnlyList<Card> pool) =>
         FindBestFiveIndices(pool).Select(i => pool[i]).ToList();
 
+    // Compares by full HandScore (category + kickers), not just
+    // category -- comparing by category alone was a real bug: once
+    // ANY 5-card combination matching the best category was found,
+    // it would never be replaced by a different combination of that
+    // SAME category with better kickers, even though this method's
+    // result (via BestFiveCards) is used for player-vs-dealer wager
+    // grading, where kickers genuinely decide Win/Lose/Push.
     private static List<int> FindBestFiveIndices(IReadOnlyList<Card> pool)
     {
         List<int> bestCombo = null!;
-        HandRank bestRank = 0;
+        long bestScore = -1;
 
         foreach (int[] combo in Combinations(pool.Count, 5))
         {
             List<Card> fiveCards = combo.Select(i => pool[i]).ToList();
-            HandRank rank = BestHandRank(fiveCards);
-            if (rank > bestRank)
+            long score = HandScore(fiveCards);
+            if (score > bestScore)
             {
-                bestRank = rank;
+                bestScore = score;
                 bestCombo = combo.ToList();
             }
         }

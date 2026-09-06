@@ -245,9 +245,14 @@ else
                 Pai Gow Insurance
             </WagerShape>
 
-            <div class="wager-shape wager-circle @(_sbFoulFlagged ? "foul-flagged" : "") @(_sbRoundScored && _sbFoulWrong ? "wager-wrong wager-shaded-wrong" : "")"
-                 @onclick="SbToggleFoul">
-                Foul
+            <div class="wager-shape" @onclick="SbToggleFoul">
+                <svg viewBox="0 0 90 90" class="wager-triangle-svg">
+                    <polygon points="45,5 85,80 5,80"
+                             fill="@(_sbRoundScored && _sbFoulWrong ? "#f8d0d0" : (_sbFoulFlagged ? "#f8c888" : "white"))"
+                             stroke="@(_sbRoundScored && _sbFoulWrong ? "black" : "#999")"
+                             stroke-width="@(_sbRoundScored && _sbFoulWrong ? 3 : 1)" />
+                </svg>
+                <span class="wager-label">Foul</span>
             </div>
 
             <div style="margin-left: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;">

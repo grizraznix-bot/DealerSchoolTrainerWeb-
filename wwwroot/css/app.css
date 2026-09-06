@@ -236,11 +236,25 @@ code {
     background-color: #f8d0d0;
 }
 
-/* Pai Gow - Settling Bets: persistent fill while the Foul circle is
-   flagged (not a hover state, not a pill -- Foul is a simple
-   declare/undeclare toggle, not a Win/Lose/Push cycle). */
-.foul-flagged {
-    background-color: #a8c8f0;
+/* Pai Gow - Settling Bets: the Foul triangle's fill/stroke are set
+   directly on the SVG polygon (conditional on flagged/wrong state),
+   matching how the diamond shapes already handle their own wrong-
+   state -- an SVG-based shape doesn't have a meaningful CSS
+   background/border of its own the way a plain circle div does. */
+.wager-triangle-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 90px;
+    height: 90px;
+}
+
+.wager-triangle-svg polygon {
+    transition: fill 0.1s ease;
+}
+
+.wager-shape:hover .wager-triangle-svg polygon {
+    fill: #f8c888;
 }
 
 .wager-diamond-svg {

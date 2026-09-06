@@ -9,7 +9,23 @@
 {
     <div class="start-screen">
         <h1>THREE CARD PRIME</h1>
-        <p>Settle the outcome of each wager by tapping each wager to cycle Win / Lose / Push, then Submit.</p>
+
+        <!-- No actual mode choice here (unlike Blackjack/Pai Gow/Hold'em,
+             which combine multiple trainers) -- styled to match those
+             combined start screens anyway for visual consistency across
+             the app, including a pre-checked radio with nothing else to
+             switch to. -->
+        <div style="margin-top: 1rem;">
+            <div class="mode-card">
+                <label class="mode-title" style="display: block;">
+                    <input type="radio" name="mode" checked="checked" />
+                    Three Card Prime
+                </label>
+                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
+                    Settle the outcome of each wager by tapping each wager to cycle Win / Lose / Push, then Submit.
+                </p>
+            </div>
+        </div>
 
         <div style="margin-top: 1rem;">
             <button class="btn btn-primary" @onclick="StartGame">Start</button>
