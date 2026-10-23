@@ -441,6 +441,54 @@ h1:focus {
     gap: 1.5rem;
 }
 
+/* Blackjack page: answer input row, Side Wagers hands and footer.
+   Desktop values match the old inline styles exactly. */
+.answer-row {
+    align-items: center;
+}
+
+.sw-hands {
+    display: flex;
+    gap: 1.5rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+}
+
+.sw-hand {
+    text-align: center;
+}
+
+.sw-dealer-card {
+    width: 100px;
+    height: 140px;
+}
+
+/* Phone-only copy of the dealer card above the hands */
+.sw-dealer-top {
+    display: none;
+}
+
+.sw-footer {
+    width: 900px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    column-gap: 1.5rem;
+}
+
+.sw-footer-buttons {
+    justify-self: end;
+}
+
+.sw-dealer-top h3 {
+    margin: 0 0 0.25rem 0;
+}
+
+.content .sw-footer-feedback {
+    min-height: 0;
+    justify-self: start;
+}
+
 /* Mobile top bar and menu backdrop -- hidden on desktop */
 .mobile-topbar,
 .menu-backdrop {
@@ -478,6 +526,16 @@ label,
 
     .sidebar a {
         padding: 0.75rem;
+    }
+
+    /* 16px minimum stops iPhones from zooming the whole page in
+       when a text box is tapped */
+    .content input[type=text],
+    .content input[type=number] {
+        font-size: 16px;
+        min-height: 44px;
+        box-sizing: border-box;
+        padding: 0 0.5rem;
     }
 
     .content input[type=checkbox],
@@ -622,6 +680,53 @@ label,
        the centered Ante diamond */
     .tcp-wagers {
         padding-bottom: 0.5rem;
+    }
+
+    /* Answer box shares its row with Submit and 123 instead of
+       pushing them onto a second line */
+    .answer-row {
+        flex-wrap: nowrap;
+    }
+
+    .answer-row input {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 8rem;
+    }
+
+    /* Blackjack - Side Wagers: dealer card moves to the top, hands sit
+       two across, and the footer stacks instead of a fixed 900px row */
+    .sw-dealer-top {
+        display: block;
+        text-align: center;
+        margin: 1rem 0 0.5rem 0;
+    }
+
+    .sw-hands {
+        justify-content: center;
+        column-gap: 1rem;
+        row-gap: 1.25rem;
+    }
+
+    .sw-footer {
+        width: auto;
+        grid-template-columns: 1fr;
+        row-gap: 0.75rem;
+    }
+
+    .sw-footer-dealer {
+        display: none;
+    }
+
+    .sw-footer-feedback {
+        order: -1;
+    }
+
+    .sw-footer-buttons {
+        justify-self: start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
     }
 
     .session-summary {
