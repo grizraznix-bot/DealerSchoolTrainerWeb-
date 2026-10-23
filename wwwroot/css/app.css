@@ -150,9 +150,15 @@ code {
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.sidebar a:hover {
-    background: #eef3fa;
-    border-color: #b8d0ec;
+/* Hover effects are limited to devices with a real mouse pointer.
+   On phones, a tap triggers :hover and it then "sticks" until the
+   user taps somewhere else -- which would leave a wager shape or menu
+   link looking highlighted after it was tapped. */
+@media (hover: hover) {
+    .sidebar a:hover {
+        background: #eef3fa;
+        border-color: #b8d0ec;
+    }
 }
 
 .sidebar a.active {
@@ -204,16 +210,26 @@ code {
    both the shared WagerShape component (Side Wagers) and Three Card
    Prime's own local copy of this same markup use this identical base
    class. */
-.wager-circle:hover {
-    background-color: #d0e0f8;
+@media (hover: hover) {
+    .wager-circle:hover {
+        background-color: #d0e0f8;
+    }
+
+    .wager-shape:hover .wager-diamond-svg polygon {
+        fill: #d0e0f8;
+    }
+
+    .wager-shape:hover .wager-triangle-svg polygon {
+        fill: #f8c888;
+    }
+
+    .pai-gow-card:hover {
+        outline: 3px solid #333;
+    }
 }
 
 .wager-diamond-svg polygon {
     transition: fill 0.1s ease;
-}
-
-.wager-shape:hover .wager-diamond-svg polygon {
-    fill: #d0e0f8;
 }
 
 .wager-circle {
@@ -253,10 +269,6 @@ code {
     transition: fill 0.1s ease;
 }
 
-.wager-shape:hover .wager-triangle-svg polygon {
-    fill: #f8c888;
-}
-
 .wager-diamond-svg {
     position: absolute;
     top: 0;
@@ -292,9 +304,7 @@ code {
    rather than border/border-width, since outline never consumes
    layout space -- a hover-only border would otherwise shift the
    card's position by its own width the instant the mouse arrives. */
-.pai-gow-card:hover {
-    outline: 3px solid #333;
-}
+/* (hover rule lives in the @media (hover: hover) block above) */
 
 /* Shared across all six games -- was previously duplicated as inline
    styles on each page individually. */
@@ -379,4 +389,242 @@ h1:focus {
     border-radius: 6px;
     padding: 1rem;
     margin-bottom: 1rem;
+}
+/* ------------------------------------------------------------------
+   Shared layout helpers (used by Home and Three Card Prime so far).
+   These reproduce the exact desktop look the old inline styles had;
+   the difference is that classes can be adjusted by the mobile media
+   query below, while inline styles can't.
+   ------------------------------------------------------------------ */
+.card-row {
+    display: flex;
+    gap: 8px;
+}
+
+.home-cards {
+    margin-top: 1.5rem;
+}
+
+.home-card {
+    width: 100px;
+    height: 140px;
+}
+
+.game-card {
+    width: 90px;
+    height: 126px;
+}
+
+.button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Three Card Prime table: hands on the left, wager column on the right */
+.tcp-table {
+    display: flex;
+    gap: 2rem;
+    margin: 1rem 0;
+    align-items: flex-start;
+}
+
+.tcp-wagers {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.tcp-wager-pair {
+    display: flex;
+    gap: 1.5rem;
+}
+
+/* Mobile top bar and menu backdrop -- hidden on desktop */
+.mobile-topbar,
+.menu-backdrop {
+    display: none;
+}
+
+/* Taps on buttons and wager shapes respond immediately, and rapid
+   repeat taps (cycling a wager Win > Lose > Push) don't get treated
+   as a double-tap zoom. No effect with a mouse. */
+button,
+a,
+label,
+.wager-shape,
+.pai-gow-card {
+    touch-action: manipulation;
+}
+
+.wager-shape {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Larger tap targets on touch screens (finger rather than mouse).
+   44px is the commonly used minimum for comfortable tapping. */
+@media (pointer: coarse) {
+    .content button {
+        min-height: 44px;
+        padding: 0.4rem 0.9rem;
+        font-size: 1rem;
+    }
+
+    /* Keypad keys are already a fixed 44px square */
+    .content .numeric-keypad-row button {
+        padding: 0;
+    }
+
+    .sidebar a {
+        padding: 0.75rem;
+    }
+
+    .content input[type=checkbox],
+    .content input[type=radio] {
+        width: 1.25rem;
+        height: 1.25rem;
+        vertical-align: middle;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Mobile layout (phones, and tablets in portrait): 768px and narrower
+   ------------------------------------------------------------------ */
+@media (max-width: 768px) {
+    .page-layout {
+        display: block;
+    }
+
+    .mobile-topbar {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: sticky;
+        top: 0;
+        z-index: 950;
+        height: 52px;
+        padding: 0 0.75rem;
+        background-color: #f4f4f4;
+        border-bottom: 1px solid #ddd;
+        box-sizing: border-box;
+    }
+
+    .mobile-title {
+        font-weight: bold;
+        font-size: 1.05rem;
+    }
+
+    .menu-toggle {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 5px;
+        width: 44px;
+        height: 44px;
+        padding: 0 10px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .menu-toggle-bar {
+        display: block;
+        height: 2px;
+        background-color: #333;
+        border-radius: 1px;
+    }
+
+    /* Sidebar becomes a slide-in drawer under the top bar */
+    .sidebar {
+        position: fixed;
+        top: 52px;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        max-width: 85vw;
+        z-index: 940;
+        overflow-y: auto;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+        border-right: 1px solid #ddd;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Title already shows in the top bar */
+    .sidebar h2 {
+        display: none;
+    }
+
+    .sidebar h3:first-of-type {
+        margin-top: 0.5rem;
+    }
+
+    .menu-backdrop {
+        display: block;
+        position: fixed;
+        top: 52px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 930;
+        background-color: rgba(0, 0, 0, 0.35);
+    }
+
+    .content {
+        padding: 1rem;
+    }
+
+    .content h1 {
+        font-size: 1.6rem;
+    }
+
+    /* Card rows shrink to fit instead of running off the screen.
+       aspect-ratio keeps the same proportions the desktop size uses. */
+    .card-row {
+        flex-wrap: wrap;
+    }
+
+    .home-card {
+        width: calc((100% - 32px) / 5);
+        max-width: 100px;
+        height: auto;
+        aspect-ratio: 100 / 140;
+    }
+
+    .game-card {
+        width: clamp(64px, 26vw, 90px);
+        height: auto;
+        aspect-ratio: 90 / 126;
+    }
+
+    /* Three Card Prime: wagers stack below the hands */
+    .tcp-table {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .tcp-hands {
+        text-align: center;
+    }
+
+    .tcp-hands .card-row {
+        justify-content: center;
+    }
+
+    /* Room for the Ante Bonus checkbox, which sits to the right of
+       the centered Ante diamond */
+    .tcp-wagers {
+        padding-bottom: 0.5rem;
+    }
+
+    .session-summary {
+        max-width: none;
+    }
 }
