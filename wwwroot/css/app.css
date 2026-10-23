@@ -571,6 +571,98 @@ h1:focus {
     font-size: 0.85rem;
 }
 
+/* Pai Gow - Hand Setting. Desktop values match the old inline styles. */
+.hs-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.hs-low-slot {
+    width: 100px;
+    height: 140px;
+    border: 1px solid #999;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.content .hs-feedback {
+    margin-left: 320px;
+    max-width: 550px;
+    margin-top: 1rem;
+    font-size: 0.75rem;
+}
+
+.hs-cards {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.hs-card {
+    width: 100px;
+    height: 140px;
+}
+
+.hs-buttons {
+    margin-top: 1rem;
+}
+
+/* Pai Gow - Settling Bets. Desktop values match the old inline styles;
+   .sb-player / .sb-dealer / .sb-wagers are plain wrappers on desktop
+   (sb-wagers uses display: contents so the wager row lays out exactly
+   as before). */
+.sb-screen > .button-row {
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.sb-hand-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.sb-card {
+    width: 90px;
+    height: 126px;
+}
+
+.content .sb-hand-labels {
+    margin-top: 1.25rem;
+}
+
+.sb-wager-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.sb-wagers {
+    display: contents;
+}
+
+.sb-actions {
+    margin-left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+}
+
+.content .sb-wins {
+    margin-left: 1.5rem;
+    min-height: 0;
+}
+
+.sb-push-note {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
 /* Mobile top bar and menu backdrop -- hidden on desktop */
 .mobile-topbar,
 .menu-backdrop {
@@ -965,6 +1057,151 @@ label,
         flex-wrap: wrap;
         gap: 4px;
         margin: 0.75rem 0 0 0;
+    }
+
+    /* Pai Gow - Hand Setting: one column -- Low hand, the 7 cards
+       wrapping 4 + 3, buttons, score, then the result */
+    .hs-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hs-top {
+        display: contents;
+    }
+
+    .hs-low { order: 1; }
+    .hs-cards-title { order: 2; margin-bottom: 0.5rem; }
+    .hs-cards { order: 3; }
+    .hs-buttons { order: 4; margin-top: 0; }
+    .hs-score { order: 5; }
+
+    .content .hs-feedback {
+        order: 6;
+        margin: 0;
+        max-width: none;
+        font-size: 0.9rem;
+    }
+
+    .hs-low-slot {
+        width: min(100px, calc((100vw - 2rem - 24px) / 4));
+        height: auto;
+        aspect-ratio: 100 / 140;
+    }
+
+    /* The 7 cards overlap in a single row, like a fanned hand. Each
+       card is the same width as a Low slot, and the left ~55% of every
+       card except the last stays visible -- the rank and suit corner,
+       and a strip wide enough to tap. Later cards sit on top of earlier
+       ones, so the visible strip is always the card being tapped. On
+       wider screens where all 7 fit side by side, the overlap
+       disappears and they space out normally (8px gap). */
+    .hs-cards {
+        --hs-row: calc(100vw - 2rem);
+        --hs-card-w: min(100px, calc(var(--hs-row) / 4.3));
+        flex-wrap: nowrap;
+        gap: 0;
+    }
+
+    /* position: relative keeps the cards stacked strictly left to
+       right. Without it, a card moved to Low (made invisible with
+       opacity: 0) jumps above its neighbor and blocks taps on the
+       next card's visible strip. */
+    .hs-card {
+        position: relative;
+        flex: none;
+        width: var(--hs-card-w);
+        height: auto;
+        aspect-ratio: 100 / 140;
+        background-color: white;
+    }
+
+    .hs-card + .hs-card {
+        margin-left: min(8px, calc((var(--hs-row) - var(--hs-card-w)) / 6 - var(--hs-card-w)));
+    }
+
+    /* Pai Gow - Settling Bets: player, dealer, push note, the four
+       wagers 2 x 2, buttons, then the results */
+    .sb-screen {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sb-player { order: 1; }
+    .sb-dealer { order: 2; }
+    .sb-push-note { order: 3; font-size: 0.9rem; margin: 0.75rem 0 0 0; }
+    .sb-wager-row { order: 4; }
+
+    .sb-player h3,
+    .sb-dealer h3 {
+        margin: 0.75rem 0 0.25rem 0;
+    }
+
+    .sb-hand-row {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .sb-card {
+        width: min(90px, calc((100vw - 2rem - 32px) / 5));
+        height: auto;
+        aspect-ratio: 90 / 126;
+    }
+
+    .content .sb-hand-labels {
+        margin-top: 0;
+        min-height: 0;
+    }
+
+    .sb-wager-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+
+    /* All four wagers on one row, slightly smaller, so the player and
+       dealer hands, wagers and Submit fit on one phone screen */
+    .sb-wagers {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .sb-wagers .wager-shape {
+        width: 78px;
+        height: 78px;
+        font-size: 0.72rem;
+    }
+
+    .sb-wagers .wager-circle {
+        width: 74px;
+        height: 74px;
+    }
+
+    .sb-wagers .wager-triangle-svg {
+        width: 78px;
+        height: 78px;
+    }
+
+    .sb-wagers .wager-label {
+        padding: 0 4px;
+    }
+
+    .sb-actions {
+        margin-left: 0;
+    }
+
+    .sb-actions > div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .content .sb-wins {
+        margin-left: 0;
     }
 
     .session-summary {

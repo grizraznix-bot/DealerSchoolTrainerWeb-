@@ -93,9 +93,14 @@
 }
 else if (_mode == PaiGowMode.HandSetting)
 {
-    <div class="play-screen">
-        <button @onclick="BackToStart">Back</button>
-        <button @onclick="() => _hsShowHouseWays = !_hsShowHouseWays">@(_hsShowHouseWays ? "Hide" : "Show") House Ways</button>
+    @* On phones (see app.css, "Pai Gow - Hand Setting") this screen
+       becomes one column: Low hand, the 7 cards (wrapping 4 + 3),
+       action buttons, score, then the result. *@
+    <div class="play-screen hs-screen">
+        <div class="button-row">
+            <button @onclick="BackToStart">Back</button>
+            <button @onclick="() => _hsShowHouseWays = !_hsShowHouseWays">@(_hsShowHouseWays ? "Hide" : "Show") House Ways</button>
+        </div>
 
         @if (_hsShowHouseWays)
         {
@@ -104,8 +109,8 @@ else if (_mode == PaiGowMode.HandSetting)
             </div>
         }
 
-        <div style="display: flex; align-items: flex-start; gap: 1rem;">
-            <div>
+        <div class="hs-top">
+            <div class="hs-low">
                 <h3 style="margin-top: 1rem;">Low Hand</h3>
                 <div style="display: flex; gap: 8px;">
                     @for (int slot = 1; slot <= 2; slot++)
@@ -114,8 +119,7 @@ else if (_mode == PaiGowMode.HandSetting)
                         int cardAtSlot = HsCardAtLowPosition(lowSlot);
 
                         <div @onclick="() => HsReturnLowSlotToHand(lowSlot)"
-                             class="pai-gow-card"
-                             style="width: 100px; height: 140px; border: 1px solid #999; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                             class="pai-gow-card hs-low-slot">
                             @if (cardAtSlot >= 0)
                             {
                                 <img src="images/cards/@(_hsCards[cardAtSlot].ImageCode).png" alt="@_hsCards[cardAtSlot].ImageCode" style="width: 100%; height: 100%;" />
@@ -125,7 +129,7 @@ else if (_mode == PaiGowMode.HandSetting)
                 </div>
             </div>
 
-            <div class="feedback-area" style="margin-left: 320px; max-width: 550px; margin-top: 1rem; font-size: 0.75rem;">
+            <div class="feedback-area hs-feedback">
                 @if (_hsErrorText.Length > 0)
                 {
                     <p style="color: red;">@_hsErrorText</p>
@@ -156,8 +160,8 @@ else if (_mode == PaiGowMode.HandSetting)
             </div>
         </div>
 
-        <h3>Your 7 Cards</h3>
-        <div style="display: flex; gap: 8px; margin-bottom: 1rem;">
+        <h3 class="hs-cards-title">Your 7 Cards</h3>
+        <div class="hs-cards">
             @for (int i = 0; i < _hsCards.Count; i++)
             {
                 int cardIndex = i;
@@ -165,14 +169,14 @@ else if (_mode == PaiGowMode.HandSetting)
 
                 <img src="images/cards/@(_hsCards[cardIndex].ImageCode).png" alt="@_hsCards[cardIndex].ImageCode"
                      @onclick="() => HsCardClicked(cardIndex)"
-                     class="pai-gow-card"
-                     style="width: 100px; height: 140px; cursor: pointer; @(inLow ? "opacity: 0;" : "")" />
+                     class="pai-gow-card hs-card"
+                     style="cursor: pointer; @(inLow ? "opacity: 0;" : "")" />
             }
         </div>
 
-        <p>@_hsScoreText</p>
+        <p class="hs-score">@_hsScoreText</p>
 
-        <div style="margin-top: 1rem;">
+        <div class="button-row hs-buttons">
             <button @onclick="HsSortHand" disabled="@(!_hsSortEnabled)">Sort</button>
             <button @onclick="HsSubmitHand" disabled="@(!_hsSubmitEnabled)">Submit</button>
             <button @onclick="HsDealAgain" disabled="@(!_hsDealEnabled)">Deal</button>
@@ -182,8 +186,12 @@ else if (_mode == PaiGowMode.HandSetting)
 }
 else
 {
-    <div class="play-screen">
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+    @* On phones (see app.css, "Pai Gow - Settling Bets") this screen
+       becomes one column: player hands, dealer hands, the Ace-High
+       push note, the four wagers (2 x 2), action buttons, then the
+       winning-wager results. *@
+    <div class="play-screen sb-screen">
+        <div class="button-row">
             <button @onclick="BackToStart">Back</button>
             <button @onclick="() => _sbShowWagerRules = !_sbShowWagerRules">@(_sbShowWagerRules ? "Hide" : "Show") Wager Rules</button>
         </div>
@@ -195,35 +203,38 @@ else
             </div>
         }
 
+        <div class="sb-player">
         <h3 style="margin-top: 1rem;">Player</h3>
-        <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+        <div class="sb-hand-row">
             <div>
                 <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
                 <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                     @foreach (PaiGowCard c in _sbPlayerHighSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
                     }
                 </div>
                 <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
                 <div style="display: flex; gap: 8px;">
                     @foreach (PaiGowCard c in _sbPlayerLowSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
                     }
                 </div>
             </div>
 
             @if (_sbRoundScored)
             {
-                <div class="feedback-area" style="margin-top: 1.25rem;">
+                <div class="feedback-area sb-hand-labels">
                     <p style="margin: 0;">High Hand: @_sbPlayerHighLabel</p>
                     <p style="margin: 0.25rem 0 0 0;">Low Hand: @_sbPlayerLowLabel</p>
                 </div>
             }
         </div>
+        </div>
 
-        <div style="display: flex; align-items: center; gap: 1.5rem; margin: 1.5rem 0;">
+        <div class="sb-wager-row">
+            <div class="sb-wagers">
             <WagerShape IsDiamond="false" AllowPush="false"
                         Selection="_sbEmperorsTreasure.Selection" SelectionChanged="v => _sbEmperorsTreasure.Selection = v"
                         Wrong="_sbEmperorsTreasure.Wrong" OnCycled="() => { _sbEmperorsTreasure.Wrong = false; SbResetFoul(); }"
@@ -254,8 +265,9 @@ else
                 </svg>
                 <span class="wager-label">Foul</span>
             </div>
+            </div>
 
-            <div style="margin-left: 1.5rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.35rem;">
+            <div class="sb-actions">
                 <p style="font-weight: bold; color: @(_sbIsCorrect ? "blue" : "red"); margin: 0;">@_sbResultText</p>
                 <div>
                     <button @onclick="SbSubmitRound" disabled="@(!_sbSubmitEnabled)">Submit</button>
@@ -267,7 +279,7 @@ else
 
             @if (_sbRoundScored && _sbWinningWagerLines.Count > 0)
             {
-                <div class="feedback-area" style="margin-left: 1.5rem; min-height: 0;">
+                <div class="feedback-area sb-wins">
                     @foreach ((string text, string color) in _sbWinningWagerLines)
                     {
                         <p style="margin: 0; font-weight: bold; color: @color;">@text</p>
@@ -276,34 +288,36 @@ else
             }
         </div>
 
-        <p style="font-weight: bold; font-size: 1.5rem;">All Hands Push with a Dealer Ace-High Pai Gow</p>
+        <p class="sb-push-note">All Hands Push with a Dealer Ace-High Pai Gow</p>
 
+        <div class="sb-dealer">
         <h3>Dealer</h3>
-        <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+        <div class="sb-hand-row">
             <div>
                 <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
                 <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                     @foreach (PaiGowCard c in _sbDealerLowSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
                     }
                 </div>
                 <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
                 <div style="display: flex; gap: 8px;">
                     @foreach (PaiGowCard c in _sbDealerHighSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" style="width: 90px; height: 126px;" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
                     }
                 </div>
             </div>
 
             @if (_sbRoundScored)
             {
-                <div class="feedback-area" style="margin-top: 1.25rem;">
+                <div class="feedback-area sb-hand-labels">
                     <p style="margin: 0;">Low Hand: @_sbDealerLowLabel</p>
                     <p style="margin: 0.25rem 0 0 0;">High Hand: @_sbDealerHighLabel</p>
                 </div>
             }
+        </div>
         </div>
     </div>
 }
