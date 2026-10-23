@@ -209,14 +209,26 @@ else
             <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Code" class="sw-dealer-card" />
         </div>
 
+        @* Phones only (hidden on desktop by CSS): one player hand is
+           shown at a time, so the dealer card stays on screen. Desktop
+           still shows every hand side by side. *@
+        @if (_swHands.Count > 1)
+        {
+            <div class="hand-pager">
+                <button @onclick="SwPreviousHand" disabled="@(_swCurrentHand <= 0)">Previous</button>
+                <span class="hand-pager-label">Player @(_swCurrentHand + 1) of @_swHands.Count</span>
+                <button @onclick="SwNextHand" disabled="@(_swCurrentHand >= _swHands.Count - 1)">Next Player</button>
+            </div>
+        }
+
         <div class="sw-hands">
             @for (int h = 0; h < _swHands.Count; h++)
             {
                 int handIndex = h;
                 SwHandState hand = _swHands[handIndex];
 
-                <div class="sw-hand">
-                    <div style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
+                <div class="sw-hand paged-hand @(handIndex == _swCurrentHand ? "paged-hand-current" : "")">
+                    <div class="paged-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
 
                     <div style="position: relative; width: 130px; height: 195px;">
                         <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
@@ -660,6 +672,7 @@ else
     private bool _swIsCorrect;
     private string _swScoreText = "Score: 0 / 0 (0.0%)";
     private bool _swShowWagerRules;
+    private int _swCurrentHand; // phone layout only: which player hand is showing
 
     private void SwStartGame()
     {
@@ -693,6 +706,17 @@ else
         _swResultText = string.Empty;
         _swRoundScored = false;
         _swSubmitEnabled = true;
+        _swCurrentHand = 0;
+    }
+
+    private void SwPreviousHand()
+    {
+        if (_swCurrentHand > 0) _swCurrentHand--;
+    }
+
+    private void SwNextHand()
+    {
+        if (_swCurrentHand < _swHands.Count - 1) _swCurrentHand++;
     }
 
     private void SwDealAgain()
@@ -710,12 +734,16 @@ else
 
     private void SwSubmitRound()
     {
-        foreach (SwHandState hand in _swHands)
+        // On phones, also jumps the pager to the first hand with a
+        // wager still untapped.
+        for (int h = 0; h < _swHands.Count; h++)
         {
+            SwHandState hand = _swHands[h];
             if (hand.LuckyLadiesSelection is null || hand.TwentyOnePlus3Selection is null)
             {
                 _swResultText = "Tap every wager to select an outcome before submitting.";
                 _swIsCorrect = false;
+                _swCurrentHand = h;
                 return;
             }
         }

@@ -555,8 +555,11 @@ h1:focus {
     margin: 1rem 0;
 }
 
-/* Phone-only player pager -- hidden on desktop */
-.hd-pager {
+/* Phone-only player pager -- hidden on desktop. hd-pager is
+   Hold'em's; hand-pager / paged-hand are the shared versions for the
+   other games (Blackjack Side Wagers so far). */
+.hd-pager,
+.hand-pager {
     display: none;
 }
 
@@ -798,8 +801,36 @@ label,
         display: none;
     }
 
+    /* Shared phone player pager: one hand at a time */
+    .hand-pager {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin: 0.75rem 0 0 0;
+    }
+
+    .hand-pager-label {
+        font-weight: bold;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .paged-hand {
+        display: none;
+    }
+
+    .paged-hand.paged-hand-current {
+        display: block;
+    }
+
+    .paged-hand-number {
+        display: none;
+    }
+
+    /* Submit / Deal right under the hand, then the result */
     .sw-footer-feedback {
-        order: -1;
+        margin-top: 0.25rem;
     }
 
     .sw-footer-buttons {
