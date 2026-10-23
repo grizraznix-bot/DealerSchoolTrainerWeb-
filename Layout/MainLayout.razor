@@ -1,7 +1,27 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject NavigationManager Nav
 
+@* Mobile: below 768px wide the sidebar is hidden off-screen and a top
+   bar with a menu button takes its place (see app.css, "Mobile layout").
+   On desktop the top bar and backdrop are hidden by CSS, so this layout
+   looks exactly as before. The menu closes itself on every navigation,
+   so tapping a game link both opens the game and gets the menu out of
+   the way. *@
 <div class="page-layout">
-    <nav class="sidebar">
+    <header class="mobile-topbar">
+        <button type="button" class="menu-toggle"
+                aria-label="@(_menuOpen ? "Close menu" : "Open menu")"
+                aria-expanded="@(_menuOpen ? "true" : "false")"
+                @onclick="ToggleMenu">
+            <span class="menu-toggle-bar"></span>
+            <span class="menu-toggle-bar"></span>
+            <span class="menu-toggle-bar"></span>
+        </button>
+        <span class="mobile-title">Dealer School Trainer</span>
+    </header>
+
+    <nav class="sidebar @(_menuOpen ? "open" : "")">
         <h2>Dealer School Trainer</h2>
         <ul>
             <li><NavLink href="" Match="NavLinkMatch.All">Home</NavLink></li>
@@ -20,7 +40,38 @@
         </ul>
     </nav>
 
+    @if (_menuOpen)
+    {
+        <div class="menu-backdrop" @onclick="CloseMenu"></div>
+    }
+
     <main class="content">
         @Body
     </main>
 </div>
+
+@code {
+    private bool _menuOpen;
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+
+    private void CloseMenu() => _menuOpen = false;
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (!_menuOpen) return;
+
+        _menuOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
+}

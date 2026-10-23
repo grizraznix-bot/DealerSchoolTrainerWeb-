@@ -90,13 +90,15 @@
 else if (_mode == BlackjackMode.FlashCards)
 {
     <div class="play-screen">
-        <button @onclick="BackToStart">Back</button>
+        <div class="button-row">
+            <button @onclick="BackToStart">Back</button>
+        </div>
 
-        <div class="card-row" style="margin: 1rem 0; display: flex; gap: 8px;">
+        <div class="card-row" style="margin: 1rem 0;">
             @for (int i = 0; i < _fcHand.Count; i++)
             {
                 var card = _fcHand.CardAt(i);
-                <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image" style="width: 90px; height: 126px;" />
+                <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image game-card" />
             }
         </div>
 
@@ -109,7 +111,7 @@ else if (_mode == BlackjackMode.FlashCards)
             <p style="font-style: italic; color: dimgray;">Remember: an Ace can count as 1 or 11.</p>
         }
 
-        <div style="margin: 1rem 0;">
+        <div class="button-row answer-row" style="margin: 1rem 0;">
             <input type="text"
                    inputmode="numeric"
                    @bind="_fcAnswerText"
@@ -133,7 +135,7 @@ else if (_mode == BlackjackMode.FlashCards)
 
         <p>Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
 
-        <div>
+        <div class="button-row">
             <button @onclick="FcStartNewRound" disabled="@(!_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">New Round</button>
             <button @onclick="EndSession">End Session</button>
         </div>
@@ -142,7 +144,9 @@ else if (_mode == BlackjackMode.FlashCards)
 else if (_mode == BlackjackMode.Payouts)
 {
     <div class="play-screen">
-        <button @onclick="BackToStart">Back</button>
+        <div class="button-row">
+            <button @onclick="BackToStart">Back</button>
+        </div>
 
         <div style="position: relative; width: 220px; height: 240px; margin: 1rem 0;">
             <img src="images/cards/AS.png" alt="AS" style="position: absolute; top: 0; left: 0; width: 130px; height: 182px;" />
@@ -153,7 +157,7 @@ else if (_mode == BlackjackMode.Payouts)
 
         <p>Wager: @PayoutWager.FormatCents(_poWagerCents)</p>
 
-        <div style="margin: 1rem 0;">
+        <div class="button-row answer-row" style="margin: 1rem 0;">
             <input type="text"
                    inputmode="decimal"
                    value="@_poAnswerText"
@@ -176,7 +180,7 @@ else if (_mode == BlackjackMode.Payouts)
             <p style="color: red;">@_poPromptDetailText</p>
         </div>
 
-        <div>
+        <div class="button-row">
             <button @onclick="PoStartNewRound" disabled="@(!_poNewRoundEnabled)" @ref="_poNewRoundButtonRef">New Round</button>
             <button @onclick="EndSession">End Session</button>
         </div>
@@ -185,8 +189,10 @@ else if (_mode == BlackjackMode.Payouts)
 else
 {
     <div class="play-screen">
-        <button @onclick="BackToStart">Back</button>
-        <button @onclick="() => _swShowWagerRules = !_swShowWagerRules">@(_swShowWagerRules ? "Hide" : "Show") Wager Rules</button>
+        <div class="button-row">
+            <button @onclick="BackToStart">Back</button>
+            <button @onclick="() => _swShowWagerRules = !_swShowWagerRules">@(_swShowWagerRules ? "Hide" : "Show") Wager Rules</button>
+        </div>
 
         @if (_swShowWagerRules)
         {
@@ -195,14 +201,34 @@ else
             </div>
         }
 
-        <div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
+        @* Phones only (hidden on desktop by CSS): the dealer's up-card is
+           repeated above the hands, so it stays in view while settling
+           21 + 3 rather than sitting below several rows of hands. *@
+        <div class="sw-dealer-top">
+            <h3>Dealer</h3>
+            <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Code" class="sw-dealer-card" />
+        </div>
+
+        @* Phones only (hidden on desktop by CSS): one player hand is
+           shown at a time, so the dealer card stays on screen. Desktop
+           still shows every hand side by side. *@
+        @if (_swHands.Count > 1)
+        {
+            <div class="hand-pager">
+                <button @onclick="SwPreviousHand" disabled="@(_swCurrentHand <= 0)">Previous</button>
+                <span class="hand-pager-label">Player @(_swCurrentHand + 1) of @_swHands.Count</span>
+                <button @onclick="SwNextHand" disabled="@(_swCurrentHand >= _swHands.Count - 1)">Next Player</button>
+            </div>
+        }
+
+        <div class="sw-hands">
             @for (int h = 0; h < _swHands.Count; h++)
             {
                 int handIndex = h;
                 SwHandState hand = _swHands[handIndex];
 
-                <div style="text-align: center;">
-                    <div style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
+                <div class="sw-hand paged-hand @(handIndex == _swCurrentHand ? "paged-hand-current" : "")">
+                    <div class="paged-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
 
                     <div style="position: relative; width: 130px; height: 195px;">
                         <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
@@ -232,19 +258,19 @@ else
             }
         </div>
 
-        <div style="width: 900px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; column-gap: 1.5rem;">
-            <div style="justify-self: end;">
+        <div class="sw-footer">
+            <div class="sw-footer-buttons">
                 <button @onclick="SwSubmitRound" disabled="@(!_swSubmitEnabled)">Submit</button>
                 <button @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Deal</button>
                 <button @onclick="EndSession">End Session</button>
             </div>
 
-            <div style="text-align: center;">
+            <div class="sw-footer-dealer">
                 <h3 style="color: black; margin: 0;">Dealer</h3>
-                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Code" style="width: 100px; height: 140px;" />
+                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Code" class="sw-dealer-card" />
             </div>
 
-            <div class="feedback-area" style="min-height: 0; justify-self: start;">
+            <div class="feedback-area sw-footer-feedback">
                 <p style="font-weight: bold; color: @(_swIsCorrect ? "blue" : "red"); margin: 0; height: 1.5rem;">@_swResultText</p>
                 <p style="margin: 0.25rem 0 0 0;">@_swScoreText</p>
             </div>
@@ -646,6 +672,7 @@ else
     private bool _swIsCorrect;
     private string _swScoreText = "Score: 0 / 0 (0.0%)";
     private bool _swShowWagerRules;
+    private int _swCurrentHand; // phone layout only: which player hand is showing
 
     private void SwStartGame()
     {
@@ -679,6 +706,17 @@ else
         _swResultText = string.Empty;
         _swRoundScored = false;
         _swSubmitEnabled = true;
+        _swCurrentHand = 0;
+    }
+
+    private void SwPreviousHand()
+    {
+        if (_swCurrentHand > 0) _swCurrentHand--;
+    }
+
+    private void SwNextHand()
+    {
+        if (_swCurrentHand < _swHands.Count - 1) _swCurrentHand++;
     }
 
     private void SwDealAgain()
@@ -696,12 +734,16 @@ else
 
     private void SwSubmitRound()
     {
-        foreach (SwHandState hand in _swHands)
+        // On phones, also jumps the pager to the first hand with a
+        // wager still untapped.
+        for (int h = 0; h < _swHands.Count; h++)
         {
+            SwHandState hand = _swHands[h];
             if (hand.LuckyLadiesSelection is null || hand.TwentyOnePlus3Selection is null)
             {
                 _swResultText = "Tap every wager to select an outcome before submitting.";
                 _swIsCorrect = false;
+                _swCurrentHand = h;
                 return;
             }
         }
