@@ -489,6 +489,85 @@ h1:focus {
     justify-self: start;
 }
 
+/* Heads-Up Hold'em play table. Desktop values match the old inline
+   styles exactly: fixed 900px table, community cards centered, and
+   the feedback block absolutely positioned at the next empty hand
+   slot (its left offset is passed in from the page as
+   --hd-feedback-left). */
+.hd-table {
+    width: 900px;
+    position: relative;
+}
+
+.hd-hands {
+    display: flex;
+    gap: 1.5rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+}
+
+.hd-hand {
+    text-align: center;
+}
+
+.hd-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hd-buttons {
+    margin-bottom: 0.5rem;
+}
+
+.hd-community-title {
+    margin: 0;
+}
+
+.hd-community {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    margin: 1rem 0;
+}
+
+/* Wider spacing leaves room for a card rotated to mark it unused */
+.hd-community.hd-community-settle {
+    gap: 3rem;
+}
+
+.hd-community-slot {
+    text-align: center;
+}
+
+.hd-card {
+    width: 100px;
+    height: 140px;
+}
+
+.hd-dealer-title {
+    margin: 1rem 0 0 0;
+}
+
+.hd-dealer {
+    display: flex;
+    gap: 3rem;
+    margin: 1rem 0;
+}
+
+/* Phone-only player pager -- hidden on desktop */
+.hd-pager {
+    display: none;
+}
+
+.content .hd-feedback {
+    position: absolute;
+    left: var(--hd-feedback-left, 0px);
+    top: 36px;
+    max-width: 320px;
+    font-size: 0.85rem;
+}
+
 /* Mobile top bar and menu backdrop -- hidden on desktop */
 .mobile-topbar,
 .menu-backdrop {
@@ -531,7 +610,8 @@ label,
     /* 16px minimum stops iPhones from zooming the whole page in
        when a text box is tapped */
     .content input[type=text],
-    .content input[type=number] {
+    .content input[type=number],
+    .content select {
         font-size: 16px;
         min-height: 44px;
         box-sizing: border-box;
@@ -727,6 +807,133 @@ label,
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
+    }
+
+    /* Heads-Up Hold'em: one column -- community cards, dealer cards,
+       player pager, the current hand, action buttons, then feedback.
+       display: contents lets the community/dealer/button pieces be
+       reordered individually alongside the hands and feedback. */
+    .hd-table {
+        width: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .hd-center {
+        display: contents;
+    }
+
+    .hd-community-title {
+        order: 1;
+        margin-top: 1rem;
+    }
+
+    .hd-community {
+        order: 2;
+        width: 100%;
+        max-width: 564px;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .hd-community.hd-community-settle {
+        gap: 18px;
+    }
+
+    .hd-community-slot {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 100px;
+    }
+
+    .hd-community .hd-card {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 100 / 140;
+    }
+
+    /* Smaller cards in Settle the Bets, so a card rotated to mark it
+       unused doesn't cover its neighbor */
+    .hd-community-settle .hd-community-slot {
+        max-width: 64px;
+    }
+
+    .hd-dealer-title {
+        order: 3;
+        margin-top: 0.5rem;
+    }
+
+    .hd-dealer {
+        order: 4;
+        gap: 2.5rem;
+    }
+
+    .hd-dealer .hd-card {
+        width: 80px;
+        height: 112px;
+    }
+
+    /* One player hand at a time, with Previous / Next Player */
+    .hd-pager {
+        order: 5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.25rem;
+    }
+
+    .hd-pager-label {
+        font-weight: bold;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .hd-hands {
+        order: 6;
+        width: 100%;
+        justify-content: center;
+        margin: 0.75rem 0 0.5rem 0;
+    }
+
+    .hd-hand {
+        display: none;
+    }
+
+    .hd-hand.hd-hand-current {
+        display: block;
+    }
+
+    /* The pager banner already says which player this is */
+    .hd-hand-number {
+        display: none;
+    }
+
+    .content .hd-feedback {
+        order: 8;
+        margin-top: 0.75rem;
+        position: static;
+        align-self: stretch;
+        max-width: none;
+        font-size: 0.95rem;
+        min-height: 0;
+    }
+
+    .hd-feedback p {
+        white-space: normal !important;
+    }
+
+    /* Submit / Deal sit right under the hand, ahead of the feedback,
+       so they're reachable without scrolling past the results */
+    .hd-buttons {
+        order: 7;
+        align-self: flex-start;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin: 0.75rem 0 0 0;
     }
 
     .session-summary {
