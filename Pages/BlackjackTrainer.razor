@@ -3,6 +3,9 @@
 @using DealerSchoolTrainerWeb.Games.FlashCardTrainer
 @using DealerSchoolTrainerWeb.Games.PayoutTrainer
 @using DealerSchoolTrainerWeb.Games.SideWagerTrainer
+@implements IDisposable
+@inject GameResetService GameReset
+@inject IJSRuntime JS
 
 <PageTitle>Blackjack</PageTitle>
 
@@ -89,9 +92,11 @@
 }
 else if (_mode == BlackjackMode.FlashCards)
 {
-    <div class="play-screen">
+    @* keypad-screen: on phones the feedback line moves up above the
+       answer box so it isn't hidden below the keypad (see app.css) *@
+    <div class="play-screen keypad-screen">
         <div class="button-row">
-            <button @onclick="BackToStart">Back</button>
+            <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
         <div class="card-row" style="margin: 1rem 0;">
@@ -111,9 +116,13 @@ else if (_mode == BlackjackMode.FlashCards)
             <p style="font-style: italic; color: dimgray;">Remember: an Ace can count as 1 or 11.</p>
         }
 
-        <div class="button-row answer-row" style="margin: 1rem 0;">
+        <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+            @* inputmode="none": on phones and tablets, tapping the box does
+               NOT open the phone's own keyboard (which pushed the cards off
+               screen) -- the on-screen keypad below is used instead. A
+               physical keyboard on a PC still types into it normally. *@
             <input type="text"
-                   inputmode="numeric"
+                   inputmode="none"
                    @bind="_fcAnswerText"
                    @bind:event="oninput"
                    @onkeydown="FcHandleAnswerKeyDown"
@@ -121,21 +130,22 @@ else if (_mode == BlackjackMode.FlashCards)
                    disabled="@(!_fcAnswerEnabled)"
                    placeholder="Total" />
             <button @onclick="FcSubmitTypedAnswer" disabled="@(!_fcSubmitEnabled)">Submit</button>
-            <button @onclick="() => _fcShowKeypad = !_fcShowKeypad">123</button>
+            <button class="keypad-toggle" @onclick="() => _fcShowKeypad = !_fcShowKeypad">123</button>
         </div>
 
-        @if (_fcShowKeypad)
-        {
-            <NumericKeypad AllowDecimal="false" @bind-Value="_fcAnswerText" />
-        }
+        @* Desktop: shown only after pressing 123. Phones/touch screens: always
+           shown, and the 123 button is hidden (see app.css, keypad-wrap). *@
+        <div class="keypad-wrap @(_fcShowKeypad ? "keypad-open" : "")">
+            <NumericKeypad AllowDecimal="false" @bind-Value="_fcAnswerText" OnEnter="FcKeypadEnter" />
+        </div>
 
         <div class="feedback-area">
             <p>@_fcFeedbackText</p>
         </div>
 
-        <p>Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
+        <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
 
-        <div class="button-row">
+        <div class="button-row keypad-actions">
             <button @onclick="FcStartNewRound" disabled="@(!_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">New Round</button>
             <button @onclick="EndSession">End Session</button>
         </div>
@@ -143,12 +153,12 @@ else if (_mode == BlackjackMode.FlashCards)
 }
 else if (_mode == BlackjackMode.Payouts)
 {
-    <div class="play-screen">
+    <div class="play-screen keypad-screen">
         <div class="button-row">
-            <button @onclick="BackToStart">Back</button>
+            <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <div style="position: relative; width: 220px; height: 240px; margin: 1rem 0;">
+        <div class="po-cards" style="position: relative; width: 220px; height: 240px; margin: 1rem 0;">
             <img src="images/cards/AS.png" alt="AS" style="position: absolute; top: 0; left: 0; width: 130px; height: 182px;" />
             <img src="images/cards/JS.png" alt="JS" style="position: absolute; top: 60px; left: 70px; width: 130px; height: 182px;" />
         </div>
@@ -157,9 +167,10 @@ else if (_mode == BlackjackMode.Payouts)
 
         <p>Wager: @PayoutWager.FormatCents(_poWagerCents)</p>
 
-        <div class="button-row answer-row" style="margin: 1rem 0;">
+        <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+            @* inputmode="none": see the Flash Cards answer box above *@
             <input type="text"
-                   inputmode="decimal"
+                   inputmode="none"
                    value="@_poAnswerText"
                    @oninput="PoHandleAnswerInput"
                    @onkeydown="PoHandleAnswerKeyDown"
@@ -167,20 +178,19 @@ else if (_mode == BlackjackMode.Payouts)
                    readonly="@(!_poAnswerEnabled)"
                    placeholder="Amount" />
             <button @onclick="PoSubmitTypedAnswer" disabled="@(!_poSubmitEnabled)">Submit</button>
-            <button @onclick="() => _poShowKeypad = !_poShowKeypad">123</button>
+            <button class="keypad-toggle" @onclick="() => _poShowKeypad = !_poShowKeypad">123</button>
         </div>
 
-        @if (_poShowKeypad)
-        {
-            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_poAnswerText" />
-        }
+        <div class="keypad-wrap @(_poShowKeypad ? "keypad-open" : "")">
+            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_poAnswerText" OnEnter="PoKeypadEnter" />
+        </div>
 
         <div class="feedback-area">
             <p style="font-weight: bold; color: @(_poIsCorrect ? "blue" : "red");">@_poPromptText</p>
             <p style="color: red;">@_poPromptDetailText</p>
         </div>
 
-        <div class="button-row">
+        <div class="button-row keypad-actions">
             <button @onclick="PoStartNewRound" disabled="@(!_poNewRoundEnabled)" @ref="_poNewRoundButtonRef">New Round</button>
             <button @onclick="EndSession">End Session</button>
         </div>
@@ -190,7 +200,7 @@ else
 {
     <div class="play-screen">
         <div class="button-row">
-            <button @onclick="BackToStart">Back</button>
+            <button class="back-button" @onclick="BackToStart">Back</button>
             <button @onclick="() => _swShowWagerRules = !_swShowWagerRules">@(_swShowWagerRules ? "Hide" : "Show") Wager Rules</button>
         </div>
 
@@ -305,6 +315,25 @@ else
 }
 
 @code {
+    // Menu link for this game tapped while it's already open: return to
+    // the start screen, same as the Back button (hidden on phones).
+    protected override void OnInitialized()
+    {
+        GameReset.ResetRequested += OnResetRequested;
+    }
+
+    private void OnResetRequested()
+    {
+        _showSessionSummary = false;
+        _started = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        GameReset.ResetRequested -= OnResetRequested;
+    }
+
     private enum BlackjackMode { FlashCards, Payouts, SideWagers }
 
     // Shared across all three modes -- which start screen/play screen
@@ -416,6 +445,20 @@ else
         if (e.Key == "Enter" && _fcSubmitEnabled)
         {
             await FcSubmitTypedAnswer();
+        }
+    }
+
+    // Keypad Enter key: submits the answer, or -- once the hand is over --
+    // deals the next one, matching what the keyboard's Enter key does.
+    private async Task FcKeypadEnter()
+    {
+        if (_fcSubmitEnabled)
+        {
+            await FcSubmitTypedAnswer();
+        }
+        else if (_fcNewRoundEnabled)
+        {
+            FcStartNewRound();
         }
     }
 
@@ -601,6 +644,20 @@ else
         if (e.Key == "Enter" && _poSubmitEnabled)
         {
             await PoSubmitTypedAnswer();
+        }
+    }
+
+    // Keypad Enter key: submits the payout, or deals the next round once
+    // this one has been scored.
+    private async Task PoKeypadEnter()
+    {
+        if (_poSubmitEnabled)
+        {
+            await PoSubmitTypedAnswer();
+        }
+        else if (_poNewRoundEnabled)
+        {
+            PoStartNewRound();
         }
     }
 
@@ -801,30 +858,44 @@ else
         _swDealEnabled = true;
     }
 
+    // Scroll back to the top whenever this game switches between its
+    // start screen and its play screen (Start, Back, menu, End Session).
+    // Without this the browser keeps the old scroll position -- after
+    // scrolling down to reach Start, the game would open scrolled down.
+    private bool _lastRenderedStarted;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (_started != _lastRenderedStarted)
+        {
+            _lastRenderedStarted = _started;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+
+        // preventScroll: true -- moving the cursor into the answer box (or
+        // onto New Round) must not scroll the page to that element
         if (_fcShouldFocusAnswer)
         {
             _fcShouldFocusAnswer = false;
-            try { await _fcAnswerInputRef.FocusAsync(); } catch { }
+            try { await _fcAnswerInputRef.FocusAsync(preventScroll: true); } catch { }
         }
 
         if (_fcShouldFocusNewRound)
         {
             _fcShouldFocusNewRound = false;
-            try { await _fcNewRoundButtonRef.FocusAsync(); } catch { }
+            try { await _fcNewRoundButtonRef.FocusAsync(preventScroll: true); } catch { }
         }
 
         if (_poShouldFocusAnswer)
         {
             _poShouldFocusAnswer = false;
-            try { await _poAnswerInputRef.FocusAsync(); } catch { }
+            try { await _poAnswerInputRef.FocusAsync(preventScroll: true); } catch { }
         }
 
         if (_poShouldFocusNewRound)
         {
             _poShouldFocusNewRound = false;
-            try { await _poNewRoundButtonRef.FocusAsync(); } catch { }
+            try { await _poNewRoundButtonRef.FocusAsync(preventScroll: true); } catch { }
         }
     }
 }

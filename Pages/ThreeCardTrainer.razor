@@ -2,6 +2,9 @@
 @using Microsoft.AspNetCore.Components
 @using DealerSchoolTrainerWeb.Core
 @using DealerSchoolTrainerWeb.Games.ThreeCardTrainer
+@implements IDisposable
+@inject GameResetService GameReset
+@inject IJSRuntime JS
 
 <PageTitle>Three Card Prime</PageTitle>
 
@@ -36,7 +39,7 @@ else
 {
     <div class="play-screen">
         <div class="button-row">
-            <button @onclick="BackToStart">Back</button>
+            <button class="back-button" @onclick="BackToStart">Back</button>
             <button @onclick="() => _showWagerRules = !_showWagerRules">@(_showWagerRules ? "Hide" : "Show") Wager Rules</button>
         </div>
 
@@ -120,6 +123,40 @@ else
 }
 
 @code {
+    // Menu link for this game tapped while it's already open: return to
+    // the start screen, same as the Back button (hidden on phones).
+    protected override void OnInitialized()
+    {
+        GameReset.ResetRequested += OnResetRequested;
+    }
+
+    private void OnResetRequested()
+    {
+        _showSessionSummary = false;
+        _started = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        GameReset.ResetRequested -= OnResetRequested;
+    }
+
+    // Scroll back to the top whenever this game switches between its
+    // start screen and its play screen (Start, Back, menu, End Session).
+    // Without this the browser keeps the old scroll position -- after
+    // scrolling down to reach Start, the game would open scrolled down.
+    private bool _lastRenderedStarted;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_started != _lastRenderedStarted)
+        {
+            _lastRenderedStarted = _started;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+    }
+
     private sealed class WagerState
     {
         public required string Name;

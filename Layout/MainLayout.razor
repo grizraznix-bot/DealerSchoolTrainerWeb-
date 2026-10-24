@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject NavigationManager Nav
+@inject DealerSchoolTrainerWeb.Core.GameResetService GameReset
 
 @* Mobile: below 768px wide the sidebar is hidden off-screen and a top
    bar with a menu button takes its place (see app.css, "Mobile layout").
@@ -29,10 +30,12 @@
 
         <h3>Games</h3>
         <ul>
-            <li><NavLink href="blackjack-trainer">Blackjack</NavLink></li>
-            <li><NavLink href="three-card-trainer">Three Card Prime</NavLink></li>
-            <li><NavLink href="pai-gow">Pai Gow</NavLink></li>
-            <li><NavLink href="holdem-trainer">Heads-Up Hold'em</NavLink></li>
+            @* Tapping the game that's already open sends it back to its
+               start screen (same as its Back button) -- see MenuLinkClicked *@
+            <li><NavLink href="blackjack-trainer" @onclick='() => MenuLinkClicked("blackjack-trainer")'>Blackjack</NavLink></li>
+            <li><NavLink href="three-card-trainer" @onclick='() => MenuLinkClicked("three-card-trainer")'>Three Card Prime</NavLink></li>
+            <li><NavLink href="pai-gow" @onclick='() => MenuLinkClicked("pai-gow")'>Pai Gow</NavLink></li>
+            <li><NavLink href="holdem-trainer" @onclick='() => MenuLinkClicked("holdem-trainer")'>Heads-Up Hold'em</NavLink></li>
         </ul>
 
         <ul>
@@ -61,6 +64,23 @@
     private void ToggleMenu() => _menuOpen = !_menuOpen;
 
     private void CloseMenu() => _menuOpen = false;
+
+    // A menu link pointing at the page that's already open doesn't change
+    // the URL, so the page wouldn't react on its own. In that case, ask
+    // the open game to return to its start screen, and close the phone
+    // menu (normally closed by the page change, which doesn't happen here).
+    private void MenuLinkClicked(string href)
+    {
+        string current = Nav.ToBaseRelativePath(Nav.Uri);
+        int cut = current.IndexOfAny(new[] { '?', '#' });
+        if (cut >= 0) current = current[..cut];
+
+        if (string.Equals(current.TrimEnd('/'), href, StringComparison.OrdinalIgnoreCase))
+        {
+            _menuOpen = false;
+            GameReset.RequestReset();
+        }
+    }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {

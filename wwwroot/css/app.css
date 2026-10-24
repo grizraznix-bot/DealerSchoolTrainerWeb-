@@ -344,6 +344,37 @@ code {
     font-size: 1.1rem;
 }
 
+/* Keypad Enter key (Flash Cards / Payouts) */
+.numeric-keypad-enter {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.numeric-keypad-row .numeric-keypad-wide {
+    width: 140px;
+}
+
+/* Answer keypad wrapper: on desktop shown only after pressing 123 */
+.keypad-wrap {
+    display: none;
+}
+
+.keypad-wrap.keypad-open {
+    display: block;
+}
+
+/* Phones and touch screens: keypad always shown, 123 button hidden,
+   since tapping the answer box no longer opens the phone's keyboard */
+@media (max-width: 768px), (pointer: coarse) {
+    .keypad-wrap {
+        display: block;
+    }
+
+    .keypad-toggle {
+        display: none;
+    }
+}
+
 .pill-win {
     background-color: #0064dc;
 }
@@ -823,6 +854,17 @@ label,
         font-size: 1.6rem;
     }
 
+    /* No Back buttons on phones: the menu does the same job (tapping the
+       game you're in returns to its start screen), and the game content
+       sits higher on screen. A row left holding only Back collapses. */
+    .back-button {
+        display: none;
+    }
+
+    .button-row:not(:has(> :not(.back-button))) {
+        display: none;
+    }
+
     /* Card rows shrink to fit instead of running off the screen.
        aspect-ratio keeps the same proportions the desktop size uses. */
     .card-row {
@@ -862,6 +904,76 @@ label,
     .tcp-wagers {
         padding-bottom: 0.5rem;
     }
+
+    /* Bigger keypad keys on phones -- three equal columns */
+    .numeric-keypad {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+    }
+
+    .numeric-keypad-row button,
+    .numeric-keypad-row span,
+    .numeric-keypad-row .numeric-keypad-wide {
+        flex: 1 1 0;
+        width: auto;
+        height: 52px;
+        font-size: 1.25rem;
+    }
+
+    .numeric-keypad-enter {
+        font-size: 1.1rem;
+    }
+
+    /* Flash Cards / Payouts: feedback moves above the answer box, so
+       "Incorrect - try again" and the result aren't hidden below the
+       keypad. Order: cards and prompt, feedback, answer box, keypad,
+       score, New Round / End Session. */
+    .keypad-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* In a flex column, paragraph margins no longer overlap each other,
+       so they're tightened here to keep the keypad on screen */
+    .keypad-screen > p {
+        margin: 0.4rem 0;
+    }
+
+    .keypad-screen > .card-row {
+        margin: 0.75rem 0 0.25rem 0 !important;
+    }
+
+    /* Flash Cards: up to 5 cards fit on one row, so the keypad stays
+       clear of the screen's bottom edge even on longer hands */
+    .keypad-screen .game-card {
+        width: min(90px, calc((100vw - 2rem - 32px) / 5));
+    }
+
+    /* Payouts: the two overlapping cards shown at 75% size */
+    .keypad-screen > .po-cards {
+        zoom: 0.75;
+    }
+
+    .keypad-screen .numeric-keypad-row button,
+    .keypad-screen .numeric-keypad-row span {
+        height: 48px;
+    }
+
+    .keypad-screen > .feedback-area {
+        order: 1;
+        min-height: 1.5rem;
+    }
+
+    .keypad-screen > .feedback-area p {
+        margin: 0.25rem 0;
+    }
+
+    .keypad-screen > .keypad-answer { order: 2; margin: 0.5rem 0 0.75rem 0 !important; align-self: stretch; }
+    .keypad-screen > .keypad-wrap { order: 3; align-self: stretch; }
+    .keypad-screen > .keypad-score { order: 4; }
+    .keypad-screen > .keypad-actions { order: 5; }
 
     /* Answer box shares its row with Submit and 123 instead of
        pushing them onto a second line */

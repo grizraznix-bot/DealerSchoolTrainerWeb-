@@ -2,7 +2,13 @@
    alternative to typing, usable with a mouse on PC as well as touch.
    Two-way bindable: use @bind-Value="_answerText" from the parent.
    MaxDecimalDigits enforces a digit limit after the decimal point
-   (e.g. cents); leave it null for no limit. *@
+   (e.g. cents); leave it null for no limit.
+
+   OnEnter is optional. When the parent supplies it, an Enter key is
+   added: in whole-number mode the bottom row becomes  <<  0  Enter
+   (same arrangement as the LTD trainer apps); in decimal mode the
+   bottom row stays  .  0  <<  and a full-width Enter row is added
+   below it. *@
 
 <div class="numeric-keypad">
     @for (int row = 0; row < 3; row++)
@@ -20,14 +26,28 @@
         @if (AllowDecimal)
         {
             <button type="button" @onclick="AppendDecimalPoint">.</button>
+            <button type="button" @onclick="() => AppendDigit(0)">0</button>
+            <button type="button" @onclick="Backspace">⌫</button>
+        }
+        else if (OnEnter.HasDelegate)
+        {
+            <button type="button" @onclick="Backspace">⌫</button>
+            <button type="button" @onclick="() => AppendDigit(0)">0</button>
+            <button type="button" class="numeric-keypad-enter" @onclick="PressEnter">Enter</button>
         }
         else
         {
             <span></span>
+            <button type="button" @onclick="() => AppendDigit(0)">0</button>
+            <button type="button" @onclick="Backspace">⌫</button>
         }
-        <button type="button" @onclick="() => AppendDigit(0)">0</button>
-        <button type="button" @onclick="Backspace">⌫</button>
     </div>
+    @if (AllowDecimal && OnEnter.HasDelegate)
+    {
+        <div class="numeric-keypad-row">
+            <button type="button" class="numeric-keypad-enter numeric-keypad-wide" @onclick="PressEnter">Enter</button>
+        </div>
+    }
 </div>
 
 @code {
@@ -35,6 +55,7 @@
     [Parameter] public int? MaxDecimalDigits { get; set; }
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public EventCallback OnEnter { get; set; }
 
     private async Task AppendDigit(int digit)
     {
@@ -61,6 +82,8 @@
             await SetValue(Value[..^1]);
         }
     }
+
+    private async Task PressEnter() => await OnEnter.InvokeAsync();
 
     private async Task SetValue(string newValue) => await ValueChanged.InvokeAsync(newValue);
 }
