@@ -809,8 +809,14 @@ label,
         background-color: rgba(0, 0, 0, 0.35);
     }
 
+    /* Extra empty space at the bottom of every page on phones, so the
+       last buttons (Start, Submit, Deal) can always be scrolled up away
+       from the screen's bottom edge -- a tap right at that edge tends
+       to bring up the browser's hidden toolbar instead of pressing the
+       button. env(safe-area-inset-bottom) adds the extra margin phones
+       with a home-indicator bar need (0 elsewhere). */
     .content {
-        padding: 1rem;
+        padding: 1rem 1rem calc(6rem + env(safe-area-inset-bottom, 0px)) 1rem;
     }
 
     .content h1 {
@@ -992,9 +998,11 @@ label,
         gap: 2.5rem;
     }
 
+    /* Dealer cards: a little larger than the community cards, clearly
+       smaller than the player's cards, so each group reads as its own */
     .hd-dealer .hd-card {
-        width: 80px;
-        height: 112px;
+        width: 66px;
+        height: 92px;
     }
 
     /* One player hand at a time, with Previous / Next Player */
