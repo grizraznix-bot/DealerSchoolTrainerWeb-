@@ -694,6 +694,39 @@ h1:focus {
     font-size: 1.5rem;
 }
 
+/* Add to Home Screen page */
+.install-heading {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.install-list {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.install-list li {
+    margin-bottom: 0.4rem;
+}
+
+/* "Already using the app version" note -- only shown when the site is
+   running from its home-screen icon, where the steps (and the menu link
+   to them) are hidden instead */
+.install-already {
+    display: none;
+}
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+    .install-already {
+        display: block;
+    }
+
+    .install-steps,
+    .install-link {
+        display: none;
+    }
+}
+
 /* Mobile top bar and menu backdrop -- hidden on desktop */
 .mobile-topbar,
 .menu-backdrop {
