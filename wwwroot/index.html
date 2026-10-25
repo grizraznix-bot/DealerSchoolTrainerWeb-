@@ -11,6 +11,17 @@
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+
+    <!-- "Add to Home Screen" app mode: when the site is opened from its
+         home-screen icon it runs without the browser's address bar and
+         toolbar (more room for the games on phones). No offline mode /
+         service worker, so published updates still show up normally. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#f4f4f4" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Dealer Trainer" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="preload" id="webassembly" />
     <link rel="stylesheet" href="css/app.css" />
     <!-- If you add any scoped CSS files, uncomment the following to load them
