@@ -14,9 +14,7 @@
 
         @* Each mode is a collapsible card: tap its title to open its
            settings and its own Start button (one card open at a time).
-           Settle the Bets is capped narrower (1-4) than Identify the
-           Hands (1-6) to leave room for the feedback block, which sits
-           beside the hands row on desktop. *@
+           Both modes allow 1-6 hands, defaulting to 3. *@
         <div class="mode-list">
             <ModeCard Title="Identify the Hands"
                       Description="Classify each dealt hand using the 5 community cards. Select a rank for every hand, then Submit."
@@ -31,7 +29,7 @@
                       Expanded="@IsModeOpen(TrainerMode.SettleBets)"
                       OnToggle="() => ToggleMode(TrainerMode.SettleBets)"
                       OnStart="StartGame">
-                <CountStepper Label="Number of Hands" Min="1" Max="4" @bind-Value="_handCountSettleBets" />
+                <CountStepper Label="Number of Hands" Min="1" Max="6" @bind-Value="_handCountSettleBets" />
             </ModeCard>
         </div>
     </div>
@@ -295,9 +293,9 @@ else
 
     private bool _started;
     private int _currentHand; // phone layout only: which player hand is showing
-    private int _handCount = 6;
-    private int _handCountIdentify = 6;
-    private int _handCountSettleBets = 4;
+    private int _handCount = 3;
+    private int _handCountIdentify = 3;
+    private int _handCountSettleBets = 3;
     private TrainerMode _mode = TrainerMode.IdentifyHands;
 
     // Start screen: which mode card is open (null = all closed). Opening
@@ -357,7 +355,7 @@ else
     {
         _handCount = _mode == TrainerMode.IdentifyHands
             ? Math.Clamp(_handCountIdentify, 1, 6)
-            : Math.Clamp(_handCountSettleBets, 1, 4);
+            : Math.Clamp(_handCountSettleBets, 1, 6);
         _started = true;
         _correctCount = 0;
         _totalRounds = 0;
