@@ -62,10 +62,28 @@
                 if (!t || !t.closest) return;
                 if (t.closest('select, textarea, input[type=text], input[type=number]')) return;
                 e.preventDefault();
-                var tappable = t.closest('button, a, label, input[type=checkbox], input[type=radio], .wager-shape, .wt, .pai-gow-card, .menu-backdrop');
+                var tappable = t.closest('button, a, label, input[type=checkbox], input[type=radio], .wager-shape, .pai-gow-card, .menu-backdrop, .wp-backdrop');
                 if (tappable && !tappable.disabled) tappable.click();
             }, { passive: false });
         })();
+    </script>
+    <!-- Wager pop-ups (Shared/WagerPick): after one opens, nudge it back
+         inside the screen if its button sits near the left or right
+         edge, and flip it above the button if it would run off the
+         bottom. -->
+    <script>
+        window.dstClampPopup = function (el) {
+            if (!el || !el.getBoundingClientRect) return;
+            el.style.marginLeft = '0px';
+            el.classList.remove('wp-pop-up');
+            var r = el.getBoundingClientRect();
+            var pad = 8, w = document.documentElement.clientWidth, h = window.innerHeight;
+            var dx = 0;
+            if (r.left < pad) dx = pad - r.left;
+            else if (r.right > w - pad) dx = (w - pad) - r.right;
+            el.style.marginLeft = dx + 'px';
+            if (r.bottom > h - pad) el.classList.add('wp-pop-up');
+        };
     </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>

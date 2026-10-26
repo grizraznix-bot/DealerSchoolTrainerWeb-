@@ -1,0 +1,132 @@
+@* Wager button with a pop-up of choices -- replaces the old tap-to-cycle
+   circle shapes. The button shows the wager's name and, under it, the
+   current pick (filled with that pick's color). Tapping it pops the
+   choices up just below it; picking one closes the pop-up. Only one
+   pop-up is open at a time on the page, and tapping anywhere else closes
+   it unchanged. A small script (dstClampPopup in index.html) nudges the
+   pop-up back inside the screen when the button sits near an edge.
+   After Submit (Locked), the button can't be opened and shows a check,
+   or a cross with a dark outline when Wrong. *@
+@implements IDisposable
+@inject IJSRuntime JS
+
+<div class="wp @(_open ? "wp-open" : "")">
+    <button type="button"
+            class="wp-btn @SelectedCss @(Locked && Wrong ? "wp-wrong" : "")"
+            aria-haspopup="true" aria-expanded="@(_open ? "true" : "false")"
+            @onclick="Toggle">
+        <span class="wp-name">@Label</span>
+        <small>@StateText</small>
+    </button>
+
+    @if (_open)
+    {
+        <div class="wp-pop" @ref="_popRef">
+            @foreach (WagerPickOption option in Options)
+            {
+                WagerPickOption o = option;
+                <button type="button" class="wp-choice @(Value == o.Key ? o.Css : "")" @onclick="() => Pick(o)">@o.Text</button>
+            }
+        </div>
+    }
+</div>
+
+@if (_open)
+{
+    <div class="wp-backdrop" @onclick="Close"></div>
+}
+
+@code {
+    // Ready-made choice lists
+    public static readonly IReadOnlyList<WagerPickOption> WinLose = new[]
+    {
+        new WagerPickOption("Win", "Win", "wp-win"),
+        new WagerPickOption("Lose", "Lose", "wp-lose")
+    };
+
+    public static readonly IReadOnlyList<WagerPickOption> WinLosePush = new[]
+    {
+        new WagerPickOption("Win", "Win", "wp-win"),
+        new WagerPickOption("Lose", "Lose", "wp-lose"),
+        new WagerPickOption("Push", "Push", "wp-push")
+    };
+
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public IReadOnlyList<WagerPickOption> Options { get; set; } = WinLose;
+
+    // Key of the current pick (null = nothing picked yet)
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> OnPick { get; set; }
+
+    // After Submit: no more changes; Wrong shows a cross + dark outline
+    [Parameter] public bool Locked { get; set; }
+    [Parameter] public bool Wrong { get; set; }
+
+    private bool _open;
+    private bool _clampPending;
+    private ElementReference _popRef;
+
+    // One pop-up open at a time across the page
+    private static event Action<WagerPick>? AnyOpened;
+
+    protected override void OnInitialized() => AnyOpened += OnAnyOpened;
+
+    public void Dispose() => AnyOpened -= OnAnyOpened;
+
+    private void OnAnyOpened(WagerPick opened)
+    {
+        if (opened != this && _open)
+        {
+            _open = false;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Locked) _open = false;
+    }
+
+    private void Toggle()
+    {
+        if (Locked) return;
+        _open = !_open;
+        if (_open)
+        {
+            _clampPending = true;
+            AnyOpened?.Invoke(this);
+        }
+    }
+
+    private void Close() => _open = false;
+
+    private async Task Pick(WagerPickOption o)
+    {
+        _open = false;
+        await OnPick.InvokeAsync(o.Key);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_open && _clampPending)
+        {
+            _clampPending = false;
+            try { await JS.InvokeVoidAsync("dstClampPopup", _popRef); } catch { }
+        }
+    }
+
+    private WagerPickOption? Selected => Value is null ? null : Options.FirstOrDefault(o => o.Key == Value);
+
+    private string SelectedCss => Selected?.Css ?? "";
+
+    private string StateText
+    {
+        get
+        {
+            string text = Selected?.Text.ToUpperInvariant() ?? "";
+            if (Locked && text.Length > 0) text += Wrong ? " ✗" : " ✓";
+            else if (Locked && Wrong) text = "✗"; // should have been picked
+            return text;
+        }
+    }
+}

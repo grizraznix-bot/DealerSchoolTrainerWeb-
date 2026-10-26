@@ -724,6 +724,138 @@ h1:focus {
     gap: 1.5rem;
 }
 
+/* Wager buttons with a pop-up of choices (Shared/WagerPick), used by
+   Side Wagers and Pai Gow Settling Bets on phone and desktop. The
+   button shows the wager name and its pick, filled with the pick's
+   color; the pop-up sits just below it on a light-blue tint with a
+   dark shadow. dstClampPopup (index.html) keeps it on screen. */
+/* Buttons in the same row stretch to the same height */
+.wp {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.content .wp > .wp-btn {
+    flex: 1 1 auto;
+}
+
+.wp.wp-open {
+    z-index: 1001;
+}
+
+.content .wp-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 84px;
+    min-height: 44px;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid #c9c9c9;
+    border-radius: 8px;
+    background-color: white;
+    color: #222;
+    font-size: 0.82rem;
+    font-weight: bold;
+    line-height: 1.1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wp-btn small {
+    min-height: 0.75rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+}
+
+.content .wp-btn.wp-win,
+.content .wp-choice.wp-win {
+    background-color: #0064dc;
+    border-color: #0064dc;
+    color: white;
+}
+
+.content .wp-btn.wp-lose,
+.content .wp-choice.wp-lose {
+    background-color: #c80000;
+    border-color: #c80000;
+    color: white;
+}
+
+.content .wp-btn.wp-push,
+.content .wp-choice.wp-push {
+    background-color: #e6c800;
+    border-color: #e6c800;
+    color: black;
+}
+
+.content .wp-btn.wp-foul,
+.content .wp-choice.wp-foul {
+    background-color: #e67e00;
+    border-color: #e67e00;
+    color: white;
+}
+
+.content .wp-btn.wp-wrong {
+    box-shadow: 0 0 0 3px #222;
+}
+
+.wp-pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1002;
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    border: 1px solid #9bb8e0;
+    border-radius: 12px;
+    background-color: #dde8f8;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+    white-space: nowrap;
+}
+
+.wp-pop.wp-pop-up {
+    top: auto;
+    bottom: calc(100% + 6px);
+}
+
+.content .wp-choice {
+    min-width: 64px;
+    min-height: 44px;
+    padding: 0 0.6rem;
+    border: 1px solid #999;
+    border-radius: 8px;
+    background-color: white;
+    color: black;
+    font-size: 0.95rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Invisible layer behind an open pop-up: tapping it closes the pop-up */
+.wp-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+/* Side Wagers: the two wager buttons side by side */
+.sw-wager-picks {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    justify-content: center;
+}
+
+.sw-wager-picks .wp {
+    flex: 1 1 0;
+    max-width: 120px;
+}
+
 /* Three Card Prime wager buttons + slide-out choices: phones only
    (shown in the phone section at the end of this file) */
 .tcp-rail,
@@ -1997,6 +2129,24 @@ label,
         width: 78px;
         height: 78px;
         font-size: 0.72rem;
+    }
+
+    /* Wager buttons: the four share the row equally, same height */
+    .sb-wagers {
+        gap: 6px;
+        align-items: stretch;
+    }
+
+    .sb-wagers .wp {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .content .sb-wagers .wp-btn {
+        min-width: 0;
+        min-height: 48px;
+        padding: 0.2rem 0.15rem;
+        font-size: 0.74rem;
     }
 
     .sb-wagers .wager-circle {

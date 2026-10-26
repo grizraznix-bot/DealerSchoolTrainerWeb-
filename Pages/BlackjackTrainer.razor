@@ -249,22 +249,17 @@ else
                     {
                         <button class="hd-inline-pager" @onclick="SwPreviousHand" disabled="@(handIndex <= 0)">Previous</button>
                     }
-                    <div style="display: flex; gap: 8px; justify-content: center;">
-                        <WagerShape IsDiamond="false" AllowPush="false" SizePx="56" ShowWrongShading="_swRoundScored"
-                                    Wrong="hand.LuckyLadiesWrong"
-                                    Selection="hand.LuckyLadiesSelection"
-                                    SelectionChanged="v => hand.LuckyLadiesSelection = v"
-                                    OnCycled="() => hand.LuckyLadiesWrong = false">
-                            Lucky<br />Ladies
-                        </WagerShape>
+                    @* Wager buttons: tap for a Win / Lose pop-up *@
+                    <div class="sw-wager-picks">
+                        <WagerPick Label="Lucky Ladies"
+                                   Value="@hand.LuckyLadiesSelection?.ToString()"
+                                   OnPick="k => { hand.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); hand.LuckyLadiesWrong = false; }"
+                                   Locked="_swRoundScored" Wrong="hand.LuckyLadiesWrong" />
 
-                        <WagerShape IsDiamond="false" AllowPush="false" SizePx="56" ShowWrongShading="_swRoundScored"
-                                    Wrong="hand.TwentyOnePlus3Wrong"
-                                    Selection="hand.TwentyOnePlus3Selection"
-                                    SelectionChanged="v => hand.TwentyOnePlus3Selection = v"
-                                    OnCycled="() => hand.TwentyOnePlus3Wrong = false">
-                            21 + 3
-                        </WagerShape>
+                        <WagerPick Label="21 + 3"
+                                   Value="@hand.TwentyOnePlus3Selection?.ToString()"
+                                   OnPick="k => { hand.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); hand.TwentyOnePlus3Wrong = false; }"
+                                   Locked="_swRoundScored" Wrong="hand.TwentyOnePlus3Wrong" />
                     </div>
                     @if (_swHands.Count > 1)
                     {
