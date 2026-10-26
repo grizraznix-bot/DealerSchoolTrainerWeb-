@@ -86,10 +86,9 @@ else
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
-                    @* Phones: Previous | Win Lose Push | Next. On the last player
-                       the Next spot becomes Submit (enabled once that player
-                       has a call), then Deal after scoring. Desktop hides these
-                       inline buttons and uses the Submit / Deal row instead. *@
+                    @* Phones: Previous | Win Lose Push | Next (Submit / Deal are
+                       in the bar pinned to the bottom of the screen). Desktop
+                       hides Previous / Next and shows every hand. *@
                     <div class="hd-hand-controls @(_hands.Count == 1 ? "hd-hand-controls-single" : "")">
                     @if (_hands.Count > 1)
                     {
@@ -111,17 +110,9 @@ else
                         }
                     </div>
 
-                    @if (handIndex < _hands.Count - 1)
+                    @if (_hands.Count > 1)
                     {
-                        <button class="hd-inline-pager" @onclick="NextHand">Next</button>
-                    }
-                    else if (!_roundScored)
-                    {
-                        <button class="hd-inline-pager hd-inline-action" @onclick="SubmitRound" disabled="@(hand.WagerSelection is null)">Submit</button>
-                    }
-                    else
-                    {
-                        <button class="hd-inline-pager hd-inline-action" @onclick="DealAgain">Deal</button>
+                        <button class="hd-inline-pager" @onclick="NextHand" disabled="@(handIndex >= _hands.Count - 1)">Next</button>
                     }
                     </div>
 

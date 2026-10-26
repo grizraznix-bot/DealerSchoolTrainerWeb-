@@ -1643,6 +1643,37 @@ label,
         justify-self: center;
     }
 
+    /* Side Wagers: one column -- player pager, the hand, dealer card,
+       result and score, then Submit / Deal / End Session pinned to the
+       bottom of the screen (always visible). sw-footer is display:
+       contents so its pieces join this column and the pinned bar can
+       stick for the whole page. */
+    .sw-screen {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sw-screen > .hand-pager { order: 1; }
+    .sw-screen > .sw-hands { order: 2; }
+    .sw-screen .sw-footer { display: contents; }
+    .sw-screen .sw-footer-dealer { order: 3; margin-top: 0.75rem; }
+    .sw-screen .sw-footer-feedback { order: 4; text-align: center; }
+    .sw-screen .sw-footer-buttons {
+        order: 5;
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        width: auto;
+        align-self: stretch;
+        margin: 0.5rem 0 0 0;
+        padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
+        background-color: white;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+    }
+    .sw-screen > .rules-row { order: 6; }
+    .sw-screen > .rules-image,
+    .sw-screen > div:last-child:not(.rules-row) { order: 7; }
+
     /* Heads-Up Hold'em: one column -- community cards, dealer cards,
        player pager, the current hand, action buttons, then feedback.
        display: contents lets the community/dealer/button pieces be
@@ -1841,31 +1872,19 @@ label,
         font-size: 0.95rem;
     }
 
-    /* Single player: no Previous, so Win Lose Push | Submit */
-    .hd-hand-controls.hd-hand-controls-single:has(.hd-inline-pager) {
-        grid-template-columns: 1fr 5rem;
-    }
-
-    /* Submit / Deal in the Next spot: blue like the other primary
-       buttons, grey while waiting for the last player's call */
-    .content .hd-inline-pager.hd-inline-action {
-        border: 1px solid #0050b4;
-        border-radius: 6px;
-        background-color: #0064dc;
-        color: white;
-        font-weight: bold;
-    }
-
-    .content .hd-inline-pager.hd-inline-action:disabled {
-        border-color: #bbb;
-        background-color: #e4e4e4;
-        color: #888;
-    }
-
-    /* Settle the Bets: Submit / Deal live in the player row on phones,
-       so the bottom row keeps only End Session */
-    .hd-table:not(.hd-identify) .hd-buttons .hd-main-action {
-        display: none;
+    /* Settle the Bets: Submit / Deal / End Session pinned to the bottom
+       of the screen (always visible), with the feedback just above it */
+    .hd-table:not(.hd-identify) .hd-buttons {
+        order: 10;
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        width: auto;
+        align-self: stretch;
+        margin: 0.5rem 0 0 0;
+        padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
+        background-color: white;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
     }
 
     /* Settle the Bets after Submit: result strip at the top of the
