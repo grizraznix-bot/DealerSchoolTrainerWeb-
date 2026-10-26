@@ -822,6 +822,62 @@ h1:focus {
     gap: 8px;
 }
 
+/* Settle the Bets: Win / Lose / Push buttons for each player hand. The
+   picked one fills with the same colors as the Win / Lose / Push pills. */
+.hd-outcomes {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+}
+
+.content .hd-outcome {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0.25rem 0;
+    border: 1px solid #999;
+    border-radius: 6px;
+    background-color: white;
+    color: black;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.content .hd-outcome:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.content .hd-outcome-win.hd-outcome-picked {
+    background-color: #0064dc;
+    border-color: #0064dc;
+    color: white;
+}
+
+.content .hd-outcome-lose.hd-outcome-picked {
+    background-color: #c80000;
+    border-color: #c80000;
+    color: white;
+}
+
+.content .hd-outcome-push.hd-outcome-picked {
+    background-color: #e6c800;
+    border-color: #e6c800;
+    color: black;
+}
+
+/* After Submit: wrong pick and the right answer */
+.content .hd-outcome.hd-outcome-wrong {
+    box-shadow: 0 0 0 3px #c80000;
+    text-decoration: line-through;
+}
+
+.content .hd-outcome.hd-outcome-answer {
+    box-shadow: 0 0 0 3px #222;
+}
+
 .hd-inline-pager {
     display: none;
 }
@@ -1533,10 +1589,12 @@ label,
         height: auto !important;
     }
 
+    /* Player cards the same size as the community and dealer cards */
     .hd-table .hd-hand-cards img {
         position: static !important;
-        width: 100px !important;
-        height: 140px !important;
+        width: min(100px, calc((100vw - 2rem) / 4)) !important;
+        height: auto !important;
+        aspect-ratio: 100 / 140;
     }
 
     /* One player hand at a time: "Player X of N" banner above it, with
@@ -1611,6 +1669,17 @@ label,
 
     .hd-hand-controls:has(.hd-inline-pager) select {
         width: 100%;
+    }
+
+    /* Win / Lose / Push: full-size tap targets; with a single hand (no
+       Previous / Next) the row matches the action row's width */
+    .content .hd-outcome {
+        min-height: 44px;
+        font-size: 0.95rem;
+    }
+
+    .hd-hand-controls:not(:has(.hd-inline-pager)) .hd-outcomes {
+        width: min(100%, 360px);
     }
 
     /* Settle the Bets: the current player hand goes to the top, then the

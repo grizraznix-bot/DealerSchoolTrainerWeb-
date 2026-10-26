@@ -81,12 +81,20 @@ else
                         <button class="hd-inline-pager" @onclick="PreviousHand" disabled="@(handIndex <= 0)">Previous</button>
                     }
 
-                    <WagerShape IsDiamond="false" AllowPush="true"
-                                Selection="hand.WagerSelection" SelectionChanged="v => hand.WagerSelection = v"
-                                Wrong="hand.WagerWrong" OnCycled="() => hand.WagerWrong = false"
-                                ShowWrongShading="_roundScored">
-                        vs Dealer
-                    </WagerShape>
+                    @* Win / Lose / Push buttons: the picked one fills with its
+                       color. After Submit, a wrong pick gets a heavy red border
+                       and the right answer a heavy dark outline. *@
+                    <div class="hd-outcomes" role="group" aria-label="Hand @(handIndex + 1) vs Dealer">
+                        @foreach (WagerOutcome outcome in OutcomeChoices)
+                        {
+                            WagerOutcome choice = outcome;
+                            bool picked = hand.WagerSelection == choice;
+                            <button class="hd-outcome hd-outcome-@choice.ToString().ToLowerInvariant() @(picked ? "hd-outcome-picked" : "") @(_roundScored && picked && hand.WagerWrong ? "hd-outcome-wrong" : "") @(_roundScored && hand.WagerWrong && hand.ActualOutcome == choice ? "hd-outcome-answer" : "")"
+                                    aria-pressed="@(picked ? "true" : "false")"
+                                    disabled="@_roundScored"
+                                    @onclick="() => { hand.WagerSelection = choice; hand.WagerWrong = false; }">@choice</button>
+                        }
+                    </div>
 
                     @if (_hands.Count > 1)
                     {
@@ -265,6 +273,8 @@ else
 
     private const int CommunityCount = 5;
 
+    private static readonly WagerOutcome[] OutcomeChoices = { WagerOutcome.Win, WagerOutcome.Lose, WagerOutcome.Push };
+
     private enum TrainerMode { IdentifyHands, SettleBets }
 
     private static readonly string[] RankComboItems =
@@ -288,6 +298,7 @@ else
         public Card Card2 = null!;
         public WagerOutcome? WagerSelection; // Settle the Bets mode: this hand's Win/Lose/Push call against the dealer
         public bool WagerWrong;
+        public WagerOutcome? ActualOutcome; // set at Submit, to outline the right answer when the call was wrong
     }
 
     private bool _started;
@@ -413,6 +424,7 @@ else
         {
             hand.WagerSelection = null;
             hand.WagerWrong = false;
+            hand.ActualOutcome = null;
         }
 
         // Settle the Bets: the dealer's best hand comes already set
@@ -598,6 +610,8 @@ else
             WagerOutcome actualOutcome = playerScore > dealerScore ? WagerOutcome.Win
                 : playerScore < dealerScore ? WagerOutcome.Lose
                 : WagerOutcome.Push;
+
+            hand.ActualOutcome = actualOutcome;
 
             if (hand.WagerSelection == actualOutcome)
             {
