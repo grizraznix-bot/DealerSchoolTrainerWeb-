@@ -1435,16 +1435,17 @@ label,
         margin-top: 0.5rem;
     }
 
+    /* Same 6px spacing as the player's two cards */
     .hd-dealer {
         order: 4;
-        gap: 2.5rem;
+        gap: 6px;
     }
 
-    /* Dealer cards: clearly smaller than the community and player
-       cards, so each group reads as its own */
+    /* Dealer cards: the same size as the community cards */
     .hd-dealer .hd-card {
-        width: 66px;
-        height: 92px;
+        width: min(100px, calc((100vw - 2rem) / 4));
+        height: auto;
+        aspect-ratio: 100 / 140;
     }
 
     /* Both modes: larger community cards, each overlapping the one
@@ -1483,13 +1484,12 @@ label,
     }
 
     .hd-dealer {
-        padding-bottom: 23px;
+        padding-bottom: calc(min(100px, calc((100vw - 2rem) / 4)) * 0.35);
     }
 
-    /* Identify the Hands only: the player's two cards side by side
-       instead of stacked diagonally (overrides the inline desktop
-       positioning) */
-    .hd-table:not(.hd-settle) .hd-hand-cards {
+    /* Both modes: the player's two cards side by side instead of
+       stacked diagonally (overrides the inline desktop positioning) */
+    .hd-table .hd-hand-cards {
         display: flex;
         justify-content: center;
         gap: 6px;
@@ -1497,7 +1497,7 @@ label,
         height: auto !important;
     }
 
-    .hd-table:not(.hd-settle) .hd-hand-cards img {
+    .hd-table .hd-hand-cards img {
         position: static !important;
         width: 100px !important;
         height: 140px !important;
