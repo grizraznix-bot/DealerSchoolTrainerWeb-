@@ -395,10 +395,9 @@ code {
     visibility: hidden;
 }
 
-@media (max-width: 768px), (pointer: coarse) {
-    .keypad-screen > .keypad-answer.fc-answer-done {
-        display: none;
-    }
+/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
+.keypad-screen > .keypad-answer.fc-answer-done {
+    display: none;
 }
 
 /* Payouts: the wager amount, large enough to read at a glance, in a
@@ -453,20 +452,19 @@ code {
 
 /* Phones and touch screens: keypad always shown, 123 button hidden,
    since tapping the answer box no longer opens the phone's keyboard */
-@media (max-width: 768px), (pointer: coarse) {
-    .keypad-wrap {
-        display: block;
-    }
+/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
+.keypad-wrap {
+    display: block;
+}
 
-    .keypad-toggle {
-        display: none;
-    }
+.keypad-toggle {
+    display: none;
+}
 
-    /* Submit / Next button beside the answer box: the keypad's Enter /
-       Next key does the same job on phones and touch screens */
-    .answer-primary {
-        display: none;
-    }
+/* Submit / Next button beside the answer box: the keypad's Enter /
+   Next key does the same job on phones and touch screens */
+.answer-primary {
+    display: none;
 }
 
 .pill-win {
@@ -693,14 +691,13 @@ h1:focus {
 }
 
 /* Phones: Start fills the card width, like the in-game action rows */
-@media (max-width: 768px) {
-    .content .mode-start {
-        width: 100%;
-    }
+/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
+.content .mode-start {
+    width: 100%;
+}
 
-    .count-stepper {
-        max-width: none;
-    }
+.count-stepper {
+    max-width: none;
 }
 /* ------------------------------------------------------------------
    Shared layout helpers (used by Home and Three Card Prime so far).
@@ -1277,39 +1274,38 @@ label,
 
 /* Larger tap targets on touch screens (finger rather than mouse).
    44px is the commonly used minimum for comfortable tapping. */
-@media (pointer: coarse) {
-    .content button {
-        min-height: 44px;
-        padding: 0.4rem 0.9rem;
-        font-size: 1rem;
-    }
+/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
+.content button {
+    min-height: 44px;
+    padding: 0.4rem 0.9rem;
+    font-size: 1rem;
+}
 
-    /* Keypad keys are already a fixed 44px square */
-    .content .numeric-keypad-row button {
-        padding: 0;
-    }
+/* Keypad keys are already a fixed 44px square */
+.content .numeric-keypad-row button {
+    padding: 0;
+}
 
-    .sidebar a {
-        padding: 0.75rem;
-    }
+.sidebar a {
+    padding: 0.75rem;
+}
 
-    /* 16px minimum stops iPhones from zooming the whole page in
-       when a text box is tapped */
-    .content input[type=text],
-    .content input[type=number],
-    .content select {
-        font-size: 16px;
-        min-height: 44px;
-        box-sizing: border-box;
-        padding: 0 0.5rem;
-    }
+/* 16px minimum stops iPhones from zooming the whole page in
+   when a text box is tapped */
+.content input[type=text],
+.content input[type=number],
+.content select {
+    font-size: 16px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 0.5rem;
+}
 
-    .content input[type=checkbox],
-    .content input[type=radio] {
-        width: 1.25rem;
-        height: 1.25rem;
-        vertical-align: middle;
-    }
+.content input[type=checkbox],
+.content input[type=radio] {
+    width: 1.25rem;
+    height: 1.25rem;
+    vertical-align: middle;
 }
 
 /* ------------------------------------------------------------------
@@ -1414,875 +1410,881 @@ label,
         font-size: 1.6rem;
     }
 
-    /* No Back buttons on phones: the menu does the same job (tapping the
-       game you're in returns to its start screen), and the game content
-       sits higher on screen. A row left holding only Back collapses. */
-    .back-button {
-        display: none;
-    }
-
-    .button-row:not(:has(> :not(.back-button))) {
-        display: none;
-    }
-
-    /* Card rows shrink to fit instead of running off the screen.
-       aspect-ratio keeps the same proportions the desktop size uses. */
-    .card-row {
-        flex-wrap: wrap;
-    }
-
-    .home-card {
-        width: calc((100% - 32px) / 5);
-        max-width: 100px;
-        height: auto;
-        aspect-ratio: 100 / 140;
-    }
-
-    .game-card {
-        width: clamp(64px, 26vw, 90px);
-        height: auto;
-        aspect-ratio: 90 / 126;
-    }
-
-    /* Three Card Prime: wagers stack below the hands */
-    .tcp-table {
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-    }
-
-    .tcp-hands {
-        text-align: center;
-    }
-
-    .tcp-hands .card-row {
-        justify-content: center;
-    }
-
-    /* Room for the Ante Bonus checkbox, which sits to the right of
-       the centered Ante diamond */
-    .tcp-wagers {
-        padding-bottom: 0.5rem;
-    }
-
-    /* Bigger keypad keys on phones -- three equal columns spanning the
-       same width as the answer box + BUST / display row above */
-    .numeric-keypad {
-        display: block;
-        width: 100%;
-    }
-
-    .numeric-keypad-row button,
-    .numeric-keypad-row span,
-    .numeric-keypad-row .numeric-keypad-wide {
-        flex: 1 1 0;
-        width: auto;
-        height: 52px;
-        font-size: 1.25rem;
-    }
-
-    .numeric-keypad-enter {
-        font-size: 1.1rem;
-    }
-
-    /* Flash Cards / Payouts: feedback moves above the answer box, so
-       "Incorrect - try again" and the result aren't hidden below the
-       keypad. Order: cards and prompt, feedback, answer box, keypad,
-       score, New Round / End Session. */
-    .keypad-screen {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    /* In a flex column, paragraph margins no longer overlap each other,
-       so they're tightened here to keep the keypad on screen */
-    .keypad-screen > p {
-        margin: 0.4rem 0;
-    }
-
-    .keypad-screen > .card-row {
-        margin: 0.75rem 0 0.25rem 0 !important;
-    }
-
-    /* Flash Cards: card width chosen so the whole fanned hand (--n cards,
-       each after the first adding 70% of a card) fits across the screen;
-       never larger than the 100px desktop size */
-    .card-row.fc-fan {
-        --fc-w: min(100px, calc((100vw - 2rem) / (1 + 0.7 * (var(--n, 2) - 1))));
-    }
-
-    .keypad-screen .numeric-keypad-row button,
-    .keypad-screen .numeric-keypad-row span {
-        height: 48px;
-    }
-
-    .keypad-screen > .feedback-area {
-        order: 1;
-        min-height: 1.5rem;
-    }
-
-    .keypad-screen > .feedback-area p {
-        margin: 0.25rem 0;
-    }
-
-    /* Payouts: display box replaces the text box and the separate
-       feedback lines */
-    .po-display {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        flex: 1 1 auto;
-        min-height: 3.6rem;
-        padding: 0.3rem 0.75rem;
-        border: 1px solid #999;
-        border-radius: 6px;
-        box-sizing: border-box;
-        font-size: 1.15rem;
-    }
-
-    .po-display-result {
-        font-weight: bold;
-    }
-
-    .po-display-detail {
-        font-size: 1rem;
-    }
-
-    .po-display-amount {
-        font-size: 1.4rem;
-        font-weight: bold;
-    }
-
-    .po-display-placeholder {
-        color: #888;
-    }
-
-    .keypad-answer:has(.po-display) input {
-        display: none;
-    }
-
-    .keypad-screen:has(.po-display) > .feedback-area {
-        display: none;
-    }
-
-    .content .bust-button {
-        font-weight: bold;
-        min-width: 5.5rem;
-    }
-
-    .keypad-screen > .keypad-answer { order: 2; margin: 0.5rem 0 0.75rem 0 !important; align-self: stretch; }
-    .keypad-screen > .keypad-wrap { order: 3; align-self: stretch; }
-    .keypad-screen > .keypad-score { order: 4; }
-    .keypad-screen > .keypad-actions { order: 5; }
-
-    /* Answer box shares its row with Submit and 123 instead of
-       pushing them onto a second line */
-    .answer-row {
-        flex-wrap: nowrap;
-    }
-
-    .answer-row input {
-        flex: 1 1 auto;
-        min-width: 0;
-        width: 8rem;
-    }
-
-    /* Blackjack - Side Wagers: player hand on top, then the dealer card,
-       Submit/Deal, and the result -- stacked instead of a fixed 900px row */
-
-    .sw-hands {
-        justify-content: center;
-        column-gap: 1rem;
-        row-gap: 1.25rem;
-    }
-
-    .sw-footer {
-        width: auto;
-        grid-template-columns: 1fr;
-        row-gap: 0.75rem;
-    }
-
-    .sw-footer-dealer {
-        order: -1;
-        text-align: center;
-        justify-self: center;
-    }
-
-    /* Shared phone player pager: "Player X of N" banner above the hand */
-    .hand-pager {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        margin: 0.75rem 0 0 0;
-    }
-
-    .hand-pager-label {
-        font-weight: bold;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    .paged-hand {
-        display: none;
-    }
-
-    .paged-hand.paged-hand-current {
-        display: block;
-    }
-
-    .paged-hand-number {
-        display: none;
-    }
-
-    /* Submit / Deal right under the hand, then the result */
-    .sw-footer-feedback {
-        margin-top: 0.25rem;
-    }
-
-    .sw-footer-buttons {
-        justify-self: center;
-    }
-
-    /* Side Wagers: one column -- player pager, the hand, dealer card,
-       result and score, then Submit / Deal / End Session pinned to the
-       bottom of the screen (always visible). sw-footer is display:
-       contents so its pieces join this column and the pinned bar can
-       stick for the whole page. */
-    .sw-screen {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .sw-screen > .hand-pager { order: 1; }
-    .sw-screen > .sw-hands { order: 2; }
-    .sw-screen .sw-footer { display: contents; }
-    .sw-screen .sw-footer-dealer { order: 3; margin-top: 0.75rem; }
-    .sw-screen .sw-footer-feedback { order: 4; text-align: center; }
-    .sw-screen .sw-footer-buttons {
-        order: 5;
-        position: sticky;
-        bottom: 0;
-        z-index: 20;
-        width: auto;
-        align-self: stretch;
-        margin: 0.5rem 0 0 0;
-        padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
-        background-color: white;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
-    }
-    .sw-screen > .rules-row { order: 6; }
-    .sw-screen > .rules-image,
-    .sw-screen > div:last-child:not(.rules-row) { order: 7; }
-
-    /* Heads-Up Hold'em: one column -- community cards, dealer cards,
-       player pager, the current hand, action buttons, then feedback.
-       display: contents lets the community/dealer/button pieces be
-       reordered individually alongside the hands and feedback. */
-    .hd-table {
-        width: auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .hd-center {
-        display: contents;
-    }
-
-    .hd-community-title {
-        order: 1;
-        margin-top: 1rem;
-    }
-
-    /* Identify the Hands: half the old spacing, so the five community
-       cards come out a little larger */
-    .hd-community {
-        order: 2;
-        width: 100%;
-        max-width: 564px;
-        justify-content: center;
-        gap: 4px;
-    }
-
-    .hd-community-slot {
-        flex: 1 1 0;
-        min-width: 0;
-        max-width: 100px;
-    }
-
-    .hd-community .hd-card {
-        width: 100%;
-        height: auto;
-        aspect-ratio: 100 / 140;
-    }
-
-    .hd-dealer-title {
-        order: 3;
-        margin-top: 0.5rem;
-    }
-
-    /* Same 6px spacing as the player's two cards */
-    .hd-dealer {
-        order: 4;
-        gap: 6px;
-    }
-
-    /* Dealer cards: the same size as the community cards */
-    .hd-dealer .hd-card {
-        width: min(100px, calc((100vw - 2rem) / 4));
-        height: auto;
-        aspect-ratio: 100 / 140;
-    }
-
-    /* Both modes: larger community cards, each overlapping the one
-       before it by 25% (corner indexes stay visible). Five cards at 75%
-       spacing span 4 card widths, so each card is a quarter of the
-       screen width, up to the desktop size of 100px. (.hd-table in the
-       selector outranks the desktop Settle the Bets 3rem gap.) */
-    .hd-table .hd-community {
-        --hc-w: min(100px, calc((100vw - 2rem) / 4));
-        gap: 0;
-        max-width: none;
-    }
-
-    .hd-community-slot {
-        flex: 0 0 var(--hc-w);
-        max-width: none;
-        position: relative;
-    }
-
-    .hd-community-slot + .hd-community-slot {
-        margin-left: calc(var(--hc-w) * -0.25);
-    }
-
-    /* Settle the Bets: a card marked unused (community or dealer) drops
-       down a quarter of its height and darkens (opaque, so the card
-       behind doesn't show through, and suit colors stay true), instead of the desktop's
-       45-degree turn -- a turned card would cover its neighbors in the
-       overlapped row. Room is left below the community row for the drop. */
-    .hd-community.hd-community-settle {
-        padding-bottom: calc(var(--hc-w) * 0.35);
-    }
-
-    .hd-settle .hd-card.hd-card-unused {
-        transform: translateY(25%) !important;
-        filter: brightness(0.7);
-    }
-
-    .hd-dealer {
-        padding-bottom: calc(min(100px, calc((100vw - 2rem) / 4)) * 0.35);
-    }
-
-    /* Both modes: the player's two cards side by side instead of
-       stacked diagonally (overrides the inline desktop positioning) */
-    .hd-table .hd-hand-cards {
-        display: flex;
-        justify-content: center;
-        gap: 6px;
-        width: auto !important;
-        height: auto !important;
-    }
-
-    /* Player cards the same size as the community and dealer cards */
-    .hd-table .hd-hand-cards img {
-        position: static !important;
-        width: min(100px, calc((100vw - 2rem) / 4)) !important;
-        height: auto !important;
-        aspect-ratio: 100 / 140;
-    }
-
-    /* One player hand at a time: "Player X of N" banner above it, with
-       Previous / Next beside its answer control */
-    .hd-pager {
-        order: 5;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        margin-top: 0.5rem;
-    }
-
-    .hd-hand-cards {
-        margin: 0 auto;
-    }
-
-    .hd-hand-controls {
-        margin-top: 0.75rem;
-        gap: 6px;
-    }
-
-    .hd-inline-pager {
-        display: inline-block;
-    }
-
-
-
-    /* With Previous / Next present: a fixed-width row -- Previous and
-       Next the same width at either end, the rank dropdown (or the
-       wagers) centered between them. Submit / Deal / End Session below
-       use the same overall width. Shared by Hold'em and Side Wagers. */
-    .hd-hand-controls:has(.hd-inline-pager),
-    .sw-hand-controls:has(.hd-inline-pager) {
-        display: grid;
-        grid-template-columns: 4.25rem 1fr 4.25rem;
-        justify-items: center;
-        gap: 6px;
-        width: min(100%, 360px);
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .hd-hand-controls .hd-inline-pager,
-    .sw-hand-controls .hd-inline-pager {
-        display: inline-block;
-        width: 100%;
-    }
-
-    .content .hd-inline-pager {
-        padding: 0.4rem 0.1rem;
-        font-size: 0.85rem;
-    }
-
-    .sw-hand-cards {
-        margin: 0 auto;
-    }
-
-    /* The current hand spans the full width, so its Previous / Next row
-       (and Hold'em's rank row) lines up with the Submit / Deal / End
-       Session row below */
-    .paged-hand.paged-hand-current,
-    .hd-hand.hd-hand-current {
-        width: 100%;
-    }
-
-    /* Side Wagers: extra space between Previous / Next and the wagers so
-       a tap meant for a wager doesn't land on a button */
-    .sw-hand-controls:has(.hd-inline-pager) {
-        column-gap: 1.25rem;
-    }
-
-    .hd-hand-controls:has(.hd-inline-pager) select {
-        width: 100%;
-    }
-
-    /* Win / Lose / Push: full-size tap targets; with a single hand (no
-       Previous / Next) the row matches the action row's width */
-    .content .hd-outcome {
-        min-height: 44px;
-        font-size: 0.95rem;
-    }
-
-    /* Settle the Bets: Submit / Deal / End Session pinned to the bottom
-       of the screen (always visible), with the feedback just above it */
-    .hd-table:not(.hd-identify) .hd-buttons {
-        order: 10;
-        position: sticky;
-        bottom: 0;
-        z-index: 20;
-        width: auto;
-        align-self: stretch;
-        margin: 0.5rem 0 0 0;
-        padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
-        background-color: white;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Settle the Bets after Submit: result strip at the top of the
-       screen, and each player's own result under their buttons */
-    .hd-result-banner {
-        display: block;
-        order: 0;
-        width: min(100%, 360px);
-        box-sizing: border-box;
-        margin: 0 auto 0.5rem auto;
-        padding: 0.4rem 0.75rem;
-        border-radius: 6px;
-        text-align: center;
-        font-size: 0.95rem;
-    }
-
-    .hd-result-main {
-        font-size: 1.15rem;
-        font-weight: bold;
-    }
-
-    .hd-hand-result {
-        display: block;
-        margin: 0.4rem 0 0 0;
-        text-align: center;
-        font-weight: bold;
-    }
-
-    .hd-result-banner.hd-result-ok {
-        background-color: #d0e0f8;
-        color: #0050b4;
-    }
-
-    .hd-result-banner.hd-result-bad {
-        background-color: #f8d0d0;
-        color: #a00000;
-    }
-
-    .hd-hand-result.hd-result-ok {
-        color: #0050b4;
-    }
-
-    .hd-hand-result.hd-result-bad {
-        color: #c80000;
-    }
-
-    /* Settle the Bets: the current player hand goes to the top, then the
-       community and dealer cards */
-    .hd-settle .hd-pager { order: 1; margin-top: 0; }
-    .hd-settle .hd-hands { order: 2; }
-    .hd-settle .hd-community-title { order: 3; }
-    .hd-settle .hd-community { order: 4; }
-    .hd-settle .hd-dealer-title { order: 5; }
-    .hd-settle .hd-dealer { order: 6; }
-
-    /* Identify the Hands: rank picker under the dealer cards, then the
-       Submit / Deal / End Session row, then the feedback */
-    .hd-rank-row {
-        order: 7;
-        width: min(100%, 360px);
-        margin: 0.25rem auto 0 auto;
-    }
-
-    .hd-rank-row select {
-        flex: 1 1 auto;
-    }
-
-    .hd-set-caption {
-        order: 7;
-        margin: 0.25rem 0 0 0;
-    }
-
-    .hd-identify .hd-buttons {
-        order: 8;
-    }
-
-    .hd-identify .hd-feedback {
-        order: 9;
-    }
-
-    .hd-pager-label {
-        font-weight: bold;
-        text-align: center;
-        white-space: nowrap;
-    }
-
-    .hd-hands {
-        order: 6;
-        width: 100%;
-        justify-content: center;
-        margin: 0.75rem 0 0.5rem 0;
-    }
-
-    .hd-hand {
-        display: none;
-    }
-
-    .hd-hand.hd-hand-current {
-        display: block;
-    }
-
-    /* The pager banner already says which player this is */
-    .hd-hand-number {
-        display: none;
-    }
-
-    .content .hd-feedback {
-        order: 8;
-        margin-top: 0.75rem;
-        position: static;
-        align-self: stretch;
-        max-width: none;
-        font-size: 0.95rem;
-        min-height: 0;
-    }
-
-    .hd-feedback p {
-        white-space: normal !important;
-    }
-
-    /* Submit / Deal sit right under the hand, ahead of the feedback,
-       so they're reachable without scrolling past the results */
-    .hd-buttons {
-        order: 7;
-        margin: 0.75rem 0 0 0;
-    }
-
-    /* Action rows (Submit / Deal / End Session) in Hold'em and Side
-       Wagers: centered, a fixed overall width matching the Previous /
-       rank / Next row, buttons sharing it equally */
-    .hd-buttons,
-    .sw-footer-buttons,
-    .sb-actions > div {
-        display: flex;
-        gap: 6px;
-        width: min(100%, 360px);
-        align-self: center;
-        justify-self: center;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .content .hd-buttons button,
-    .content .sw-footer-buttons button,
-    .content .sb-actions > div button {
-        flex: 1 1 0;
-        padding-left: 0.3rem;
-        padding-right: 0.3rem;
-    }
-
-    /* Pai Gow - Hand Setting: one column -- Low hand, the 7 cards
-       wrapping 4 + 3, buttons, score, then the result */
-    .hs-screen {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .hs-top {
-        display: contents;
-    }
-
-    .hs-low { order: 1; }
-    .hs-cards-title { order: 2; margin-bottom: 0.5rem; }
-    .hs-cards { order: 3; }
-    .hs-buttons { order: 4; margin-top: 0; }
-
-    /* Sort / Submit / Deal / End Session: a tidy 2 x 2 block of
-       equal-size buttons */
-    .hs-screen > .hs-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 6px;
-        width: min(100%, 360px);
-        align-self: center;
-    }
-
-    .content .hs-buttons button {
-        width: 100%;
-    }
-    .hs-score { order: 5; }
-
-    /* House Ways / Wager Rules toggle and chart stay last on phones */
-    .hs-screen > .rules-row,
-    .sb-screen > .rules-row { order: 10; }
-    .hs-screen > .rules-image,
-    .sb-screen > .rules-image { order: 11; }
-
-    .content .hs-feedback {
-        order: 6;
-        margin: 0;
-        max-width: none;
-        font-size: 0.9rem;
-    }
-
-    .hs-low-slot {
-        width: min(100px, calc((100vw - 2rem - 24px) / 4));
-        height: auto;
-        aspect-ratio: 100 / 140;
-    }
-
-    /* The 7 cards overlap in a single row, like a fanned hand. Each
-       card is the same width as a Low slot, and the left ~55% of every
-       card except the last stays visible -- the rank and suit corner,
-       and a strip wide enough to tap. Later cards sit on top of earlier
-       ones, so the visible strip is always the card being tapped. On
-       wider screens where all 7 fit side by side, the overlap
-       disappears and they space out normally (8px gap). */
-    .hs-cards {
-        --hs-row: calc(100vw - 2rem);
-        --hs-card-w: min(100px, calc(var(--hs-row) / 4.3));
-        flex-wrap: nowrap;
-        gap: 0;
-    }
-
-    /* position: relative keeps the cards stacked strictly left to
-       right. Without it, a card moved to Low (made invisible with
-       opacity: 0) jumps above its neighbor and blocks taps on the
-       next card's visible strip. */
-    .hs-card {
-        position: relative;
-        flex: none;
-        width: var(--hs-card-w);
-        height: auto;
-        aspect-ratio: 100 / 140;
-        background-color: white;
-    }
-
-    .hs-card + .hs-card {
-        margin-left: min(8px, calc((var(--hs-row) - var(--hs-card-w)) / 6 - var(--hs-card-w)));
-    }
-
-    /* Pai Gow - Settling Bets: player hand, the four wager buttons,
-       dealer hand, push note, then Submit / Deal / End Session and the
-       results. (.sb-wager-row is display: contents so its wagers and its
-       buttons can sit apart, either side of the dealer hand.) */
-    .sb-screen {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .sb-player { order: 1; }
-    .sb-wagers { order: 2; }
-    .sb-push-note { order: 3; font-size: 0.8rem; margin: 0 0 0.25rem 0; }
-    .sb-dealer { order: 4; }
-    .content .sb-wins { order: 5; }
-    .sb-actions { order: 6; }
-
-    /* A little wider than the page padding, so the cards can be bigger */
-    .sb-screen {
-        margin-left: -0.5rem;
-        margin-right: -0.5rem;
-    }
-
-    /* Submit / Deal / End Session (with the result) pinned to the bottom
-       of the screen, so they're always visible; the page still scrolls
-       underneath. Sits above the iPhone's home bar. */
-    .sb-actions {
-        position: sticky;
-        bottom: 0;
-        z-index: 20;
-        margin: 0.5rem 0 0 0;
-        padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
-        background-color: white;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
-    }
-
-    .sb-actions > p {
-        text-align: center;
-        font-size: 0.85rem;
-    }
-
-    .sb-actions > p:empty {
-        display: none;
-    }
-
-    .sb-player h3,
-    .sb-dealer h3 {
-        margin: 0.25rem 0 0.15rem 0;
-    }
-
-    .sb-player h3 {
-        margin-top: 0 !important;
-    }
-
-    .sb-hand-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.15rem;
-    }
-
-    .sb-hand-row > div {
-        width: 100%;
-    }
-
-    /* Compact headings, hand labels and row spacing, so everything down
-       to Submit fits on one screen */
-    .sb-player h3,
-    .sb-dealer h3 {
-        font-size: 1.05rem;
-    }
-
-    .content .sb-hand-row > div > div:not(.sb-cards) {
-        font-size: 0.72rem !important;
-        line-height: 1.15;
-    }
-
-    .content .sb-cards {
-        margin-bottom: 0.2rem !important;
-    }
-
-    /* Cards overlap 25%: five cards span 4 card widths, so each card is
-       25% of the row, capped at 110px. The low hands overlap the same
-       way at the same size. */
-    .content .sb-cards {
-        gap: 0 !important;
-    }
-
-    .sb-card {
-        position: relative;
-        width: min(110px, 25%);
-        height: auto;
-        aspect-ratio: 90 / 126;
-    }
-
-    .sb-card + .sb-card {
-        margin-left: calc(min(110px, 25%) * -0.25);
-    }
-
-    .content .sb-hand-labels {
-        margin-top: 0;
-        min-height: 0;
-    }
-
-    .sb-wager-row {
-        display: contents;
-    }
-
-    /* All four wagers on one row, between the two hands */
-    .sb-wagers {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 0.5rem 0 0.25rem 0;
-    }
-
-    .sb-wagers .wager-shape {
-        width: 78px;
-        height: 78px;
-        font-size: 0.72rem;
-    }
-
-    /* Wager buttons: the four share the row equally, same height */
-    .sb-wagers {
-        gap: 6px;
-        align-items: stretch;
-    }
-
-    .sb-wagers .wp {
-        flex: 1 1 0;
-        min-width: 0;
-    }
-
-    .content .sb-wagers .wp-btn {
-        min-width: 0;
-        min-height: 48px;
-        padding: 0.2rem 0.15rem;
-        font-size: 0.74rem;
-    }
-
-    .sb-wagers .wager-circle {
-        width: 74px;
-        height: 74px;
-    }
-
-    .sb-wagers .wager-triangle-svg {
-        width: 78px;
-        height: 78px;
-    }
-
-    .sb-wagers .wager-label {
-        padding: 0 4px;
-    }
-
-    .sb-actions {
-        margin-left: 0;
-        align-items: stretch;
-    }
-
-    .content .sb-wins {
-        margin-left: 0;
-    }
-
-    .session-summary {
-        max-width: none;
-    }
+}
+
+/* ------------------------------------------------------------------
+   Game layouts: written for phones, and used on desktop too (inside a
+   centered column -- see "Desktop column" below), so every game
+   works the same way on both.
+   ------------------------------------------------------------------ */
+/* No Back buttons on phones: the menu does the same job (tapping the
+   game you're in returns to its start screen), and the game content
+   sits higher on screen. A row left holding only Back collapses. */
+.back-button {
+    display: none;
+}
+
+.button-row:not(:has(> :not(.back-button))) {
+    display: none;
+}
+
+/* Card rows shrink to fit instead of running off the screen.
+   aspect-ratio keeps the same proportions the desktop size uses. */
+.card-row {
+    flex-wrap: wrap;
+}
+
+.home-card {
+    width: calc((100% - 32px) / 5);
+    max-width: 100px;
+    height: auto;
+    aspect-ratio: 100 / 140;
+}
+
+.game-card {
+    width: clamp(64px, 26vw, 90px);
+    height: auto;
+    aspect-ratio: 90 / 126;
+}
+
+/* Three Card Prime: wagers stack below the hands */
+.tcp-table {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.tcp-hands {
+    text-align: center;
+}
+
+.tcp-hands .card-row {
+    justify-content: center;
+}
+
+/* Room for the Ante Bonus checkbox, which sits to the right of
+   the centered Ante diamond */
+.tcp-wagers {
+    padding-bottom: 0.5rem;
+}
+
+/* Bigger keypad keys on phones -- three equal columns spanning the
+   same width as the answer box + BUST / display row above */
+.numeric-keypad {
+    display: block;
+    width: 100%;
+}
+
+.numeric-keypad-row button,
+.numeric-keypad-row span,
+.numeric-keypad-row .numeric-keypad-wide {
+    flex: 1 1 0;
+    width: auto;
+    height: 52px;
+    font-size: 1.25rem;
+}
+
+.numeric-keypad-enter {
+    font-size: 1.1rem;
+}
+
+/* Flash Cards / Payouts: feedback moves above the answer box, so
+   "Incorrect - try again" and the result aren't hidden below the
+   keypad. Order: cards and prompt, feedback, answer box, keypad,
+   score, New Round / End Session. */
+.keypad-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* In a flex column, paragraph margins no longer overlap each other,
+   so they're tightened here to keep the keypad on screen */
+.keypad-screen > p {
+    margin: 0.4rem 0;
+}
+
+.keypad-screen > .card-row {
+    margin: 0.75rem 0 0.25rem 0 !important;
+}
+
+/* Flash Cards: card width chosen so the whole fanned hand (--n cards,
+   each after the first adding 70% of a card) fits across the screen;
+   never larger than the 100px desktop size */
+.card-row.fc-fan {
+    --fc-w: min(100px, calc((var(--col-w) - 2rem) / (1 + 0.7 * (var(--n, 2) - 1))));
+}
+
+.keypad-screen .numeric-keypad-row button,
+.keypad-screen .numeric-keypad-row span {
+    height: 48px;
+}
+
+.keypad-screen > .feedback-area {
+    order: 1;
+    min-height: 1.5rem;
+}
+
+.keypad-screen > .feedback-area p {
+    margin: 0.25rem 0;
+}
+
+/* Payouts: display box replaces the text box and the separate
+   feedback lines */
+.po-display {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-height: 3.6rem;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid #999;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 1.15rem;
+}
+
+.po-display-result {
+    font-weight: bold;
+}
+
+.po-display-detail {
+    font-size: 1rem;
+}
+
+.po-display-amount {
+    font-size: 1.4rem;
+    font-weight: bold;
+}
+
+.po-display-placeholder {
+    color: #888;
+}
+
+.keypad-answer:has(.po-display) input {
+    display: none;
+}
+
+.keypad-screen:has(.po-display) > .feedback-area {
+    display: none;
+}
+
+.content .bust-button {
+    font-weight: bold;
+    min-width: 5.5rem;
+}
+
+.keypad-screen > .keypad-answer { order: 2; margin: 0.5rem 0 0.75rem 0 !important; align-self: stretch; }
+.keypad-screen > .keypad-wrap { order: 3; align-self: stretch; }
+.keypad-screen > .keypad-score { order: 4; }
+.keypad-screen > .keypad-actions { order: 5; }
+
+/* Answer box shares its row with Submit and 123 instead of
+   pushing them onto a second line */
+.answer-row {
+    flex-wrap: nowrap;
+}
+
+.answer-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 8rem;
+}
+
+/* Blackjack - Side Wagers: player hand on top, then the dealer card,
+   Submit/Deal, and the result -- stacked instead of a fixed 900px row */
+
+.sw-hands {
+    justify-content: center;
+    column-gap: 1rem;
+    row-gap: 1.25rem;
+}
+
+.sw-footer {
+    width: auto;
+    grid-template-columns: 1fr;
+    row-gap: 0.75rem;
+}
+
+.sw-footer-dealer {
+    order: -1;
+    text-align: center;
+    justify-self: center;
+}
+
+/* Shared phone player pager: "Player X of N" banner above the hand */
+.hand-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0.75rem 0 0 0;
+}
+
+.hand-pager-label {
+    font-weight: bold;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.paged-hand {
+    display: none;
+}
+
+.paged-hand.paged-hand-current {
+    display: block;
+}
+
+.paged-hand-number {
+    display: none;
+}
+
+/* Submit / Deal right under the hand, then the result */
+.sw-footer-feedback {
+    margin-top: 0.25rem;
+}
+
+.sw-footer-buttons {
+    justify-self: center;
+}
+
+/* Side Wagers: one column -- player pager, the hand, dealer card,
+   result and score, then Submit / Deal / End Session pinned to the
+   bottom of the screen (always visible). sw-footer is display:
+   contents so its pieces join this column and the pinned bar can
+   stick for the whole page. */
+.sw-screen {
+    display: flex;
+    flex-direction: column;
+}
+
+.sw-screen > .hand-pager { order: 1; }
+.sw-screen > .sw-hands { order: 2; }
+.sw-screen .sw-footer { display: contents; }
+.sw-screen .sw-footer-dealer { order: 3; margin-top: 0.75rem; }
+.sw-screen .sw-footer-feedback { order: 4; text-align: center; }
+.sw-screen .sw-footer-buttons {
+    order: 5;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    width: auto;
+    align-self: stretch;
+    margin: 0.5rem 0 0 0;
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
+    background-color: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+.sw-screen > .rules-row { order: 6; }
+.sw-screen > .rules-image,
+.sw-screen > div:last-child:not(.rules-row) { order: 7; }
+
+/* Heads-Up Hold'em: one column -- community cards, dealer cards,
+   player pager, the current hand, action buttons, then feedback.
+   display: contents lets the community/dealer/button pieces be
+   reordered individually alongside the hands and feedback. */
+.hd-table {
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hd-center {
+    display: contents;
+}
+
+.hd-community-title {
+    order: 1;
+    margin-top: 1rem;
+}
+
+/* Identify the Hands: half the old spacing, so the five community
+   cards come out a little larger */
+.hd-community {
+    order: 2;
+    width: 100%;
+    max-width: 564px;
+    justify-content: center;
+    gap: 4px;
+}
+
+.hd-community-slot {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100px;
+}
+
+.hd-community .hd-card {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 100 / 140;
+}
+
+.hd-dealer-title {
+    order: 3;
+    margin-top: 0.5rem;
+}
+
+/* Same 6px spacing as the player's two cards */
+.hd-dealer {
+    order: 4;
+    gap: 6px;
+}
+
+/* Dealer cards: the same size as the community cards */
+.hd-dealer .hd-card {
+    width: min(100px, calc((var(--col-w) - 2rem) / 4));
+    height: auto;
+    aspect-ratio: 100 / 140;
+}
+
+/* Both modes: larger community cards, each overlapping the one
+   before it by 25% (corner indexes stay visible). Five cards at 75%
+   spacing span 4 card widths, so each card is a quarter of the
+   screen width, up to the desktop size of 100px. (.hd-table in the
+   selector outranks the desktop Settle the Bets 3rem gap.) */
+.hd-table .hd-community {
+    --hc-w: min(100px, calc((var(--col-w) - 2rem) / 4));
+    gap: 0;
+    max-width: none;
+}
+
+.hd-community-slot {
+    flex: 0 0 var(--hc-w);
+    max-width: none;
+    position: relative;
+}
+
+.hd-community-slot + .hd-community-slot {
+    margin-left: calc(var(--hc-w) * -0.25);
+}
+
+/* Settle the Bets: a card marked unused (community or dealer) drops
+   down a quarter of its height and darkens (opaque, so the card
+   behind doesn't show through, and suit colors stay true), instead of the desktop's
+   45-degree turn -- a turned card would cover its neighbors in the
+   overlapped row. Room is left below the community row for the drop. */
+.hd-community.hd-community-settle {
+    padding-bottom: calc(var(--hc-w) * 0.35);
+}
+
+.hd-settle .hd-card.hd-card-unused {
+    transform: translateY(25%) !important;
+    filter: brightness(0.7);
+}
+
+.hd-dealer {
+    padding-bottom: calc(min(100px, calc((var(--col-w) - 2rem) / 4)) * 0.35);
+}
+
+/* Both modes: the player's two cards side by side instead of
+   stacked diagonally (overrides the inline desktop positioning) */
+.hd-table .hd-hand-cards {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Player cards the same size as the community and dealer cards */
+.hd-table .hd-hand-cards img {
+    position: static !important;
+    width: min(100px, calc((var(--col-w) - 2rem) / 4)) !important;
+    height: auto !important;
+    aspect-ratio: 100 / 140;
+}
+
+/* One player hand at a time: "Player X of N" banner above it, with
+   Previous / Next beside its answer control */
+.hd-pager {
+    order: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+.hd-hand-cards {
+    margin: 0 auto;
+}
+
+.hd-hand-controls {
+    margin-top: 0.75rem;
+    gap: 6px;
+}
+
+.hd-inline-pager {
+    display: inline-block;
+}
+
+
+
+/* With Previous / Next present: a fixed-width row -- Previous and
+   Next the same width at either end, the rank dropdown (or the
+   wagers) centered between them. Submit / Deal / End Session below
+   use the same overall width. Shared by Hold'em and Side Wagers. */
+.hd-hand-controls:has(.hd-inline-pager),
+.sw-hand-controls:has(.hd-inline-pager) {
+    display: grid;
+    grid-template-columns: 4.25rem 1fr 4.25rem;
+    justify-items: center;
+    gap: 6px;
+    width: min(100%, 360px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hd-hand-controls .hd-inline-pager,
+.sw-hand-controls .hd-inline-pager {
+    display: inline-block;
+    width: 100%;
+}
+
+.content .hd-inline-pager {
+    padding: 0.4rem 0.1rem;
+    font-size: 0.85rem;
+}
+
+.sw-hand-cards {
+    margin: 0 auto;
+}
+
+/* The current hand spans the full width, so its Previous / Next row
+   (and Hold'em's rank row) lines up with the Submit / Deal / End
+   Session row below */
+.paged-hand.paged-hand-current,
+.hd-hand.hd-hand-current {
+    width: 100%;
+}
+
+/* Side Wagers: extra space between Previous / Next and the wagers so
+   a tap meant for a wager doesn't land on a button */
+.sw-hand-controls:has(.hd-inline-pager) {
+    column-gap: 1.25rem;
+}
+
+.hd-hand-controls:has(.hd-inline-pager) select {
+    width: 100%;
+}
+
+/* Win / Lose / Push: full-size tap targets; with a single hand (no
+   Previous / Next) the row matches the action row's width */
+.content .hd-outcome {
+    min-height: 44px;
+    font-size: 0.95rem;
+}
+
+/* Settle the Bets: Submit / Deal / End Session pinned to the bottom
+   of the screen (always visible), with the feedback just above it */
+.hd-table:not(.hd-identify) .hd-buttons {
+    order: 10;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    width: auto;
+    align-self: stretch;
+    margin: 0.5rem 0 0 0;
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
+    background-color: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Settle the Bets after Submit: result strip at the top of the
+   screen, and each player's own result under their buttons */
+.hd-result-banner {
+    display: block;
+    order: 0;
+    width: min(100%, 360px);
+    box-sizing: border-box;
+    margin: 0 auto 0.5rem auto;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.95rem;
+}
+
+.hd-result-main {
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+
+.hd-hand-result {
+    display: block;
+    margin: 0.4rem 0 0 0;
+    text-align: center;
+    font-weight: bold;
+}
+
+.hd-result-banner.hd-result-ok {
+    background-color: #d0e0f8;
+    color: #0050b4;
+}
+
+.hd-result-banner.hd-result-bad {
+    background-color: #f8d0d0;
+    color: #a00000;
+}
+
+.hd-hand-result.hd-result-ok {
+    color: #0050b4;
+}
+
+.hd-hand-result.hd-result-bad {
+    color: #c80000;
+}
+
+/* Settle the Bets: the current player hand goes to the top, then the
+   community and dealer cards */
+.hd-settle .hd-pager { order: 1; margin-top: 0; }
+.hd-settle .hd-hands { order: 2; }
+.hd-settle .hd-community-title { order: 3; }
+.hd-settle .hd-community { order: 4; }
+.hd-settle .hd-dealer-title { order: 5; }
+.hd-settle .hd-dealer { order: 6; }
+
+/* Identify the Hands: rank picker under the dealer cards, then the
+   Submit / Deal / End Session row, then the feedback */
+.hd-rank-row {
+    order: 7;
+    width: min(100%, 360px);
+    margin: 0.25rem auto 0 auto;
+}
+
+.hd-rank-row select {
+    flex: 1 1 auto;
+}
+
+.hd-set-caption {
+    order: 7;
+    margin: 0.25rem 0 0 0;
+}
+
+.hd-identify .hd-buttons {
+    order: 8;
+}
+
+.hd-identify .hd-feedback {
+    order: 9;
+}
+
+.hd-pager-label {
+    font-weight: bold;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.hd-hands {
+    order: 6;
+    width: 100%;
+    justify-content: center;
+    margin: 0.75rem 0 0.5rem 0;
+}
+
+.hd-hand {
+    display: none;
+}
+
+.hd-hand.hd-hand-current {
+    display: block;
+}
+
+/* The pager banner already says which player this is */
+.hd-hand-number {
+    display: none;
+}
+
+.content .hd-feedback {
+    order: 8;
+    margin-top: 0.75rem;
+    position: static;
+    align-self: stretch;
+    max-width: none;
+    font-size: 0.95rem;
+    min-height: 0;
+}
+
+.hd-feedback p {
+    white-space: normal !important;
+}
+
+/* Submit / Deal sit right under the hand, ahead of the feedback,
+   so they're reachable without scrolling past the results */
+.hd-buttons {
+    order: 7;
+    margin: 0.75rem 0 0 0;
+}
+
+/* Action rows (Submit / Deal / End Session) in Hold'em and Side
+   Wagers: centered, a fixed overall width matching the Previous /
+   rank / Next row, buttons sharing it equally */
+.hd-buttons,
+.sw-footer-buttons,
+.sb-actions > div {
+    display: flex;
+    gap: 6px;
+    width: min(100%, 360px);
+    align-self: center;
+    justify-self: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.content .hd-buttons button,
+.content .sw-footer-buttons button,
+.content .sb-actions > div button {
+    flex: 1 1 0;
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+}
+
+/* Pai Gow - Hand Setting: one column -- Low hand, the 7 cards
+   wrapping 4 + 3, buttons, score, then the result */
+.hs-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.hs-top {
+    display: contents;
+}
+
+.hs-low { order: 1; }
+.hs-cards-title { order: 2; margin-bottom: 0.5rem; }
+.hs-cards { order: 3; }
+.hs-buttons { order: 4; margin-top: 0; }
+
+/* Sort / Submit / Deal / End Session: a tidy 2 x 2 block of
+   equal-size buttons */
+.hs-screen > .hs-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: min(100%, 360px);
+    align-self: center;
+}
+
+.content .hs-buttons button {
+    width: 100%;
+}
+.hs-score { order: 5; }
+
+/* House Ways / Wager Rules toggle and chart stay last on phones */
+.hs-screen > .rules-row,
+.sb-screen > .rules-row { order: 10; }
+.hs-screen > .rules-image,
+.sb-screen > .rules-image { order: 11; }
+
+.content .hs-feedback {
+    order: 6;
+    margin: 0;
+    max-width: none;
+    font-size: 0.9rem;
+}
+
+.hs-low-slot {
+    width: min(100px, calc((var(--col-w) - 2rem - 24px) / 4));
+    height: auto;
+    aspect-ratio: 100 / 140;
+}
+
+/* The 7 cards overlap in a single row, like a fanned hand. Each
+   card is the same width as a Low slot, and the left ~55% of every
+   card except the last stays visible -- the rank and suit corner,
+   and a strip wide enough to tap. Later cards sit on top of earlier
+   ones, so the visible strip is always the card being tapped. On
+   wider screens where all 7 fit side by side, the overlap
+   disappears and they space out normally (8px gap). */
+.hs-cards {
+    --hs-row: calc(var(--col-w) - 2rem);
+    --hs-card-w: min(100px, calc(var(--hs-row) / 4.3));
+    flex-wrap: nowrap;
+    gap: 0;
+}
+
+/* position: relative keeps the cards stacked strictly left to
+   right. Without it, a card moved to Low (made invisible with
+   opacity: 0) jumps above its neighbor and blocks taps on the
+   next card's visible strip. */
+.hs-card {
+    position: relative;
+    flex: none;
+    width: var(--hs-card-w);
+    height: auto;
+    aspect-ratio: 100 / 140;
+    background-color: white;
+}
+
+.hs-card + .hs-card {
+    margin-left: min(8px, calc((var(--hs-row) - var(--hs-card-w)) / 6 - var(--hs-card-w)));
+}
+
+/* Pai Gow - Settling Bets: player hand, the four wager buttons,
+   dealer hand, push note, then Submit / Deal / End Session and the
+   results. (.sb-wager-row is display: contents so its wagers and its
+   buttons can sit apart, either side of the dealer hand.) */
+.sb-screen {
+    display: flex;
+    flex-direction: column;
+}
+
+.sb-player { order: 1; }
+.sb-wagers { order: 2; }
+.sb-push-note { order: 3; font-size: 0.8rem; margin: 0 0 0.25rem 0; }
+.sb-dealer { order: 4; }
+.content .sb-wins { order: 5; }
+.sb-actions { order: 6; }
+
+/* A little wider than the page padding, so the cards can be bigger */
+.sb-screen {
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+}
+
+/* Submit / Deal / End Session (with the result) pinned to the bottom
+   of the screen, so they're always visible; the page still scrolls
+   underneath. Sits above the iPhone's home bar. */
+.sb-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    margin: 0.5rem 0 0 0;
+    padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
+    background-color: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sb-actions > p {
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+.sb-actions > p:empty {
+    display: none;
+}
+
+.sb-player h3,
+.sb-dealer h3 {
+    margin: 0.25rem 0 0.15rem 0;
+}
+
+.sb-player h3 {
+    margin-top: 0 !important;
+}
+
+.sb-hand-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+}
+
+.sb-hand-row > div {
+    width: 100%;
+}
+
+/* Compact headings, hand labels and row spacing, so everything down
+   to Submit fits on one screen */
+.sb-player h3,
+.sb-dealer h3 {
+    font-size: 1.05rem;
+}
+
+.content .sb-hand-row > div > div:not(.sb-cards) {
+    font-size: 0.72rem !important;
+    line-height: 1.15;
+}
+
+.content .sb-cards {
+    margin-bottom: 0.2rem !important;
+}
+
+/* Cards overlap 25%: five cards span 4 card widths, so each card is
+   25% of the row, capped at 110px. The low hands overlap the same
+   way at the same size. */
+.content .sb-cards {
+    gap: 0 !important;
+}
+
+.sb-card {
+    position: relative;
+    width: min(110px, 25%);
+    height: auto;
+    aspect-ratio: 90 / 126;
+}
+
+.sb-card + .sb-card {
+    margin-left: calc(min(110px, 25%) * -0.25);
+}
+
+.content .sb-hand-labels {
+    margin-top: 0;
+    min-height: 0;
+}
+
+.sb-wager-row {
+    display: contents;
+}
+
+/* All four wagers on one row, between the two hands */
+.sb-wagers {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.5rem 0 0.25rem 0;
+}
+
+.sb-wagers .wager-shape {
+    width: 78px;
+    height: 78px;
+    font-size: 0.72rem;
+}
+
+/* Wager buttons: the four share the row equally, same height */
+.sb-wagers {
+    gap: 6px;
+    align-items: stretch;
+}
+
+.sb-wagers .wp {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.content .sb-wagers .wp-btn {
+    min-width: 0;
+    min-height: 48px;
+    padding: 0.2rem 0.15rem;
+    font-size: 0.74rem;
+}
+
+.sb-wagers .wager-circle {
+    width: 74px;
+    height: 74px;
+}
+
+.sb-wagers .wager-triangle-svg {
+    width: 78px;
+    height: 78px;
+}
+
+.sb-wagers .wager-label {
+    padding: 0 4px;
+}
+
+.sb-actions {
+    margin-left: 0;
+    align-items: stretch;
+}
+
+.content .sb-wins {
+    margin-left: 0;
+}
+
+.session-summary {
+    max-width: none;
 }
 
 /* ------------------------------------------------------------------
@@ -2290,218 +2292,239 @@ label,
    the wagers are a column of buttons down the right edge in settling
    order. Tapping one slides its choices out to the left beside it.
    ------------------------------------------------------------------ */
-@media (max-width: 768px) {
-    .tcp-play .tcp-wagers,
-    .tcp-play .tcp-main-action {
-        display: none;
+/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
+.tcp-play .tcp-wagers,
+.tcp-play .tcp-main-action {
+    display: none;
+}
+
+/* Hands left, wager buttons right */
+/* Hands left, wager column (84px) right. The table is the anchor
+   for the slid-out choices, so they can never run off screen. */
+.tcp-play .tcp-table {
+    --tcp-rail-w: 84px;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 0;
+}
+
+.tcp-play .tcp-hands {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+}
+
+.tcp-play .tcp-hands h3 {
+    margin: 0.25rem 0;
+}
+
+.tcp-play .tcp-hands p {
+    margin: 0.4rem 0;
+    font-size: 0.72rem;
+}
+
+/* Each hand's three cards overlap 25% (rank/suit corners stay
+   visible), so they keep their size beside the wager column */
+.tcp-play .tcp-hands .card-row {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0;
+}
+
+/* Three cards overlapped 25% = 2.5 card widths, so each card is 40%
+   of the hand column's width (capped at 120px on wide screens) */
+.tcp-play .tcp-hands .game-card {
+    position: relative;
+    width: min(40%, 120px);
+    height: auto;
+    aspect-ratio: 100 / 140;
+}
+
+.tcp-play .tcp-hands .game-card + .game-card {
+    margin-left: calc(min(40%, 120px) * -0.25);
+}
+
+/* Wager buttons, top to bottom in settling order, then Submit/Deal */
+.tcp-rail {
+    display: flex;
+    flex: 0 0 var(--tcp-rail-w);
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 1.9rem;
+}
+
+.content .tcp-rail-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 16;
+    width: 100%;
+    min-height: 42px;
+    padding: 0.15rem 0.2rem;
+    border: 1px solid #c9c9c9;
+    border-radius: 8px;
+    background-color: white;
+    color: #222;
+    font-size: 0.82rem;
+    font-weight: bold;
+    line-height: 1.1;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tcp-rail-btn small {
+    min-height: 0.75rem;
+    font-size: 0.62rem;
+    font-weight: 600;
+}
+
+.content .tcp-rail-btn.win {
+    background-color: #0064dc;
+    border-color: #0064dc;
+    color: white;
+}
+
+.content .tcp-rail-btn.lose {
+    background-color: #c80000;
+    border-color: #c80000;
+    color: white;
+}
+
+.content .tcp-rail-btn.push {
+    background-color: #e6c800;
+    border-color: #e6c800;
+    color: black;
+}
+
+.content .tcp-rail-btn.tcp-rail-active {
+    box-shadow: 0 0 0 3px #7f9fcf;
+}
+
+.content .tcp-rail-btn.tcp-rail-wrong {
+    box-shadow: 0 0 0 3px #222;
+}
+
+.content .tcp-rail-primary {
+    position: relative;
+    z-index: 16;
+    min-height: 42px;
+    padding: 0;
+    border: 1px solid #0050b4;
+    border-radius: 8px;
+    background-color: #0064dc;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+/* The slid-out choices: level with the tapped button (top left at
+   its natural spot, pulled up by the button's height), and spanning
+   the card area from the table's left edge to the wager column --
+   anchored to the table, so always on screen. Light-blue tint with a
+   border and a dark shadow so it stands clear of the cards. */
+.tcp-fly {
+    position: absolute;
+    left: 0;
+    right: calc(var(--tcp-rail-w) + 8px);
+    margin-top: -46px;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    box-sizing: border-box;
+    padding: 6px;
+    border: 1px solid #9bb8e0;
+    border-radius: 12px;
+    background-color: #dde8f8;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+    animation: tcp-fly-in 0.15s ease-out;
+}
+
+@keyframes tcp-fly-in {
+    from { opacity: 0; transform: translateX(12px); }
+    to { opacity: 1; transform: none; }
+}
+
+.content .tcp-fly-choice {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 46px;
+    padding: 0;
+    border: 1px solid #999;
+    border-radius: 8px;
+    background-color: white;
+    color: black;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+.content .tcp-fly-choice.tcp-fly-win {
+    background-color: #0064dc;
+    border-color: #0064dc;
+    color: white;
+}
+
+.content .tcp-fly-choice.tcp-fly-lose {
+    background-color: #c80000;
+    border-color: #c80000;
+    color: white;
+}
+
+.content .tcp-fly-choice.tcp-fly-push {
+    background-color: #e6c800;
+    border-color: #e6c800;
+    color: black;
+}
+
+.content .tcp-fly-bonus {
+    flex: 1 0 100%;
+    min-height: 38px;
+    border: 1px dashed #777;
+    border-radius: 8px;
+    background-color: white;
+    color: black;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.content .tcp-fly-bonus.on {
+    border: 1px solid #0050b4;
+    background-color: #0050b4;
+    color: white;
+}
+
+/* Invisible layer behind the choices: tapping it closes them */
+.tcp-fly-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+}
+
+.tcp-play .tcp-table {
+    position: relative;
+}
+
+/* ------------------------------------------------------------------
+   Desktop column: the games use the phone layout on desktop too, in a
+   centered column. --col-w is the width those layouts size their cards
+   against (the screen width on phones, the column width on desktop).
+   ------------------------------------------------------------------ */
+:root {
+    --col-w: 100vw;
+}
+
+@media (min-width: 769px) {
+    :root {
+        --col-w: 520px;
     }
 
-    /* Hands left, wager buttons right */
-    /* Hands left, wager column (84px) right. The table is the anchor
-       for the slid-out choices, so they can never run off screen. */
-    .tcp-play .tcp-table {
-        --tcp-rail-w: 84px;
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 8px;
-        margin-top: 0;
-    }
-
-    .tcp-play .tcp-hands {
-        flex: 1 1 auto;
-        min-width: 0;
-        text-align: left;
-    }
-
-    .tcp-play .tcp-hands h3 {
-        margin: 0.25rem 0;
-    }
-
-    .tcp-play .tcp-hands p {
-        margin: 0.4rem 0;
-        font-size: 0.72rem;
-    }
-
-    /* Each hand's three cards overlap 25% (rank/suit corners stay
-       visible), so they keep their size beside the wager column */
-    .tcp-play .tcp-hands .card-row {
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-        gap: 0;
-    }
-
-    /* Three cards overlapped 25% = 2.5 card widths, so each card is 40%
-       of the hand column's width (capped at 120px on wide screens) */
-    .tcp-play .tcp-hands .game-card {
-        position: relative;
-        width: min(40%, 120px);
-        height: auto;
-        aspect-ratio: 100 / 140;
-    }
-
-    .tcp-play .tcp-hands .game-card + .game-card {
-        margin-left: calc(min(40%, 120px) * -0.25);
-    }
-
-    /* Wager buttons, top to bottom in settling order, then Submit/Deal */
-    .tcp-rail {
-        display: flex;
-        flex: 0 0 var(--tcp-rail-w);
-        flex-direction: column;
-        gap: 6px;
-        margin-top: 1.9rem;
-    }
-
-    .content .tcp-rail-btn {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        z-index: 16;
-        width: 100%;
-        min-height: 42px;
-        padding: 0.15rem 0.2rem;
-        border: 1px solid #c9c9c9;
-        border-radius: 8px;
-        background-color: white;
-        color: #222;
-        font-size: 0.82rem;
-        font-weight: bold;
-        line-height: 1.1;
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    .tcp-rail-btn small {
-        min-height: 0.75rem;
-        font-size: 0.62rem;
-        font-weight: 600;
-    }
-
-    .content .tcp-rail-btn.win {
-        background-color: #0064dc;
-        border-color: #0064dc;
-        color: white;
-    }
-
-    .content .tcp-rail-btn.lose {
-        background-color: #c80000;
-        border-color: #c80000;
-        color: white;
-    }
-
-    .content .tcp-rail-btn.push {
-        background-color: #e6c800;
-        border-color: #e6c800;
-        color: black;
-    }
-
-    .content .tcp-rail-btn.tcp-rail-active {
-        box-shadow: 0 0 0 3px #7f9fcf;
-    }
-
-    .content .tcp-rail-btn.tcp-rail-wrong {
-        box-shadow: 0 0 0 3px #222;
-    }
-
-    .content .tcp-rail-primary {
-        position: relative;
-        z-index: 16;
-        min-height: 42px;
-        padding: 0;
-        border: 1px solid #0050b4;
-        border-radius: 8px;
-        background-color: #0064dc;
-        color: white;
-        font-size: 0.95rem;
-        font-weight: bold;
-    }
-
-    /* The slid-out choices: level with the tapped button (top left at
-       its natural spot, pulled up by the button's height), and spanning
-       the card area from the table's left edge to the wager column --
-       anchored to the table, so always on screen. Light-blue tint with a
-       border and a dark shadow so it stands clear of the cards. */
-    .tcp-fly {
-        position: absolute;
-        left: 0;
-        right: calc(var(--tcp-rail-w) + 8px);
-        margin-top: -46px;
-        z-index: 20;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        box-sizing: border-box;
-        padding: 6px;
-        border: 1px solid #9bb8e0;
-        border-radius: 12px;
-        background-color: #dde8f8;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
-        animation: tcp-fly-in 0.15s ease-out;
-    }
-
-    @keyframes tcp-fly-in {
-        from { opacity: 0; transform: translateX(12px); }
-        to { opacity: 1; transform: none; }
-    }
-
-    .content .tcp-fly-choice {
-        flex: 1 1 0;
-        min-width: 0;
-        min-height: 46px;
-        padding: 0;
-        border: 1px solid #999;
-        border-radius: 8px;
-        background-color: white;
-        color: black;
-        font-size: 0.95rem;
-        font-weight: bold;
-    }
-
-    .content .tcp-fly-choice.tcp-fly-win {
-        background-color: #0064dc;
-        border-color: #0064dc;
-        color: white;
-    }
-
-    .content .tcp-fly-choice.tcp-fly-lose {
-        background-color: #c80000;
-        border-color: #c80000;
-        color: white;
-    }
-
-    .content .tcp-fly-choice.tcp-fly-push {
-        background-color: #e6c800;
-        border-color: #e6c800;
-        color: black;
-    }
-
-    .content .tcp-fly-bonus {
-        flex: 1 0 100%;
-        min-height: 38px;
-        border: 1px dashed #777;
-        border-radius: 8px;
-        background-color: white;
-        color: black;
-        font-size: 0.85rem;
-        font-weight: bold;
-    }
-
-    .content .tcp-fly-bonus.on {
-        border: 1px solid #0050b4;
-        background-color: #0050b4;
-        color: white;
-    }
-
-    /* Invisible layer behind the choices: tapping it closes them */
-    .tcp-fly-backdrop {
-        display: block;
-        position: fixed;
-        inset: 0;
-        z-index: 15;
-    }
-
-    .tcp-play .tcp-table {
-        position: relative;
+    .play-screen,
+    .start-screen {
+        max-width: 520px;
+        margin-left: auto;
+        margin-right: auto;
     }
 }
