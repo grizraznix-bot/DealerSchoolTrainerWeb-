@@ -311,15 +311,32 @@ else
 
     private void BackToStart() => _started = false;
 
+    // Share of hands dealt so All 6 wins (see DealNewRound). 19% forced,
+    // plus the ~7% the other 81% of plain deals win on their own, makes
+    // All 6 win on about 25% of hands overall.
+    private const double AllSixBoostRate = 0.19;
+
     private void DealNewRound()
     {
         _dealEnabled = false;
 
-        _deck = new Deck();
-        _deck.Shuffle();
+        // Training boost: All 6 (Three of a Kind or better from all six
+        // cards) wins on about 1 hand in 4 overall, vs about 1 in 14 with
+        // plain random deals. AllSixBoostRate of hands are forced winners. On those hands the cards are simply
+        // re-dealt until the six qualify, so the winners still come in
+        // their natural mix (trips, straights, flushes, full houses...).
+        // Not shown or adjustable anywhere; every other hand is a plain
+        // random deal.
+        bool forceAllSix = Random.Shared.NextDouble() < AllSixBoostRate;
+        do
+        {
+            _deck = new Deck();
+            _deck.Shuffle();
 
-        _playerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
-        _dealerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
+            _playerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
+            _dealerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
+        }
+        while (forceAllSix && ThreeCardEvaluator.ResolveAllSix(_playerCards, _dealerCards) != WagerOutcome.Win);
 
         SortDescending(_playerCards);
         SortDescending(_dealerCards);
