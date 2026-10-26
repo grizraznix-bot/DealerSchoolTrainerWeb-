@@ -2538,4 +2538,78 @@ label,
         margin-left: auto;
         margin-right: auto;
     }
+
+    /* Every game card on desktop is the Blackjack Payouts size, 75 x 105,
+       with each game's overlap scaled to match */
+
+    /* Flash Cards (fanned, 30% overlap) */
+    .card-row.fc-fan {
+        --fc-w: 75px !important;
+    }
+
+    /* Three Card Prime (25% overlap) */
+    .tcp-play .tcp-hands .game-card {
+        width: 75px !important;
+    }
+
+    .tcp-play .tcp-hands .game-card + .game-card {
+        margin-left: -18.75px !important;
+    }
+
+    /* Side Wagers: player's two cards (staggered) and the dealer card */
+    .sw-hand-cards {
+        width: 98px !important;
+        height: 146px !important;
+    }
+
+    .sw-hand-cards img {
+        width: 75px !important;
+        height: 105px !important;
+    }
+
+    .sw-hand-cards img:first-child {
+        left: 19px !important;
+    }
+
+    .sw-hand-cards img:last-child {
+        top: 34px !important;
+    }
+
+    .sw-dealer-card {
+        width: 75px;
+        height: 105px;
+    }
+
+    /* Hold'em: community (25% overlap), dealer and player cards */
+    .hd-table .hd-community {
+        --hc-w: 75px;
+    }
+
+    .hd-dealer .hd-card,
+    .hd-table .hd-hand-cards img {
+        width: 75px !important;
+        height: auto !important;
+    }
+
+    .hd-dealer {
+        padding-bottom: 26px;
+    }
+
+    /* Pai Gow Hand Setting: the 7 cards and the 2 Low slots */
+    .hs-cards {
+        --hs-card-w: 75px;
+    }
+
+    .hs-low-slot {
+        width: 75px;
+    }
+
+    /* Pai Gow Settling Bets (25% overlap) */
+    .sb-card {
+        width: 75px;
+    }
+
+    .sb-card + .sb-card {
+        margin-left: -18.75px;
+    }
 }
