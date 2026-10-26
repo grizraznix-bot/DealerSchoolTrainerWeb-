@@ -85,6 +85,24 @@
             if (r.bottom > h - pad) el.classList.add('wp-pop-up');
         };
     </script>
+    <!-- About page, "Reload Latest Version": GitHub Pages lets browsers
+         reuse a saved copy of the page and stylesheet for 10 minutes.
+         This fetches both fresh from GitHub (cache: 'reload' also replaces
+         the saved copies), then restarts the trainer from its home page.
+         Everything under _framework is renamed on each publish, so the new
+         page always pulls the new game code. Saved scores are untouched. -->
+    <script>
+        window.dstReloadLatest = async function () {
+            var base = document.baseURI;
+            var urls = [base, base + 'index.html', base + 'css/app.css', base + 'manifest.webmanifest'];
+            try {
+                await Promise.all(urls.map(function (u) {
+                    return fetch(u, { cache: 'reload' }).catch(function () { });
+                }));
+            } catch (e) { }
+            location.replace(base);
+        };
+    </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 

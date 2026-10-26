@@ -28,7 +28,7 @@
                       Expanded="@(_openCard == ChallengeGame.FlashCards)"
                       OnToggle="() => ToggleCard(ChallengeGame.FlashCards)"
                       OnStart="() => StartRun(ChallengeGame.FlashCards)">
-                @RenderTopFive(_fcTop, null)
+                @RenderTopFive(_fcTop, null, -1, FcKey)
             </ModeCard>
 
             <ModeCard Title="Blackjack Payouts"
@@ -49,7 +49,7 @@
                         </label>
                     </div>
                 </div>
-                @RenderTopFive(_ratio == PayoutRatio.ThreeToTwo ? _po32Top : _po65Top, _ratio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5")
+                @RenderTopFive(_ratio == PayoutRatio.ThreeToTwo ? _po32Top : _po65Top, _ratio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5", -1, _ratio == PayoutRatio.ThreeToTwo ? Po32Key : Po65Key)
             </ModeCard>
         </div>
     </div>
@@ -624,7 +624,29 @@ else
     private static string FormatAvg(int correct, double seconds) =>
         correct == 0 ? "-" : (seconds / correct).ToString("0.0") + "s";
 
-    private RenderFragment RenderTopFive(List<ChallengeScore> top, string? ratioLabel, int highlight = -1) => __builder =>
+    // Clear Scores: the first tap asks to confirm (on the page itself),
+    // the second clears that one list. _confirmClearKey = the list waiting
+    // on a confirm, or null.
+    private string? _confirmClearKey;
+
+    private void AskClear(string key) => _confirmClearKey = key;
+
+    private void CancelClear() => _confirmClearKey = null;
+
+    private async Task ConfirmClear(string key)
+    {
+        _confirmClearKey = null;
+
+        List<ChallengeScore> top = key == FcKey ? _fcTop : key == Po32Key ? _po32Top : _po65Top;
+        top.Clear();
+
+        try { await JS.InvokeVoidAsync("localStorage.removeItem", key); }
+        catch { /* storage blocked: the list is already empty on screen */ }
+    }
+
+    // Top 5 table. clearKey: the storage key for its Clear Scores button
+    // (start screen only; null on the end-of-run screen = no button).
+    private RenderFragment RenderTopFive(List<ChallengeScore> top, string? ratioLabel, int highlight = -1, string? clearKey = null) => __builder =>
     {
         <div class="ch-top">
             <p class="mode-option-label">Your Top 5@(ratioLabel is null ? "" : $" ({ratioLabel})")</p>
@@ -636,7 +658,7 @@ else
             {
                 <table class="ch-top-table">
                     <thead>
-                        <tr><th>#</th><th>Score</th><th>Correct</th><th>Avg</th><th>Date</th></tr>
+                        <tr><th>#</th><th>Score</th><th>Correct</th><th>Date</th></tr>
                     </thead>
                     <tbody>
                         @for (int i = 0; i < top.Count; i++)
@@ -646,12 +668,29 @@ else
                                 <td>@(i + 1)</td>
                                 <td>@s.Score</td>
                                 <td>@s.Correct</td>
-                                <td>@s.AvgSeconds.ToString("0.0")s</td>
                                 <td class="ch-top-date">@s.When.ToString("M/d/yy h:mm tt")</td>
                             </tr>
                         }
                     </tbody>
                 </table>
+
+                @if (clearKey is not null)
+                {
+                    @if (_confirmClearKey == clearKey)
+                    {
+                        <div class="ch-clear-confirm">
+                            <span>Clear these scores? This can't be undone.</span>
+                            <div class="ch-clear-buttons">
+                                <button type="button" class="ch-clear-yes" @onclick="() => ConfirmClear(clearKey)">Clear</button>
+                                <button type="button" @onclick="CancelClear">Cancel</button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <button type="button" class="ch-clear" @onclick="() => AskClear(clearKey)">Clear Scores</button>
+                    }
+                }
             }
         </div>
     };

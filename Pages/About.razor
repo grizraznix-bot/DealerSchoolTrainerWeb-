@@ -1,4 +1,6 @@
 @page "/about"
+@using System.Reflection
+@inject IJSRuntime JS
 
 <PageTitle>About - Dealer School Trainer</PageTitle>
 
@@ -19,3 +21,45 @@
 
     <p>for all the work on this project.</p>
 </div>
+
+@* Version = when this copy of the trainer was built (stamped by the
+   build, see DealerSchoolTrainerWeb.csproj). Reload Latest Version
+   fetches the newest publish without waiting for the browser's saved
+   copy to expire (dstReloadLatest in index.html). *@
+<div class="mode-card about-version" style="max-width: 500px;">
+    <p class="about-version-line">Version: <strong>@_version</strong></p>
+
+    <button type="button" class="mode-start" disabled="@_reloading" @onclick="ReloadLatest">
+        @(_reloading ? "Loading..." : "Reload Latest Version")
+    </button>
+
+    <p class="about-version-note">Loads the newest version of the trainer. Your saved Challenge scores are kept. A new update takes a couple of minutes to appear after it's published.</p>
+</div>
+
+@code {
+    private string _version = "unknown";
+    private bool _reloading;
+
+    protected override void OnInitialized()
+    {
+        string? stamp = typeof(About).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => a.Key == "BuildTimeUtc")?.Value;
+
+        if (DateTime.TryParse(stamp, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime builtUtc))
+            _version = builtUtc.ToLocalTime().ToString("MMM d, yyyy h:mm tt");
+    }
+
+    private async Task ReloadLatest()
+    {
+        _reloading = true;
+        try
+        {
+            await JS.InvokeVoidAsync("dstReloadLatest");
+        }
+        catch
+        {
+            _reloading = false;
+        }
+    }
+}
