@@ -46,6 +46,17 @@ else
            fixed 900px width and the side-positioned feedback apply on
            desktop only. *@
         <div class="hd-table hd-settle @(_mode == TrainerMode.IdentifyHands ? "hd-identify" : "")">
+            @* Phones only (hidden on desktop by CSS): after Submit, the
+               round result, dealer hand and score at the top of the screen,
+               so it shows without scrolling down to the feedback. *@
+            @if (_mode == TrainerMode.SettleBets && _roundScored)
+            {
+                <div class="hd-result-banner @(_isCorrect ? "hd-result-ok" : "hd-result-bad")">
+                    <div class="hd-result-main">@_resultText</div>
+                    <div>@(_handRankLines.Count > 0 ? _handRankLines[0].Text : "") &middot; @_scoreText</div>
+                </div>
+            }
+
             @* Phones only (hidden on desktop by CSS): one player hand is
                shown at a time. This banner names it; the Previous / Next
                buttons sit beside that hand's answer control below, to save
@@ -113,6 +124,15 @@ else
                         <button class="hd-inline-pager hd-inline-action" @onclick="DealAgain">Deal</button>
                     }
                     </div>
+
+                    @* Phones only: this player's result, right under the
+                       buttons, after Submit *@
+                    @if (_roundScored && hand.ActualOutcome is not null)
+                    {
+                        <p class="hd-hand-result @(hand.WagerWrong ? "hd-result-bad" : "hd-result-ok")">
+                            @hand.RankName &middot; @(hand.WagerWrong ? $"\u2717 actually {hand.ActualOutcome}" : "\u2713 correct")
+                        </p>
+                    }
                 </div>
             }
             </div>
@@ -311,6 +331,7 @@ else
         public WagerOutcome? WagerSelection; // Settle the Bets mode: this hand's Win/Lose/Push call against the dealer
         public bool WagerWrong;
         public WagerOutcome? ActualOutcome; // set at Submit, to outline the right answer when the call was wrong
+        public string RankName = string.Empty; // set at Submit: this hand's poker rank, for the phone result line
     }
 
     private bool _started;
@@ -466,16 +487,13 @@ else
         if (_currentHand < _hands.Count - 1) _currentHand++;
     }
 
-    // Settle the Bets: record the call, then move straight on to the next
-    // player (phones show one at a time). The last player stays put, so
-    // the Submit beside it is right there.
+    // Settle the Bets: record the call. Next moves on to the next player.
     private void PickOutcome(int handIndex, WagerOutcome choice)
     {
         if (_roundScored) return;
         HandState hand = _hands[handIndex];
         hand.WagerSelection = choice;
         hand.WagerWrong = false;
-        if (handIndex < _hands.Count - 1) _currentHand = handIndex + 1;
     }
 
     private void ToggleCommunityRotation(int index)
@@ -649,6 +667,7 @@ else
             }
 
             HandRank handRank = HandEvaluator.BestHandRank(sevenCards);
+            hand.RankName = HandEvaluator.HandRankName(handRank);
             _handRankLines.Add(($"Hand {h + 1}: {HandEvaluator.HandRankName(handRank)}", hand.WagerWrong ? "red" : "darkblue"));
         }
         _handRankLines.Insert(0, ($"Dealer: {HandEvaluator.HandRankName(dealerRank)}", "darkblue"));

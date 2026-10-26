@@ -910,7 +910,9 @@ h1:focus {
    Hold'em's; hand-pager / paged-hand are the shared versions for the
    other games (Blackjack Side Wagers so far). */
 .hd-pager,
-.hand-pager {
+.hand-pager,
+.hd-result-banner,
+.hd-hand-result {
     display: none;
 }
 
@@ -1703,6 +1705,50 @@ label,
        so the bottom row keeps only End Session */
     .hd-table:not(.hd-identify) .hd-buttons .hd-main-action {
         display: none;
+    }
+
+    /* Settle the Bets after Submit: result strip at the top of the
+       screen, and each player's own result under their buttons */
+    .hd-result-banner {
+        display: block;
+        order: 0;
+        width: min(100%, 360px);
+        box-sizing: border-box;
+        margin: 0 auto 0.5rem auto;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        text-align: center;
+        font-size: 0.95rem;
+    }
+
+    .hd-result-main {
+        font-size: 1.15rem;
+        font-weight: bold;
+    }
+
+    .hd-hand-result {
+        display: block;
+        margin: 0.4rem 0 0 0;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .hd-result-banner.hd-result-ok {
+        background-color: #d0e0f8;
+        color: #0050b4;
+    }
+
+    .hd-result-banner.hd-result-bad {
+        background-color: #f8d0d0;
+        color: #a00000;
+    }
+
+    .hd-hand-result.hd-result-ok {
+        color: #0050b4;
+    }
+
+    .hd-hand-result.hd-result-bad {
+        color: #c80000;
     }
 
     /* Settle the Bets: the current player hand goes to the top, then the
