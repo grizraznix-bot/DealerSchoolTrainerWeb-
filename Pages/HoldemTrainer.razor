@@ -17,7 +17,7 @@
            Settle the Bets allows 1-6 player hands, defaulting to 1. *@
         <div class="mode-list">
             <ModeCard Title="Identify the Hands"
-                      Description="The 5 community cards and the dealer's 2 cards are dealt. Tap the 2 cards that are NOT part of the dealer's best 5-card hand, pick the hand's rank, then Submit."
+                      Description="The 5 community cards and the dealer's 2 cards are dealt. Set the hand by tapping the 2 cards that are NOT part of the dealer's best 5-card hand. Once it's right, pick the hand's rank, then Submit."
                       Expanded="@IsModeOpen(TrainerMode.IdentifyHands)"
                       OnToggle="() => ToggleMode(TrainerMode.IdentifyHands)"
                       OnStart="StartGame" />
@@ -109,9 +109,9 @@ else
         <div class="hd-center">
             <div class="hd-buttons">
                 @* Settle the Bets: Submit only appears once every player
-                   hand has a Win/Lose/Push called. Identify the Hands: shown
-                   until the round is scored (Submit says what's missing). *@
-                @if (_submitEnabled && (_mode == TrainerMode.IdentifyHands || AllHandsAnswered))
+                   hand has a Win/Lose/Push called. Identify the Hands: only
+                   once the hand is set correctly (the rank picker shows). *@
+                @if (_submitEnabled && (_mode == TrainerMode.IdentifyHands ? _dealerHandSet : AllHandsAnswered))
                 {
                     <button @onclick="SubmitRound">Submit</button>
                 }
@@ -152,8 +152,18 @@ else
                      style="cursor: @(CanMarkCards ? "pointer" : "default"); @(_dealerCard2Rotated ? "transform: rotate(45deg);" : "")" />
             </div>
 
-            @* Identify the Hands: the rank of the dealer hand as set *@
-            @if (_mode == TrainerMode.IdentifyHands)
+            @* Identify the Hands: until the right 2 cards are marked, a
+               caption in place of the rank picker; once they are, the cards
+               lock and the rank picker appears. *@
+            @if (_mode == TrainerMode.IdentifyHands && !_dealerHandSet)
+            {
+                <p class="hd-set-caption @(SbRotatedCount == 2 ? "hd-set-caption-wrong" : "")">
+                    @(SbRotatedCount == 2
+                        ? "Not the dealer's best hand -- adjust your cards."
+                        : "Set the Hand to continue: tap the 2 cards that are NOT part of the dealer's best hand.")
+                </p>
+            }
+            else if (_mode == TrainerMode.IdentifyHands)
             {
                 <div class="hd-rank-row">
                     <label for="hd-rank">Dealer's hand:</label>
@@ -330,7 +340,6 @@ else
     private bool _dealerCard1Rotated;
     private bool _dealerCard2Rotated;
     private readonly bool[] _communityRotated = new bool[CommunityCount];
-    private bool _dealerExclusionWrong;
 
     // Identify the Hands: the rank picked for the dealer hand (0 =
     // unselected, 1-10 matches HandRank) and whether it was wrong.
@@ -340,9 +349,14 @@ else
     // Player hands show in Settle the Bets only.
     private bool PlayersVisible => _mode == TrainerMode.SettleBets;
 
-    // Only Identify the Hands lets the trainee mark cards, until Submit.
-    // Settle the Bets deals the dealer hand already set.
-    private bool CanMarkCards => _mode == TrainerMode.IdentifyHands && !_roundScored;
+    // Identify the Hands: set once the trainee's 2 marked cards leave the
+    // dealer's best hand (checked after every tap -- no Submit needed).
+    // The cards then lock and the rank picker appears.
+    private bool _dealerHandSet;
+
+    // Only Identify the Hands lets the trainee mark cards, until the hand
+    // is set. Settle the Bets deals the dealer hand already set.
+    private bool CanMarkCards => _mode == TrainerMode.IdentifyHands && !_dealerHandSet && !_roundScored;
 
     // How many of the 7 dealer cards (2 dealer + 5 community) are marked
     // unused. Identify the Hands can only be submitted with exactly 2.
@@ -388,9 +402,9 @@ else
         Array.Clear(_communityRotated);
         _dealerCard1Rotated = false;
         _dealerCard2Rotated = false;
-        _dealerExclusionWrong = false;
         _dealerRankIndex = 0;
         _dealerRankWrong = false;
+        _dealerHandSet = false;
 
         _dealerCard1 = _deck.Draw();
         _dealerCard2 = _deck.Draw();
@@ -432,7 +446,7 @@ else
     {
         if (!CanMarkCards) return;
         _communityRotated[index] = !_communityRotated[index];
-        _dealerExclusionWrong = false;
+        CheckHandSet();
     }
 
     private void ToggleDealerCard(int which)
@@ -440,7 +454,19 @@ else
         if (!CanMarkCards) return;
         if (which == 1) _dealerCard1Rotated = !_dealerCard1Rotated;
         else _dealerCard2Rotated = !_dealerCard2Rotated;
-        _dealerExclusionWrong = false;
+        CheckHandSet();
+    }
+
+    // Identify the Hands: after each tap, lock in the hand as soon as the
+    // 2 marked cards are the right ones. A wrong pair just shows a hint
+    // (no penalty) until the trainee adjusts it.
+    private void CheckHandSet()
+    {
+        if (_mode == TrainerMode.IdentifyHands && SbRotatedCount == 2 && DeclaredHandIsBest())
+        {
+            _dealerHandSet = true;
+            _resultText = string.Empty;
+        }
     }
 
     // The 7 cards the dealer's hand is made from: 2 dealer + 5 community.
@@ -474,8 +500,7 @@ else
     }
 
     // Marks exactly the 2 cards outside the dealer's best 5: Settle the
-    // Bets deals with this already done; Identify the Hands does it to
-    // show the answer after a wrong hand.
+    // Bets deals with this already done.
     private void MarkCorrectUnusedCards()
     {
         List<Card> bestFive = HandEvaluator.BestFiveCards(DealerPool());
@@ -484,9 +509,6 @@ else
         for (int i = 0; i < CommunityCount; i++)
             _communityRotated[i] = !bestFive.Contains(_community[i]!);
     }
-
-    private string MarkTwoMessage() =>
-        $"Mark exactly 2 cards as unused (currently {SbRotatedCount} marked).";
 
     private void SubmitRound()
     {
@@ -500,19 +522,11 @@ else
         }
     }
 
-    // Identify the Hands: one try per deal. Correct only if the 5 cards
-    // left unmarked are the dealer's best hand AND the rank picked is that
-    // hand's rank. A wrong hand gets the correct 2 unused cards marked.
+    // Identify the Hands: the hand itself is already set correctly (the
+    // rank picker only appears then), so only the rank is scored.
     private void SubmitIdentifyHands()
     {
-        if (_roundScored) return;
-
-        if (SbRotatedCount != 2)
-        {
-            _isCorrect = false;
-            _resultText = MarkTwoMessage();
-            return;
-        }
+        if (_roundScored || !_dealerHandSet) return;
 
         if (_dealerRankIndex <= 0)
         {
@@ -522,21 +536,13 @@ else
         }
 
         HandRank bestRank = HandEvaluator.BestHandRank(DealerPool());
-        bool handCorrect = DeclaredHandIsBest();
         bool rankCorrect = _dealerRankIndex == (int)bestRank;
 
-        if (!handCorrect) MarkCorrectUnusedCards();
-
-        _dealerExclusionWrong = !handCorrect;
         _dealerRankWrong = !rankCorrect;
+        _mistakesText = rankCorrect ? string.Empty : $"Rank: actually {HandEvaluator.HandRankName(bestRank)}";
+        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(bestRank)}", rankCorrect ? "darkblue" : "red"));
 
-        System.Text.StringBuilder mistakes = new();
-        if (!handCorrect) mistakes.AppendLine("Not the dealer's best 5-card hand. The correct 2 unused cards are now marked.");
-        if (!rankCorrect) mistakes.AppendLine($"Rank: actually {HandEvaluator.HandRankName(bestRank)}");
-        _mistakesText = mistakes.ToString();
-        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(bestRank)}", handCorrect && rankCorrect ? "darkblue" : "red"));
-
-        bool allCorrect = handCorrect && rankCorrect;
+        bool allCorrect = rankCorrect;
 
         _totalRounds++;
         if (allCorrect) _correctCount++;
