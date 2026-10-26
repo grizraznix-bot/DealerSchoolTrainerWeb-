@@ -135,6 +135,9 @@ else if (_mode == BlackjackMode.FlashCards)
             @* One button: Submit while answering, Next once the hand is over
                (replaces the old separate New Round button). Hidden on phones,
                where the keypad's Enter / Next key does the same job. *@
+            @* BUST: one tap when the dealer's total is over 21 (typing the
+               total still counts too) *@
+            <button class="bust-button" @onclick="FcBust" disabled="@(!_fcSubmitEnabled)">BUST</button>
             <button class="answer-primary" @onclick="FcKeypadEnter" disabled="@(!_fcSubmitEnabled && !_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">@(_fcNewRoundEnabled ? "Next" : "Submit")</button>
             <button class="keypad-toggle" @onclick="() => _fcShowKeypad = !_fcShowKeypad">123</button>
         </div>
@@ -146,7 +149,7 @@ else if (_mode == BlackjackMode.FlashCards)
         </div>
 
         <div class="feedback-area">
-            <p>@_fcFeedbackText</p>
+            <p style="font-weight: bold; color: @_fcFeedbackColor;">@_fcFeedbackText</p>
         </div>
 
         <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
@@ -172,9 +175,28 @@ else if (_mode == BlackjackMode.Payouts)
 
         <p style="font-weight: bold;">BLACKJACK PAYS @(_poRatio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
 
-        <p>Wager: @PayoutWager.FormatCents(_poWagerCents)</p>
+        <p class="po-wager">Wager: <strong>@PayoutWager.FormatCents(_poWagerCents)</strong></p>
 
         <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+            @* Phones: this display box takes the place of the text box --
+               it shows the amount being keyed in, then the result (with the
+               correct payout) in the same spot, so nothing shifts down. *@
+            <div class="po-display" style="color: @(_poPromptText.Length == 0 ? "black" : (_poIsCorrect ? "blue" : "red"));">
+                @if (_poPromptText.Length > 0)
+                {
+                    <div class="po-display-result">@_poPromptText</div>
+                    <div class="po-display-detail">@_poPromptDetailText</div>
+                }
+                else if (_poAnswerText.Length > 0)
+                {
+                    <div class="po-display-amount">$@_poAnswerText</div>
+                }
+                else
+                {
+                    <div class="po-display-placeholder">Enter payout</div>
+                }
+            </div>
+
             @* inputmode="none": see the Flash Cards answer box above *@
             <input type="text"
                    inputmode="none"
@@ -196,7 +218,7 @@ else if (_mode == BlackjackMode.Payouts)
 
         <div class="feedback-area">
             <p style="font-weight: bold; color: @(_poIsCorrect ? "blue" : "red");">@_poPromptText</p>
-            <p style="color: red;">@_poPromptDetailText</p>
+            <p style="color: @(_poIsCorrect ? "blue" : "red");">@_poPromptDetailText</p>
         </div>
 
         <div class="button-row keypad-actions">
@@ -216,9 +238,7 @@ else
         @if (_swHands.Count > 1)
         {
             <div class="hand-pager">
-                <button @onclick="SwPreviousHand" disabled="@(_swCurrentHand <= 0)">Previous</button>
                 <span class="hand-pager-label">Player @(_swCurrentHand + 1) of @_swHands.Count</span>
-                <button @onclick="SwNextHand" disabled="@(_swCurrentHand >= _swHands.Count - 1)">Next Player</button>
             </div>
         }
 
@@ -231,14 +251,21 @@ else
                 <div class="sw-hand paged-hand @(handIndex == _swCurrentHand ? "paged-hand-current" : "")">
                     <div class="paged-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
 
-                    <div style="position: relative; width: 130px; height: 195px;">
+                    <div class="sw-hand-cards" style="position: relative; width: 130px; height: 195px;">
                         <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
                              style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
                         <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Code"
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
-                    <div style="margin-top: 0.5rem; display: flex; gap: 8px; justify-content: center;">
+                    @* Phones: Previous / Next sit either side of the two wagers,
+                       below the cards (hidden on desktop) *@
+                    <div class="sw-hand-controls">
+                    @if (_swHands.Count > 1)
+                    {
+                        <button class="hd-inline-pager" @onclick="SwPreviousHand" disabled="@(handIndex <= 0)">Previous</button>
+                    }
+                    <div style="display: flex; gap: 8px; justify-content: center;">
                         <WagerShape IsDiamond="false" AllowPush="false" SizePx="56" ShowWrongShading="_swRoundScored"
                                     Wrong="hand.LuckyLadiesWrong"
                                     Selection="hand.LuckyLadiesSelection"
@@ -254,6 +281,11 @@ else
                                     OnCycled="() => hand.TwentyOnePlus3Wrong = false">
                             21 + 3
                         </WagerShape>
+                    </div>
+                    @if (_swHands.Count > 1)
+                    {
+                        <button class="hd-inline-pager" @onclick="SwNextHand" disabled="@(handIndex >= _swHands.Count - 1)">Next</button>
+                    }
                     </div>
                 </div>
             }
@@ -406,6 +438,9 @@ else
     private string _fcAnswerText = string.Empty;
     private string _fcPromptText = string.Empty;
     private string _fcFeedbackText = string.Empty;
+    // Blue for a correct answer, red for wrong -- same as the other games;
+    // plain black for prompts like "Enter the dealer's total."
+    private string _fcFeedbackColor = "black";
     private bool _fcShowHint;
     private bool _fcAnswerEnabled;
     private bool _fcSubmitEnabled;
@@ -470,6 +505,25 @@ else
         }
     }
 
+    // BUST button: correct when the dealer's hand is over 21 (graded the
+    // same as typing the busted total); otherwise a wrong answer.
+    private async Task FcBust()
+    {
+        if (!_fcSubmitEnabled) return;
+
+        if (_fcHand.IsBust)
+        {
+            await FcEvaluateAnswer(_fcHand.Total);
+        }
+        else
+        {
+            _fcRoundHasMistake = true;
+            _fcAnswerText = string.Empty;
+            _fcFeedbackText = "Incorrect - not a bust. Try again.";
+            _fcFeedbackColor = "red";
+        }
+    }
+
     private async Task FcSubmitTypedAnswer()
     {
         string raw = _fcAnswerText.Trim();
@@ -477,12 +531,14 @@ else
         if (raw.Length == 0)
         {
             _fcFeedbackText = "Enter the dealer's total.";
+            _fcFeedbackColor = "black";
             return;
         }
 
         if (!long.TryParse(raw, out long enteredValue) || enteredValue < 2)
         {
             _fcFeedbackText = "Enter a valid total.";
+            _fcFeedbackColor = "black";
             return;
         }
 
@@ -518,6 +574,7 @@ else
             _fcRoundHasMistake = true;
             _fcAnswerText = string.Empty;
             _fcFeedbackText = "Incorrect - try again.";
+            _fcFeedbackColor = "red";
             return;
         }
 
@@ -530,6 +587,7 @@ else
                     : $"Correct.  Actual total: {actualTotal} (hard)";
 
         _fcFeedbackText = msg;
+        _fcFeedbackColor = "blue";
         _fcAnswerText = string.Empty;
         _fcAnswerEnabled = false;
         _fcSubmitEnabled = false;
@@ -690,7 +748,7 @@ else
             _poCorrectCount++;
             _poIsCorrect = true;
             _poPromptText = "CORRECT";
-            _poPromptDetailText = string.Empty;
+            _poPromptDetailText = "Payout: " + PayoutWager.FormatCents(correctCents);
         }
         else
         {

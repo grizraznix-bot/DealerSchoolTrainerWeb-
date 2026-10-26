@@ -172,9 +172,20 @@ else if (_mode == PaiGowMode.HandSetting)
         <p class="hs-score">@_hsScoreText</p>
 
         <div class="button-row hs-buttons">
-            <button @onclick="HsSortHand" disabled="@(!_hsSortEnabled)">Sort</button>
-            <button @onclick="HsSubmitHand" disabled="@(!_hsSubmitEnabled)">Submit</button>
-            <button @onclick="HsDealAgain" disabled="@(!_hsDealEnabled)">Deal</button>
+            @* One step button that changes as the hand progresses:
+               Sort -> (once sorted) Submit -> (once scored) Deal *@
+            @if (_hsSortEnabled)
+            {
+                <button @onclick="HsSortHand">Sort</button>
+            }
+            else if (_hsSubmitEnabled)
+            {
+                <button @onclick="HsSubmitHand">Submit</button>
+            }
+            else if (_hsDealEnabled)
+            {
+                <button @onclick="HsDealAgain">Deal</button>
+            }
             <button @onclick="EndSession">End Session</button>
         </div>
 

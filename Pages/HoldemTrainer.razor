@@ -150,7 +150,11 @@ else
                 {
                     <button @onclick="SubmitRound" disabled="@(_mode == TrainerMode.SettleBets && SbRotatedCount != 2)">Submit</button>
                 }
-                <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+                @* Deal only appears after Submit (once the round is scored) *@
+                @if (_dealEnabled)
+                {
+                    <button @onclick="DealAgain">Deal</button>
+                }
                 <button @onclick="EndSession">End Session</button>
             </div>
 

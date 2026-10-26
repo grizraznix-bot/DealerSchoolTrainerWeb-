@@ -1,3 +1,9 @@
+/* Stops phones zooming the page when something is tapped twice quickly
+   (e.g. cycling a wager Win > Lose fast). Pinch-to-zoom still works. */
+html {
+    touch-action: manipulation;
+}
+
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
 }
@@ -369,6 +375,37 @@ code {
 .po-card {
     width: 100px;
     height: 140px;
+}
+
+/* Payouts: the wager amount, large enough to read at a glance, in a
+   light blue tag so it stands out */
+.po-wager {
+    font-size: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.po-wager strong {
+    display: inline-block;
+    background-color: #d0e0f8;
+    border: 1px solid #9bb8e0;
+    border-radius: 8px;
+    padding: 0.1rem 0.75rem;
+}
+
+/* Payouts on phones: display box in place of the text box (amount being
+   keyed in, then the result) -- hidden on desktop */
+.po-display {
+    display: none;
+}
+
+/* Side Wagers: the two wagers under each hand (Previous / Next beside
+   them on phones) */
+.sw-hand-controls {
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
 }
 
 /* Keypad Enter key (Flash Cards / Payouts) */
@@ -984,11 +1021,11 @@ label,
         padding-bottom: 0.5rem;
     }
 
-    /* Bigger keypad keys on phones -- three equal columns */
+    /* Bigger keypad keys on phones -- three equal columns spanning the
+       same width as the answer box + BUST / display row above */
     .numeric-keypad {
         display: block;
         width: 100%;
-        max-width: 300px;
     }
 
     .numeric-keypad-row button,
@@ -1045,6 +1082,51 @@ label,
         margin: 0.25rem 0;
     }
 
+    /* Payouts: display box replaces the text box and the separate
+       feedback lines */
+    .po-display {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex: 1 1 auto;
+        min-height: 3.6rem;
+        padding: 0.3rem 0.75rem;
+        border: 1px solid #999;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 1.15rem;
+    }
+
+    .po-display-result {
+        font-weight: bold;
+    }
+
+    .po-display-detail {
+        font-size: 1rem;
+    }
+
+    .po-display-amount {
+        font-size: 1.4rem;
+        font-weight: bold;
+    }
+
+    .po-display-placeholder {
+        color: #888;
+    }
+
+    .keypad-answer:has(.po-display) input {
+        display: none;
+    }
+
+    .keypad-screen:has(.po-display) > .feedback-area {
+        display: none;
+    }
+
+    .content .bust-button {
+        font-weight: bold;
+        min-width: 5.5rem;
+    }
+
     .keypad-screen > .keypad-answer { order: 2; margin: 0.5rem 0 0.75rem 0 !important; align-self: stretch; }
     .keypad-screen > .keypad-wrap { order: 3; align-self: stretch; }
     .keypad-screen > .keypad-score { order: 4; }
@@ -1083,11 +1165,11 @@ label,
         justify-self: center;
     }
 
-    /* Shared phone player pager: one hand at a time */
+    /* Shared phone player pager: "Player X of N" banner above the hand */
     .hand-pager {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        justify-content: center;
         gap: 0.5rem;
         margin: 0.75rem 0 0 0;
     }
@@ -1212,25 +1294,50 @@ label,
         display: inline-block;
     }
 
-    .content .hd-inline-pager {
-        padding: 0.4rem 0.6rem;
-    }
+
 
     /* With Previous / Next present: a fixed-width row -- Previous and
-       Next the same width at either end, the rank dropdown (or the vs
-       Dealer wager) centered between them. Submit / Deal / End Session
-       below use the same overall width (see .action-row rules). */
-    .hd-hand-controls:has(.hd-inline-pager) {
+       Next the same width at either end, the rank dropdown (or the
+       wagers) centered between them. Submit / Deal / End Session below
+       use the same overall width. Shared by Hold'em and Side Wagers. */
+    .hd-hand-controls:has(.hd-inline-pager),
+    .sw-hand-controls:has(.hd-inline-pager) {
         display: grid;
-        grid-template-columns: 5.75rem 1fr 5.75rem;
+        grid-template-columns: 4.25rem 1fr 4.25rem;
         justify-items: center;
+        gap: 6px;
         width: min(100%, 360px);
         margin-left: auto;
         margin-right: auto;
     }
 
-    .hd-hand-controls .hd-inline-pager {
+    .hd-hand-controls .hd-inline-pager,
+    .sw-hand-controls .hd-inline-pager {
+        display: inline-block;
         width: 100%;
+    }
+
+    .content .hd-inline-pager {
+        padding: 0.4rem 0.1rem;
+        font-size: 0.85rem;
+    }
+
+    .sw-hand-cards {
+        margin: 0 auto;
+    }
+
+    /* The current hand spans the full width, so its Previous / Next row
+       (and Hold'em's rank row) lines up with the Submit / Deal / End
+       Session row below */
+    .paged-hand.paged-hand-current,
+    .hd-hand.hd-hand-current {
+        width: 100%;
+    }
+
+    /* Side Wagers: extra space between Previous / Next and the wagers so
+       a tap meant for a wager doesn't land on a button */
+    .sw-hand-controls:has(.hd-inline-pager) {
+        column-gap: 1.25rem;
     }
 
     .hd-hand-controls:has(.hd-inline-pager) select {
@@ -1297,7 +1404,8 @@ label,
        Wagers: centered, a fixed overall width matching the Previous /
        rank / Next row, buttons sharing it equally */
     .hd-buttons,
-    .sw-footer-buttons {
+    .sw-footer-buttons,
+    .sb-actions > div {
         display: flex;
         gap: 6px;
         width: min(100%, 360px);
@@ -1308,7 +1416,8 @@ label,
     }
 
     .content .hd-buttons button,
-    .content .sw-footer-buttons button {
+    .content .sw-footer-buttons button,
+    .content .sb-actions > div button {
         flex: 1 1 0;
         padding-left: 0.3rem;
         padding-right: 0.3rem;
@@ -1330,6 +1439,20 @@ label,
     .hs-cards-title { order: 2; margin-bottom: 0.5rem; }
     .hs-cards { order: 3; }
     .hs-buttons { order: 4; margin-top: 0; }
+
+    /* Sort / Submit / Deal / End Session: a tidy 2 x 2 block of
+       equal-size buttons */
+    .hs-screen > .hs-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        width: min(100%, 360px);
+        align-self: center;
+    }
+
+    .content .hs-buttons button {
+        width: 100%;
+    }
     .hs-score { order: 5; }
 
     /* House Ways / Wager Rules toggle and chart stay last on phones */
@@ -1453,12 +1576,7 @@ label,
 
     .sb-actions {
         margin-left: 0;
-    }
-
-    .sb-actions > div {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
+        align-items: stretch;
     }
 
     .content .sb-wins {
