@@ -2076,32 +2076,73 @@ label,
         margin-left: min(8px, calc((var(--hs-row) - var(--hs-card-w)) / 6 - var(--hs-card-w)));
     }
 
-    /* Pai Gow - Settling Bets: player, dealer, push note, the four
-       wagers 2 x 2, buttons, then the results */
+    /* Pai Gow - Settling Bets: player hand, the four wager buttons,
+       dealer hand, push note, then Submit / Deal / End Session and the
+       results. (.sb-wager-row is display: contents so its wagers and its
+       buttons can sit apart, either side of the dealer hand.) */
     .sb-screen {
         display: flex;
         flex-direction: column;
     }
 
     .sb-player { order: 1; }
-    .sb-dealer { order: 2; }
-    .sb-push-note { order: 3; font-size: 0.9rem; margin: 0.75rem 0 0 0; }
-    .sb-wager-row { order: 4; }
+    .sb-wagers { order: 2; }
+    .sb-dealer { order: 3; }
+    .sb-push-note { order: 4; font-size: 0.8rem; margin: 0.3rem 0 0 0; }
+    .sb-actions { order: 5; margin-top: 0.5rem; }
+    .content .sb-wins { order: 6; }
 
     .sb-player h3,
     .sb-dealer h3 {
-        margin: 0.75rem 0 0.25rem 0;
+        margin: 0.25rem 0 0.15rem 0;
+    }
+
+    .sb-player h3 {
+        margin-top: 0 !important;
     }
 
     .sb-hand-row {
         flex-direction: column;
-        gap: 0.25rem;
+        align-items: stretch;
+        gap: 0.15rem;
+    }
+
+    .sb-hand-row > div {
+        width: 100%;
+    }
+
+    /* Compact headings, hand labels and row spacing, so everything down
+       to Submit fits on one screen */
+    .sb-player h3,
+    .sb-dealer h3 {
+        font-size: 1.05rem;
+    }
+
+    .content .sb-hand-row > div > div:not(.sb-cards) {
+        font-size: 0.72rem !important;
+        line-height: 1.15;
+    }
+
+    .content .sb-cards {
+        margin-bottom: 0.2rem !important;
+    }
+
+    /* Cards overlap 20%: five cards span 4.2 card widths, so each card
+       is 1/4.2 (23.8%) of the row, capped at 100px. The low hands
+       overlap the same way at the same size. */
+    .content .sb-cards {
+        gap: 0 !important;
     }
 
     .sb-card {
-        width: min(90px, calc((100vw - 2rem - 32px) / 5));
+        position: relative;
+        width: min(100px, 23.8%);
         height: auto;
         aspect-ratio: 90 / 126;
+    }
+
+    .sb-card + .sb-card {
+        margin-left: calc(min(100px, 23.8%) * -0.2);
     }
 
     .content .sb-hand-labels {
@@ -2110,19 +2151,15 @@ label,
     }
 
     .sb-wager-row {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-        margin: 1rem 0;
+        display: contents;
     }
 
-    /* All four wagers on one row, slightly smaller, so the player and
-       dealer hands, wagers and Submit fit on one phone screen */
+    /* All four wagers on one row, between the two hands */
     .sb-wagers {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.5rem;
+        margin: 0.5rem 0 0.25rem 0;
     }
 
     .sb-wagers .wager-shape {

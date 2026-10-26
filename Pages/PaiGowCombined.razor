@@ -206,14 +206,14 @@ else
         <div class="sb-hand-row">
             <div>
                 <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
-                <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                <div class="sb-cards" style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                     @foreach (PaiGowCard c in _sbPlayerHighSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
                     }
                 </div>
                 <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
-                <div style="display: flex; gap: 8px;">
+                <div class="sb-cards" style="display: flex; gap: 8px;">
                     @foreach (PaiGowCard c in _sbPlayerLowSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
@@ -284,14 +284,14 @@ else
         <div class="sb-hand-row">
             <div>
                 <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
-                <div style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                <div class="sb-cards" style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                     @foreach (PaiGowCard c in _sbDealerLowSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
                     }
                 </div>
                 <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
-                <div style="display: flex; gap: 8px;">
+                <div class="sb-cards" style="display: flex; gap: 8px;">
                     @foreach (PaiGowCard c in _sbDealerHighSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
