@@ -108,14 +108,11 @@ else if (_screen == Screen.Playing)
         }
         else
         {
-            <div class="card-row po-cards" style="margin: 1rem 0;">
-                <img src="images/cards/AS.png" alt="AS" class="po-card" />
-                <img src="images/cards/JS.png" alt="JS" class="po-card" />
-            </div>
+            @* No cards here (unlike the regular Payouts trainer): the timer
+               takes that room, so the keypad's Enter key stays on screen *@
+            <p class="ch-pays">BLACKJACK PAYS @(_ratio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
 
-            <p style="font-weight: bold;">BLACKJACK PAYS @(_ratio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
-
-            <p class="po-wager">Wager: <strong>@PayoutWager.FormatCents(_wagerCents)</strong></p>
+            <p class="po-wager ch-wager">Wager: <strong>@PayoutWager.FormatCents(_wagerCents)</strong></p>
 
             <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
                 <div class="po-display">

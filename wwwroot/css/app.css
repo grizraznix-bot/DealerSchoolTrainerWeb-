@@ -2743,6 +2743,21 @@ label,
     to { transform: scaleX(0); }
 }
 
+/* Payouts challenge: no cards, so the wager is shown larger */
+.ch-pays {
+    font-weight: bold;
+    margin-top: 1rem !important;
+}
+
+.po-wager.ch-wager {
+    font-size: 2.2rem;
+    margin: 0.25rem 0 0.5rem 0;
+}
+
+.po-wager.ch-wager strong {
+    padding: 0.15rem 1rem;
+}
+
 /* One fixed-height line: the prompt, then "Correct! +N" */
 .ch-msg {
     min-height: 1.6em;
