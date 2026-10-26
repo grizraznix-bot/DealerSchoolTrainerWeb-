@@ -2758,16 +2758,53 @@ label,
     padding: 0.15rem 1rem;
 }
 
-/* One fixed-height line: the prompt, then "Correct! +N" */
-.ch-msg {
-    min-height: 1.6em;
-    margin: 0.4rem 0;
-    font-size: 1.15rem;
+/* "+N" beside the score after a correct answer */
+.ch-gain {
+    margin-left: 0.4rem;
+    color: blue;
+    font-weight: bold;
 }
 
-.ch-hint {
-    color: dimgray;
-    font-style: italic;
+/* End button pinned to the bottom of the screen. Phones: full width.
+   Desktop: lined up with the centered game column (sidebar is 220px). */
+.ch-screen {
+    padding-bottom: 4.5rem;
+}
+
+.ch-endbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    padding: 0.4rem 0.75rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.75rem;
+    background-color: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+    box-sizing: border-box;
+}
+
+.content .ch-endbar .ch-end {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #a00000;
+    border-radius: 6px;
+    background-color: #c80000;
+    color: white;
+    font-size: 1.05rem;
+    font-weight: bold;
+}
+
+@media (min-width: 769px) {
+    .ch-endbar {
+        --ch-col: min(520px, 100% - 220px - 4rem);
+        left: calc(220px + (100% - 220px - var(--ch-col)) / 2);
+        right: auto;
+        width: var(--ch-col);
+        padding-left: 0;
+        padding-right: 0;
+        box-shadow: none;
+    }
 }
 
 .ch-plus {
@@ -2778,6 +2815,10 @@ label,
 /* Run over screen */
 .ch-over h1 {
     color: #c80000;
+}
+
+.ch-over h1.ch-ended {
+    color: #1b6ec2;
 }
 
 .ch-reason {
