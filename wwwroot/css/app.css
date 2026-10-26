@@ -384,10 +384,19 @@ code {
     margin: 0.4rem 0;
 }
 
-/* Hand over: total box and BUST hidden but still holding their space */
+/* Hand over: total box and BUST hidden. Desktop: they keep their space
+   (the row still holds the Next button). Phones / touch screens: the
+   whole row is removed (below), so the keypad and everything under it
+   move up instead of being pushed down by the longer end-of-hand text. */
 .fc-answer-done input,
 .fc-answer-done .bust-button {
     visibility: hidden;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .keypad-screen > .keypad-answer.fc-answer-done {
+        display: none;
+    }
 }
 
 /* Payouts: the wager amount, large enough to read at a glance, in a
