@@ -2938,3 +2938,294 @@ label,
     font-size: 0.9rem;
     color: #555;
 }
+
+/* ------------------------------------------------------------------
+   Roulette Payouts
+   ------------------------------------------------------------------ */
+.rl-note {
+    margin: 0.1rem 0 0 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.rl-pays-line {
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.rl-screen {
+    padding-bottom: 4.5rem;
+}
+
+.rl-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    align-self: stretch;
+    margin: 0.25rem 0 0.4rem 0;
+    font-size: 1rem;
+}
+
+/* Green felt close-up of the layout */
+.rl-felt {
+    align-self: stretch;
+    padding: 0.5rem 0;
+    border-radius: 10px;
+    background-color: #0b6b3a;
+}
+
+.rl-winner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.rl-winner .rl-winner-num {
+    width: 34px;
+    height: 34px;
+    font-size: 1.05rem;
+    box-shadow: 0 0 0 3px #ffd700;
+}
+
+/* Board = grid of numbers + chips placed over it. Sizes (cells 94 x 54,
+   partly shown edge rows 24, lines included) must match CellW / CellH /
+   EdgeRowH in RouletteTrainer.razor. */
+.rl-board {
+    position: relative;
+    width: 284px;
+    margin: 0 auto;
+}
+
+.rl-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 94px);
+    grid-template-rows: 24px 54px 54px 54px 24px;
+    width: 284px;
+    box-sizing: border-box;
+    border-left: 2px solid #e8e8e8;
+    border-top: 2px solid #e8e8e8;
+}
+
+.rl-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border-right: 2px solid #e8e8e8;
+    border-bottom: 2px solid #e8e8e8;
+}
+
+.rl-cell.rl-fade {
+    overflow: hidden;
+    opacity: 0.45;
+}
+
+/* Edge rows: only the inner part of each number shows */
+.rl-cell.rl-edge-top {
+    align-items: flex-end;
+}
+
+.rl-cell.rl-edge-bottom {
+    align-items: flex-start;
+}
+
+/* The winning number's square */
+.rl-cell.rl-win {
+    background-color: rgba(255, 215, 0, 0.28);
+    box-shadow: inset 0 0 0 3px #ffd700;
+}
+
+.rl-num {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.rl-red {
+    background-color: #c8102e;
+}
+
+.rl-black {
+    background-color: #111;
+}
+
+/* A winning chip: number = how many chips in the stack */
+.rl-chip {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%);
+    border: 4px dashed white;
+    border-radius: 50%;
+    background-color: #f2c400;
+    box-shadow: 0 0 0 2px #7a5c00, 0 3px 6px rgba(0, 0, 0, 0.5);
+    color: #222;
+    font-size: 1.05rem;
+    font-weight: 900;
+    pointer-events: none;
+}
+
+.keypad-screen > .rl-result,
+.rl-result {
+    margin: 0.75rem 0 0.4rem 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+/* Phones: a slightly shorter answer box and keys, so the whole keypad
+   fits above the pinned Help bar */
+@media (max-width: 768px), (pointer: coarse) {
+    .rl-screen .po-display {
+        min-height: 3rem;
+    }
+
+    .rl-screen .numeric-keypad-row button {
+        height: 44px;
+    }
+
+    .keypad-screen.rl-screen > .keypad-answer {
+        margin: 0.5rem 0 0.5rem 0 !important;
+    }
+}
+
+.rl-breakdown {
+    align-self: stretch;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #999;
+    border-radius: 6px;
+}
+
+.rl-breakdown table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.rl-breakdown td {
+    padding: 2px 0;
+}
+
+.rl-breakdown td:last-child {
+    text-align: right;
+    font-weight: bold;
+    white-space: nowrap;
+    padding-left: 0.5rem;
+}
+
+.rl-breakdown tr.rl-total td {
+    padding-top: 5px;
+    border-top: 1px solid #bbb;
+}
+
+/* Bottom bar pinned to the screen: Help, then Next once answered.
+   Phones: full width. Desktop: lined up with the game column. */
+.rl-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.75rem;
+    box-sizing: border-box;
+    background-color: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.content .rl-bar button {
+    flex: 1 1 0;
+    min-height: 44px;
+    border-radius: 6px;
+    font-size: 1.05rem;
+    font-weight: bold;
+}
+
+.content .rl-bar .rl-help-btn {
+    border: 1px solid #999;
+    background-color: white;
+    color: #111;
+}
+
+.content .rl-bar .rl-next {
+    flex-grow: 2;
+    border: 1px solid #0050b4;
+    background-color: #0064dc;
+    color: white;
+}
+
+@media (min-width: 769px) {
+    .rl-bar {
+        --rl-col: min(520px, 100% - 220px - 4rem);
+        left: calc(220px + (100% - 220px - var(--rl-col)) / 2);
+        right: auto;
+        width: var(--rl-col);
+        padding-left: 0;
+        padding-right: 0;
+        box-shadow: none;
+    }
+}
+
+/* Help: the pays, in a box over the page; tap outside or Close */
+.rl-help-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.rl-help {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 31;
+    width: min(320px, calc(100vw - 2rem));
+    transform: translate(-50%, -50%);
+    padding: 1rem 1.25rem;
+    box-sizing: border-box;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.rl-help-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+
+.rl-help table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.05rem;
+}
+
+.rl-help td {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.rl-help td:last-child {
+    text-align: right;
+    font-weight: bold;
+}
+
+.rl-help-note {
+    margin: 0.75rem 0 0 0;
+    font-size: 0.9rem;
+    color: #555;
+}

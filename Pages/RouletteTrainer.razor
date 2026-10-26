@@ -1,0 +1,349 @@
+@page "/roulette"
+@using DealerSchoolTrainerWeb.Core
+@implements IDisposable
+@inject GameResetService GameReset
+@inject IJSRuntime JS
+
+<PageTitle>Roulette</PageTitle>
+
+@* Roulette Payouts (LTD Roulette Trainer "Foundation" style): a close-up
+   of the layout around the winning number (always 14) with only the
+   winning chips on it. The trainee enters the total payout in chips --
+   winnings only, the chips already on the layout aren't counted.
+   Not timed. Each round places exactly the chosen number of wagers, in
+   random spots among the 12 that win on 14. *@
+
+@if (!_started)
+{
+    <div class="start-screen">
+        <h1>ROULETTE</h1>
+
+        <div class="mode-list">
+            <ModeCard Title="Roulette Payouts"
+                      Description="The winning chips around the winning number are shown. Enter the total payout in chips."
+                      Collapsible="false"
+                      OnStart="StartGame">
+                <div class="mode-options">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Level</p>
+                        <label class="mode-choice">
+                            <input type="radio" name="rl-level" checked="@(_level == RouletteLevel.Beginner)" @onchange="() => _level = RouletteLevel.Beginner" />
+                            <span><strong>Beginner</strong> - single chips</span>
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="rl-level" checked="@(_level == RouletteLevel.Intermediate)" @onchange="() => _level = RouletteLevel.Intermediate" />
+                            <span><strong>Intermediate</strong> - stacks up to 2 chips</span>
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="rl-level" checked="@(_level == RouletteLevel.Advanced)" @onchange="() => _level = RouletteLevel.Advanced" />
+                            <span><strong>Advanced</strong> - stacks up to 5 chips</span>
+                        </label>
+                    </div>
+                </div>
+
+                <CountStepper Label="Number of Wagers" Min="1" Max="@Spots.Length" @bind-Value="_wagerCount" />
+                <p class="rl-note">1 to @Spots.Length (every winning spot around the number)</p>
+            </ModeCard>
+        </div>
+
+        <p class="rl-pays-line"><strong>Pays:</strong> @PaysText</p>
+    </div>
+}
+else
+{
+    <div class="play-screen keypad-screen rl-screen">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        <div class="rl-status">
+            <span class="rl-winner">Winning number <span class="rl-num rl-red rl-winner-num">14</span></span>
+            <span>Score <strong>@_correct / @_played</strong></span>
+        </div>
+
+        @* The layout close-up. Rows 7-9 and 19-21 are only partly shown
+           and faded, so the eye goes to the rows around 14. Chips sit on
+           the lines/centers of the spots they bet on; the number on each
+           is how many chips. *@
+        <div class="rl-felt">
+            <div class="rl-board">
+                <div class="rl-grid">
+                    @for (int row = 0; row < 5; row++)
+                    {
+                        for (int col = 0; col < 3; col++)
+                        {
+                            int n = 7 + row * 3 + col;
+                            <div class="rl-cell @(row == 0 ? "rl-fade rl-edge-top" : row == 4 ? "rl-fade rl-edge-bottom" : "") @(n == WinningNumber ? "rl-win" : "")">
+                                <span class="rl-num @(RedNumbers.Contains(n) ? "rl-red" : "rl-black")">@n</span>
+                            </div>
+                        }
+                    }
+                </div>
+                @foreach (PlacedWager w in _wagers)
+                {
+                    <div class="rl-chip" style="left: @Px(2 + w.Spot.X * CellW); top: @Px(2 + EdgeRowH + (w.Spot.Y - 1) * CellH);">@w.Chips</div>
+                }
+            </div>
+        </div>
+
+        @if (!_answered)
+        {
+            <div class="button-row answer-row keypad-answer" style="margin: 0.5rem 0;">
+                @* Phones: shows what's being keyed in (the text box is
+                   hidden there). Desktop: the text box below is used. *@
+                <div class="po-display">
+                    @if (_answerText.Length > 0)
+                    {
+                        <div class="po-display-amount">@_answerText</div>
+                    }
+                    else
+                    {
+                        <div class="po-display-placeholder">Total payout (chips)</div>
+                    }
+                </div>
+
+                <input type="text"
+                       inputmode="none"
+                       value="@_answerText"
+                       @oninput="HandleAnswerInput"
+                       @onkeydown="HandleAnswerKeyDown"
+                       @ref="_answerRef"
+                       placeholder="Total payout (chips)" />
+                <button class="answer-primary" @onclick="Submit">Submit</button>
+                <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
+            </div>
+
+            <div class="keypad-wrap @(_showKeypad ? "keypad-open" : "")">
+                <NumericKeypad AllowDecimal="false" @bind-Value="_answerText" OnEnter="Submit" EnterLabel="Enter" />
+            </div>
+        }
+        else
+        {
+            <p class="rl-result" style="color: @(_isCorrect ? "blue" : "red");">
+                @(_isCorrect ? $"CORRECT - {_correctTotal} chips" : $"INCORRECT - you entered {_enteredTotal}, the payout is {_correctTotal} chips")
+            </p>
+
+            <div class="rl-breakdown">
+                <table>
+                    @foreach (PlacedWager w in _wagers.OrderByDescending(w => w.Spot.Pays).ThenBy(w => w.Spot.Order))
+                    {
+                        <tr>
+                            <td>@w.Spot.Name - @w.Chips @(w.Chips == 1 ? "chip" : "chips") × @w.Spot.Pays</td>
+                            <td>@(w.Chips * w.Spot.Pays)</td>
+                        </tr>
+                    }
+                    <tr class="rl-total">
+                        <td>Total payout</td>
+                        <td>@_correctTotal</td>
+                    </tr>
+                </table>
+            </div>
+        }
+
+        @* Pinned to the bottom of the screen: Help (the pays) always;
+           Next once the round has been answered *@
+        <div class="rl-bar">
+            <button type="button" class="rl-help-btn" @onclick="() => _showHelp = true">Help</button>
+            @if (_answered)
+            {
+                <button type="button" class="rl-next" @onclick="NextRound" @ref="_nextRef">Next</button>
+            }
+        </div>
+
+        @if (_showHelp)
+        {
+            <div class="rl-help-backdrop" @onclick="() => _showHelp = false"></div>
+            <div class="rl-help" role="dialog" aria-label="Roulette pays">
+                <p class="rl-help-title">Roulette Pays</p>
+                <table>
+                    <tr><td>Straight up</td><td>35 to 1</td></tr>
+                    <tr><td>Split</td><td>17 to 1</td></tr>
+                    <tr><td>Street</td><td>11 to 1</td></tr>
+                    <tr><td>Corner</td><td>8 to 1</td></tr>
+                    <tr><td>Six-line</td><td>5 to 1</td></tr>
+                </table>
+                <p class="rl-help-note">Enter the winnings only. The chips on the layout stay with the player and aren't counted.</p>
+                <button type="button" class="mode-start" @onclick="() => _showHelp = false">Close</button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private enum RouletteLevel { Beginner, Intermediate, Advanced }
+
+    // One betting spot that wins on 14. X/Y are where its chip sits, in
+    // cells from the top-left of the grid (14 is the middle of row 2,
+    // col 1; whole numbers are lines, .5 is the middle of a cell). The
+    // street and six-lines sit on the outside line at the 13 end of the
+    // rows (dozens side). Order keeps the breakdown in a steady order.
+    private sealed record Spot(string Name, int Pays, double X, double Y, int Order);
+
+    private sealed record PlacedWager(Spot Spot, int Chips);
+
+    private static readonly Spot[] Spots =
+    {
+        new("Straight up 14", 35, 1.5, 2.5, 0),
+        new("Split 11/14", 17, 1.5, 2.0, 1),
+        new("Split 13/14", 17, 1.0, 2.5, 2),
+        new("Split 14/15", 17, 2.0, 2.5, 3),
+        new("Split 14/17", 17, 1.5, 3.0, 4),
+        new("Street 13/14/15", 11, 0.0, 2.5, 5),
+        new("Corner 10/11/13/14", 8, 1.0, 2.0, 6),
+        new("Corner 11/12/14/15", 8, 2.0, 2.0, 7),
+        new("Corner 13/14/16/17", 8, 1.0, 3.0, 8),
+        new("Corner 14/15/17/18", 8, 2.0, 3.0, 9),
+        new("Six-line 10-15", 5, 0.0, 2.0, 10),
+        new("Six-line 13-18", 5, 0.0, 3.0, 11)
+    };
+
+    private const string PaysText = "Straight up 35 · Split 17 · Street 11 · Corner 8 · Six-line 5";
+
+    private const int WinningNumber = 14;
+
+    // Cell size in px, lines included -- must match .rl-grid in app.css.
+    // EdgeRowH: the partly shown top and bottom rows (7-9, 19-21).
+    private const double CellW = 94;
+    private const double CellH = 54;
+    private const double EdgeRowH = 24;
+
+    private static readonly HashSet<int> RedNumbers = new() { 1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36 };
+
+    private static readonly Random Rng = new();
+
+    private static string Px(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "px";
+
+    private bool _started;
+    private RouletteLevel _level = RouletteLevel.Beginner;
+    private int _wagerCount = 4;
+
+    private List<PlacedWager> _wagers = new();
+    private string _answerText = string.Empty;
+    private bool _answered;
+    private bool _isCorrect;
+    private int _correctTotal;
+    private int _enteredTotal;
+    private int _correct;
+    private int _played;
+    private bool _showKeypad;
+    private bool _showHelp;
+
+    private ElementReference _answerRef;
+    private ElementReference _nextRef;
+    private bool _focusAnswer;
+    private bool _focusNext;
+    private bool _lastRenderedStarted;
+
+    protected override void OnInitialized()
+    {
+        GameReset.ResetRequested += OnResetRequested;
+    }
+
+    private void OnResetRequested()
+    {
+        _started = false;
+        _showHelp = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        GameReset.ResetRequested -= OnResetRequested;
+    }
+
+    private void StartGame()
+    {
+        _correct = 0;
+        _played = 0;
+        _showKeypad = false;
+        _showHelp = false;
+        _started = true;
+        DealRound();
+    }
+
+    private void BackToStart()
+    {
+        _started = false;
+        _showHelp = false;
+    }
+
+    // Exactly _wagerCount different spots, chosen at random; stack size
+    // by level: Beginner 1, Intermediate 1-2, Advanced 1-5
+    private void DealRound()
+    {
+        int maxChips = _level switch
+        {
+            RouletteLevel.Beginner => 1,
+            RouletteLevel.Intermediate => 2,
+            _ => 5
+        };
+
+        int count = Math.Clamp(_wagerCount, 1, Spots.Length);
+
+        _wagers = Spots
+            .OrderBy(_ => Rng.Next())
+            .Take(count)
+            .OrderBy(s => s.Order)
+            .Select(s => new PlacedWager(s, Rng.Next(1, maxChips + 1)))
+            .ToList();
+
+        _correctTotal = _wagers.Sum(w => w.Chips * w.Spot.Pays);
+        _answerText = string.Empty;
+        _answered = false;
+        _focusAnswer = true;
+    }
+
+    private void NextRound()
+    {
+        _showHelp = false;
+        DealRound();
+    }
+
+    private void Submit()
+    {
+        if (_answered) return;
+
+        string raw = _answerText.Trim();
+        if (raw.Length == 0 || !int.TryParse(raw, out int entered)) return;
+
+        _enteredTotal = entered;
+        _isCorrect = entered == _correctTotal;
+        _played++;
+        if (_isCorrect) _correct++;
+        _answered = true;
+        _focusNext = true;
+    }
+
+    // Whole numbers only
+    private void HandleAnswerInput(ChangeEventArgs e)
+    {
+        string raw = e.Value?.ToString() ?? string.Empty;
+        _answerText = new string(raw.Where(char.IsDigit).Take(6).ToArray());
+    }
+
+    private void HandleAnswerKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") Submit();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_started != _lastRenderedStarted)
+        {
+            _lastRenderedStarted = _started;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+
+        if (_focusAnswer && _started && !_answered)
+        {
+            _focusAnswer = false;
+            try { await _answerRef.FocusAsync(preventScroll: true); } catch { }
+        }
+
+        if (_focusNext && _answered)
+        {
+            _focusNext = false;
+            try { await _nextRef.FocusAsync(preventScroll: true); } catch { }
+        }
+    }
+}
