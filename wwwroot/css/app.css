@@ -1270,6 +1270,43 @@ label,
         height: 92px;
     }
 
+    /* Identify the Hands only: larger community cards, each overlapping
+       the one before it by 25% (corner indexes stay visible). Five cards
+       at 75% spacing span 4 card widths, so each card is a quarter of
+       the screen width, up to the desktop size of 100px. */
+    .hd-table:not(.hd-settle) .hd-community {
+        --hc-w: min(100px, calc((100vw - 2rem) / 4));
+        gap: 0;
+        max-width: none;
+    }
+
+    .hd-table:not(.hd-settle) .hd-community-slot {
+        flex: 0 0 var(--hc-w);
+        max-width: none;
+        position: relative;
+    }
+
+    .hd-table:not(.hd-settle) .hd-community-slot + .hd-community-slot {
+        margin-left: calc(var(--hc-w) * -0.25);
+    }
+
+    /* Identify the Hands only: the player's two cards side by side
+       instead of stacked diagonally (overrides the inline desktop
+       positioning) */
+    .hd-table:not(.hd-settle) .hd-hand-cards {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        width: auto !important;
+        height: auto !important;
+    }
+
+    .hd-table:not(.hd-settle) .hd-hand-cards img {
+        position: static !important;
+        width: 100px !important;
+        height: 140px !important;
+    }
+
     /* One player hand at a time: "Player X of N" banner above it, with
        Previous / Next beside its answer control */
     .hd-pager {
