@@ -395,9 +395,11 @@ code {
     visibility: hidden;
 }
 
-/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
-.keypad-screen > .keypad-answer.fc-answer-done {
-    display: none;
+/* Phones / touch screens only (desktop keeps the row: it holds Next) */
+@media (max-width: 768px), (pointer: coarse) {
+    .keypad-screen > .keypad-answer.fc-answer-done {
+        display: none;
+    }
 }
 
 /* Payouts: the wager amount, large enough to read at a glance, in a
@@ -452,19 +454,22 @@ code {
 
 /* Phones and touch screens: keypad always shown, 123 button hidden,
    since tapping the answer box no longer opens the phone's keyboard */
-/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
-.keypad-wrap {
-    display: block;
-}
+/* Phones / touch screens only: desktop keeps typing + Submit / Next, and
+   the keypad only after pressing 123 */
+@media (max-width: 768px), (pointer: coarse) {
+    .keypad-wrap {
+        display: block;
+    }
 
-.keypad-toggle {
-    display: none;
-}
+    .keypad-toggle {
+        display: none;
+    }
 
-/* Submit / Next button beside the answer box: the keypad's Enter /
-   Next key does the same job on phones and touch screens */
-.answer-primary {
-    display: none;
+    /* Submit / Next button beside the answer box: the keypad's Enter /
+       Next key does the same job on phones and touch screens */
+    .answer-primary {
+        display: none;
+    }
 }
 
 .pill-win {
@@ -1274,38 +1279,39 @@ label,
 
 /* Larger tap targets on touch screens (finger rather than mouse).
    44px is the commonly used minimum for comfortable tapping. */
-/* (Applies on phones and desktop alike -- desktop uses the phone layout) */
-.content button {
-    min-height: 44px;
-    padding: 0.4rem 0.9rem;
-    font-size: 1rem;
-}
+@media (pointer: coarse) {
+    .content button {
+        min-height: 44px;
+        padding: 0.4rem 0.9rem;
+        font-size: 1rem;
+    }
 
-/* Keypad keys are already a fixed 44px square */
-.content .numeric-keypad-row button {
-    padding: 0;
-}
+    /* Keypad keys are already a fixed 44px square */
+    .content .numeric-keypad-row button {
+        padding: 0;
+    }
 
-.sidebar a {
-    padding: 0.75rem;
-}
+    .sidebar a {
+        padding: 0.75rem;
+    }
 
-/* 16px minimum stops iPhones from zooming the whole page in
-   when a text box is tapped */
-.content input[type=text],
-.content input[type=number],
-.content select {
-    font-size: 16px;
-    min-height: 44px;
-    box-sizing: border-box;
-    padding: 0 0.5rem;
-}
+    /* 16px minimum stops iPhones from zooming the whole page in
+       when a text box is tapped */
+    .content input[type=text],
+    .content input[type=number],
+    .content select {
+        font-size: 16px;
+        min-height: 44px;
+        box-sizing: border-box;
+        padding: 0 0.5rem;
+    }
 
-.content input[type=checkbox],
-.content input[type=radio] {
-    width: 1.25rem;
-    height: 1.25rem;
-    vertical-align: middle;
+    .content input[type=checkbox],
+    .content input[type=radio] {
+        width: 1.25rem;
+        height: 1.25rem;
+        vertical-align: middle;
+    }
 }
 
 /* ------------------------------------------------------------------
@@ -1468,127 +1474,132 @@ label,
     padding-bottom: 0.5rem;
 }
 
-/* Bigger keypad keys on phones -- three equal columns spanning the
-   same width as the answer box + BUST / display row above */
-.numeric-keypad {
-    display: block;
-    width: 100%;
-}
+/* Flash Cards / Payouts phone layout (big keypad, display box, feedback
+   above the answer) -- phones / touch screens only; desktop keeps the
+   keyboard-friendly layout: type, Enter / Submit, keypad on 123 */
+@media (max-width: 768px), (pointer: coarse) {
+    /* Bigger keypad keys on phones -- three equal columns spanning the
+       same width as the answer box + BUST / display row above */
+    .numeric-keypad {
+        display: block;
+        width: 100%;
+    }
 
-.numeric-keypad-row button,
-.numeric-keypad-row span,
-.numeric-keypad-row .numeric-keypad-wide {
-    flex: 1 1 0;
-    width: auto;
-    height: 52px;
-    font-size: 1.25rem;
-}
+    .numeric-keypad-row button,
+    .numeric-keypad-row span,
+    .numeric-keypad-row .numeric-keypad-wide {
+        flex: 1 1 0;
+        width: auto;
+        height: 52px;
+        font-size: 1.25rem;
+    }
 
-.numeric-keypad-enter {
-    font-size: 1.1rem;
-}
+    .numeric-keypad-enter {
+        font-size: 1.1rem;
+    }
 
-/* Flash Cards / Payouts: feedback moves above the answer box, so
-   "Incorrect - try again" and the result aren't hidden below the
-   keypad. Order: cards and prompt, feedback, answer box, keypad,
-   score, New Round / End Session. */
-.keypad-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
+    /* Flash Cards / Payouts: feedback moves above the answer box, so
+       "Incorrect - try again" and the result aren't hidden below the
+       keypad. Order: cards and prompt, feedback, answer box, keypad,
+       score, New Round / End Session. */
+    .keypad-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-/* In a flex column, paragraph margins no longer overlap each other,
-   so they're tightened here to keep the keypad on screen */
-.keypad-screen > p {
-    margin: 0.4rem 0;
-}
+    /* In a flex column, paragraph margins no longer overlap each other,
+       so they're tightened here to keep the keypad on screen */
+    .keypad-screen > p {
+        margin: 0.4rem 0;
+    }
 
-.keypad-screen > .card-row {
-    margin: 0.75rem 0 0.25rem 0 !important;
-}
+    .keypad-screen > .card-row {
+        margin: 0.75rem 0 0.25rem 0 !important;
+    }
 
-/* Flash Cards: card width chosen so the whole fanned hand (--n cards,
-   each after the first adding 70% of a card) fits across the screen;
-   never larger than the 100px desktop size */
-.card-row.fc-fan {
-    --fc-w: min(100px, calc((var(--col-w) - 2rem) / (1 + 0.7 * (var(--n, 2) - 1))));
-}
+    /* Flash Cards: card width chosen so the whole fanned hand (--n cards,
+       each after the first adding 70% of a card) fits across the screen;
+       never larger than the 100px desktop size */
+    .card-row.fc-fan {
+        --fc-w: min(100px, calc((var(--col-w) - 2rem) / (1 + 0.7 * (var(--n, 2) - 1))));
+    }
 
-.keypad-screen .numeric-keypad-row button,
-.keypad-screen .numeric-keypad-row span {
-    height: 48px;
-}
+    .keypad-screen .numeric-keypad-row button,
+    .keypad-screen .numeric-keypad-row span {
+        height: 48px;
+    }
 
-.keypad-screen > .feedback-area {
-    order: 1;
-    min-height: 1.5rem;
-}
+    .keypad-screen > .feedback-area {
+        order: 1;
+        min-height: 1.5rem;
+    }
 
-.keypad-screen > .feedback-area p {
-    margin: 0.25rem 0;
-}
+    .keypad-screen > .feedback-area p {
+        margin: 0.25rem 0;
+    }
 
-/* Payouts: display box replaces the text box and the separate
-   feedback lines */
-.po-display {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    flex: 1 1 auto;
-    min-height: 3.6rem;
-    padding: 0.3rem 0.75rem;
-    border: 1px solid #999;
-    border-radius: 6px;
-    box-sizing: border-box;
-    font-size: 1.15rem;
-}
+    /* Payouts: display box replaces the text box and the separate
+       feedback lines */
+    .po-display {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        flex: 1 1 auto;
+        min-height: 3.6rem;
+        padding: 0.3rem 0.75rem;
+        border: 1px solid #999;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 1.15rem;
+    }
 
-.po-display-result {
-    font-weight: bold;
-}
+    .po-display-result {
+        font-weight: bold;
+    }
 
-.po-display-detail {
-    font-size: 1rem;
-}
+    .po-display-detail {
+        font-size: 1rem;
+    }
 
-.po-display-amount {
-    font-size: 1.4rem;
-    font-weight: bold;
-}
+    .po-display-amount {
+        font-size: 1.4rem;
+        font-weight: bold;
+    }
 
-.po-display-placeholder {
-    color: #888;
-}
+    .po-display-placeholder {
+        color: #888;
+    }
 
-.keypad-answer:has(.po-display) input {
-    display: none;
-}
+    .keypad-answer:has(.po-display) input {
+        display: none;
+    }
 
-.keypad-screen:has(.po-display) > .feedback-area {
-    display: none;
-}
+    .keypad-screen:has(.po-display) > .feedback-area {
+        display: none;
+    }
 
-.content .bust-button {
-    font-weight: bold;
-    min-width: 5.5rem;
-}
+    .content .bust-button {
+        font-weight: bold;
+        min-width: 5.5rem;
+    }
 
-.keypad-screen > .keypad-answer { order: 2; margin: 0.5rem 0 0.75rem 0 !important; align-self: stretch; }
-.keypad-screen > .keypad-wrap { order: 3; align-self: stretch; }
-.keypad-screen > .keypad-score { order: 4; }
-.keypad-screen > .keypad-actions { order: 5; }
+    .keypad-screen > .keypad-answer { order: 2; margin: 0.5rem 0 0.75rem 0 !important; align-self: stretch; }
+    .keypad-screen > .keypad-wrap { order: 3; align-self: stretch; }
+    .keypad-screen > .keypad-score { order: 4; }
+    .keypad-screen > .keypad-actions { order: 5; }
 
-/* Answer box shares its row with Submit and 123 instead of
-   pushing them onto a second line */
-.answer-row {
-    flex-wrap: nowrap;
-}
+    /* Answer box shares its row with Submit and 123 instead of
+       pushing them onto a second line */
+    .answer-row {
+        flex-wrap: nowrap;
+    }
 
-.answer-row input {
-    flex: 1 1 auto;
-    min-width: 0;
-    width: 8rem;
+    .answer-row input {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 8rem;
+    }
 }
 
 /* Blackjack - Side Wagers: player hand on top, then the dealer card,
