@@ -2039,15 +2039,13 @@ label,
     }
 
     /* Hands left, wager buttons right */
-    /* Card width comes from the table's own width (container units), so
-       the three overlapped cards (2.5 card widths) exactly fill the space
-       left of the wager column */
+    /* Hands left, wager column (84px) right. The table is the anchor
+       for the slid-out choices, so they can never run off screen. */
     .tcp-play .tcp-table {
-        container-type: inline-size;
-        --tcp-rail-w: 112px;
+        --tcp-rail-w: 84px;
         flex-direction: row;
         align-items: flex-start;
-        gap: 10px;
+        gap: 8px;
         margin-top: 0;
     }
 
@@ -2068,25 +2066,23 @@ label,
 
     /* Each hand's three cards overlap 25% (rank/suit corners stay
        visible), so they keep their size beside the wager column */
-    .tcp-play .tcp-hands {
-        --tcp-card-w: min(100px, calc((100cqw - var(--tcp-rail-w) - 10px) / 2.5));
-    }
-
     .tcp-play .tcp-hands .card-row {
         flex-wrap: nowrap;
         justify-content: flex-start;
         gap: 0;
     }
 
+    /* Three cards overlapped 25% = 2.5 card widths, so each card is 40%
+       of the hand column's width (capped at 120px on wide screens) */
     .tcp-play .tcp-hands .game-card {
         position: relative;
-        width: var(--tcp-card-w);
+        width: min(40%, 120px);
         height: auto;
         aspect-ratio: 100 / 140;
     }
 
     .tcp-play .tcp-hands .game-card + .game-card {
-        margin-left: calc(var(--tcp-card-w) * -0.25);
+        margin-left: calc(min(40%, 120px) * -0.25);
     }
 
     /* Wager buttons, top to bottom in settling order, then Submit/Deal */
@@ -2094,12 +2090,8 @@ label,
         display: flex;
         flex: 0 0 var(--tcp-rail-w);
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
         margin-top: 1.9rem;
-    }
-
-    .tcp-rail-item {
-        position: relative;
     }
 
     .content .tcp-rail-btn {
@@ -2107,22 +2099,24 @@ label,
         flex-direction: column;
         align-items: center;
         justify-content: center;
+        position: relative;
+        z-index: 16;
         width: 100%;
-        min-height: 50px;
-        padding: 0.2rem 0.25rem;
+        min-height: 42px;
+        padding: 0.15rem 0.2rem;
         border: 1px solid #c9c9c9;
-        border-radius: 10px;
+        border-radius: 8px;
         background-color: white;
         color: #222;
-        font-size: 0.95rem;
+        font-size: 0.82rem;
         font-weight: bold;
-        line-height: 1.15;
+        line-height: 1.1;
         -webkit-tap-highlight-color: transparent;
     }
 
     .tcp-rail-btn small {
-        min-height: 0.85rem;
-        font-size: 0.68rem;
+        min-height: 0.75rem;
+        font-size: 0.62rem;
         font-weight: 600;
     }
 
@@ -2153,27 +2147,32 @@ label,
     }
 
     .content .tcp-rail-primary {
-        min-height: 46px;
+        position: relative;
+        z-index: 16;
+        min-height: 42px;
+        padding: 0;
         border: 1px solid #0050b4;
-        border-radius: 10px;
+        border-radius: 8px;
         background-color: #0064dc;
         color: white;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         font-weight: bold;
     }
 
-    /* The slid-out choices: beside the tapped button, over the cards,
-       light-blue tint with a border and a dark shadow so it stands
-       clear of the cards and the page */
+    /* The slid-out choices: level with the tapped button (top left at
+       its natural spot, pulled up by the button's height), and spanning
+       the card area from the table's left edge to the wager column --
+       anchored to the table, so always on screen. Light-blue tint with a
+       border and a dark shadow so it stands clear of the cards. */
     .tcp-fly {
         position: absolute;
-        right: calc(100% + 8px);
-        top: -4px;
+        left: 0;
+        right: calc(var(--tcp-rail-w) + 8px);
+        margin-top: -46px;
         z-index: 20;
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        width: 212px;
         box-sizing: border-box;
         padding: 6px;
         border: 1px solid #9bb8e0;
@@ -2246,10 +2245,5 @@ label,
 
     .tcp-play .tcp-table {
         position: relative;
-    }
-
-    .tcp-rail {
-        position: relative;
-        z-index: 16;
     }
 }
