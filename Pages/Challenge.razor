@@ -10,7 +10,7 @@
 <PageTitle>Challenge Mode</PageTitle>
 
 @* Challenge Mode: timed runs that end on the first miss or time-out.
-   Scoring: each correct answer earns 100 points plus 10 points for every
+   Scoring: each correct answer earns 10 points plus 1 point for every
    second showing on the clock when it was answered. The best 5 runs of
    each challenge are kept on this device only (browser storage). *@
 
@@ -20,7 +20,7 @@
         <h1>CHALLENGE MODE</h1>
 
         <p class="ch-rules">One wrong answer or running out of time ends the run.
-            Each correct answer scores <strong>100 points + 10 points for every second left on the clock</strong>.</p>
+            Each correct answer scores <strong>10 points + 1 point for every second left on the clock</strong>.</p>
 
         <div class="mode-list">
             <ModeCard Title="Blackjack Flash Cards"
@@ -62,9 +62,10 @@ else if (_screen == Screen.Playing)
         </div>
 
         @* Score, count and the clock; the bar drains smoothly by CSS and
-           stops the moment an answer is given *@
+           stops the moment an answer is given. "+N" shows beside the score
+           for a moment after each correct answer. *@
         <div class="ch-status">
-            <span class="ch-score">Score <strong>@_score</strong></span>
+            <span class="ch-score">Score <strong>@_score</strong>@if (_gainText.Length > 0) { <span class="ch-gain">@_gainText</span> }</span>
             <span class="ch-count">Correct <strong>@_correct</strong></span>
             <span class="ch-clock @(_clock <= 5 ? "ch-clock-low" : "")">@_clock</span>
         </div>
@@ -83,8 +84,6 @@ else if (_screen == Screen.Playing)
                     <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image fc-card" />
                 }
             </div>
-
-            <p class="ch-msg">@if (_flashText.Length > 0) { <span class="ch-plus">@_flashText</span> } else { <span class="ch-hint">Dealer's total?</span> }</p>
 
             <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
                 @* inputmode="none": the on-screen keypad is used on phones;
@@ -152,15 +151,24 @@ else if (_screen == Screen.Playing)
                 <p class="ch-plus">@_flashText</p>
             </div>
         }
+
+        @* Pinned to the bottom of the screen: ends the run and keeps the
+           score so far (no wrong answer needed to stop) *@
+        <div class="ch-endbar">
+            <button type="button" class="ch-end" @onclick="EndByUser">End</button>
+        </div>
     </div>
 }
 else
 {
     <div class="play-screen ch-over">
-        <h1>@(_timedOut ? "TIME'S UP" : "RUN OVER")</h1>
+        <h1 class="@(_endedByUser ? "ch-ended" : "")">@(_endedByUser ? "RUN ENDED" : _timedOut ? "TIME'S UP" : "RUN OVER")</h1>
 
         <p class="ch-reason">@_overReason</p>
-        <p class="ch-answer">@_overAnswer</p>
+        @if (!_endedByUser)
+        {
+            <p class="ch-answer">@_overAnswer</p>
+        }
 
         @if (_placed >= 0)
         {
@@ -200,9 +208,11 @@ else
     private const int TopCount = 5;
     private const bool HitSoft17 = true;
 
-    private const string FcKey = "dst-challenge-fc";
-    private const string Po32Key = "dst-challenge-po-32";
-    private const string Po65Key = "dst-challenge-po-65";
+    // "-v2": scoring changed from 100 + 10/sec to 10 + 1/sec, so the
+    // old (10x larger) scores start fresh instead of topping the list
+    private const string FcKey = "dst-challenge-fc-v2";
+    private const string Po32Key = "dst-challenge-po-32-v2";
+    private const string Po65Key = "dst-challenge-po-65-v2";
 
     private static readonly Random Rng = new();
 
@@ -226,6 +236,7 @@ else
     private int _clock;                // whole seconds showing on the clock
     private string _answerText = string.Empty;
     private string _flashText = string.Empty;
+    private string _gainText = string.Empty;   // "+240" beside the score
     private bool _showKeypad;
     private readonly System.Diagnostics.Stopwatch _watch = new();
     private CancellationTokenSource? _clockCts;
@@ -237,6 +248,7 @@ else
 
     // Run over
     private bool _timedOut;
+    private bool _endedByUser;
     private string _overReason = string.Empty;
     private string _overAnswer = string.Empty;
     private int _placed = -1;
@@ -332,6 +344,7 @@ else
         _roundId++;
         _answerText = string.Empty;
         _flashText = string.Empty;
+        _gainText = string.Empty;
         _clock = _limitSeconds;
         _answering = true;
         _watch.Restart();
@@ -374,13 +387,14 @@ else
 
         double left = _limitSeconds - _watch.Elapsed.TotalSeconds;
         int secondsShown = Math.Max(0, (int)Math.Ceiling(left));
-        int points = 100 + 10 * secondsShown;
+        int points = 10 + secondsShown;
 
         _score += points;
         _correct++;
         _answerSeconds += _watch.Elapsed.TotalSeconds;
         _clock = secondsShown;
         _flashText = $"Correct! +{points}";
+        _gainText = $"+{points}";
 
         // Short pause so the points can be seen, then the next one
         int runId = _runId;
@@ -389,8 +403,20 @@ else
         NextRound();
     }
 
+    // End button: stops the run and scores it as it stands. The hand or
+    // wager on screen when End is pressed doesn't count either way.
+    private void EndByUser()
+    {
+        if (_screen != Screen.Playing) return;
+        _timedOut = false;
+        _endedByUser = true;
+        _overReason = "You ended the run.";
+        EndRun();
+    }
+
     private void Wrong(string yourAnswer)
     {
+        _endedByUser = false;
         _timedOut = false;
         _overReason = "You answered " + yourAnswer + ".";
         EndRun();
@@ -398,6 +424,7 @@ else
 
     private void TimeUp()
     {
+        _endedByUser = false;
         _timedOut = true;
         _overReason = "The clock ran out.";
         EndRun();
