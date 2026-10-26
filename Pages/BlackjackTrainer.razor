@@ -99,11 +99,14 @@ else if (_mode == BlackjackMode.FlashCards)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <div class="card-row" style="margin: 1rem 0;">
+        @* Cards fanned: each overlaps the previous one by 30%, leaving every
+           card's rank/suit corner visible. --n (card count) lets the CSS
+           size them so the whole hand fits across a phone screen. *@
+        <div class="card-row fc-fan" style="margin: 1rem 0; --n: @_fcHand.Count;">
             @for (int i = 0; i < _fcHand.Count; i++)
             {
                 var card = _fcHand.CardAt(i);
-                <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image game-card" />
+                <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image fc-card" />
             }
         </div>
 
@@ -129,14 +132,17 @@ else if (_mode == BlackjackMode.FlashCards)
                    @ref="_fcAnswerInputRef"
                    disabled="@(!_fcAnswerEnabled)"
                    placeholder="Total" />
-            <button @onclick="FcSubmitTypedAnswer" disabled="@(!_fcSubmitEnabled)">Submit</button>
+            @* One button: Submit while answering, Next once the hand is over
+               (replaces the old separate New Round button). Hidden on phones,
+               where the keypad's Enter / Next key does the same job. *@
+            <button class="answer-primary" @onclick="FcKeypadEnter" disabled="@(!_fcSubmitEnabled && !_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">@(_fcNewRoundEnabled ? "Next" : "Submit")</button>
             <button class="keypad-toggle" @onclick="() => _fcShowKeypad = !_fcShowKeypad">123</button>
         </div>
 
         @* Desktop: shown only after pressing 123. Phones/touch screens: always
            shown, and the 123 button is hidden (see app.css, keypad-wrap). *@
         <div class="keypad-wrap @(_fcShowKeypad ? "keypad-open" : "")">
-            <NumericKeypad AllowDecimal="false" @bind-Value="_fcAnswerText" OnEnter="FcKeypadEnter" />
+            <NumericKeypad AllowDecimal="false" @bind-Value="_fcAnswerText" OnEnter="FcKeypadEnter" EnterLabel="@(_fcNewRoundEnabled ? "Next" : "Enter")" />
         </div>
 
         <div class="feedback-area">
@@ -146,7 +152,6 @@ else if (_mode == BlackjackMode.FlashCards)
         <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
 
         <div class="button-row keypad-actions">
-            <button @onclick="FcStartNewRound" disabled="@(!_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">New Round</button>
             <button @onclick="EndSession">End Session</button>
         </div>
     </div>
@@ -158,9 +163,11 @@ else if (_mode == BlackjackMode.Payouts)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <div class="po-cards" style="position: relative; width: 220px; height: 240px; margin: 1rem 0;">
-            <img src="images/cards/AS.png" alt="AS" style="position: absolute; top: 0; left: 0; width: 130px; height: 182px;" />
-            <img src="images/cards/JS.png" alt="JS" style="position: absolute; top: 60px; left: 70px; width: 130px; height: 182px;" />
+        @* Blackjack shown as two cards side by side (was overlapped and
+           offset) -- shorter, so more of the screen is left for the answer *@
+        <div class="card-row po-cards" style="margin: 1rem 0;">
+            <img src="images/cards/AS.png" alt="AS" class="po-card" />
+            <img src="images/cards/JS.png" alt="JS" class="po-card" />
         </div>
 
         <p style="font-weight: bold;">BLACKJACK PAYS @(_poRatio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
@@ -177,12 +184,14 @@ else if (_mode == BlackjackMode.Payouts)
                    @ref="_poAnswerInputRef"
                    readonly="@(!_poAnswerEnabled)"
                    placeholder="Amount" />
-            <button @onclick="PoSubmitTypedAnswer" disabled="@(!_poSubmitEnabled)">Submit</button>
+            @* Submit while answering, Next once scored (replaces New Round);
+               hidden on phones where the keypad's Enter / Next key is used *@
+            <button class="answer-primary" @onclick="PoKeypadEnter" disabled="@(!_poSubmitEnabled && !_poNewRoundEnabled)" @ref="_poNewRoundButtonRef">@(_poNewRoundEnabled ? "Next" : "Submit")</button>
             <button class="keypad-toggle" @onclick="() => _poShowKeypad = !_poShowKeypad">123</button>
         </div>
 
         <div class="keypad-wrap @(_poShowKeypad ? "keypad-open" : "")">
-            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_poAnswerText" OnEnter="PoKeypadEnter" />
+            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_poAnswerText" OnEnter="PoKeypadEnter" EnterLabel="@(_poNewRoundEnabled ? "Next" : "Enter")" />
         </div>
 
         <div class="feedback-area">
@@ -191,7 +200,6 @@ else if (_mode == BlackjackMode.Payouts)
         </div>
 
         <div class="button-row keypad-actions">
-            <button @onclick="PoStartNewRound" disabled="@(!_poNewRoundEnabled)" @ref="_poNewRoundButtonRef">New Round</button>
             <button @onclick="EndSession">End Session</button>
         </div>
     </div>
@@ -201,27 +209,10 @@ else
     <div class="play-screen">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
-            <button @onclick="() => _swShowWagerRules = !_swShowWagerRules">@(_swShowWagerRules ? "Hide" : "Show") Wager Rules</button>
-        </div>
-
-        @if (_swShowWagerRules)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/SideWagerRules.png" alt="Side Wager Rules" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
-
-        @* Phones only (hidden on desktop by CSS): the dealer's up-card is
-           repeated above the hands, so it stays in view while settling
-           21 + 3 rather than sitting below several rows of hands. *@
-        <div class="sw-dealer-top">
-            <h3>Dealer</h3>
-            <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Code" class="sw-dealer-card" />
         </div>
 
         @* Phones only (hidden on desktop by CSS): one player hand is
-           shown at a time, so the dealer card stays on screen. Desktop
-           still shows every hand side by side. *@
+           shown at a time. Desktop still shows every hand side by side. *@
         @if (_swHands.Count > 1)
         {
             <div class="hand-pager">
@@ -270,7 +261,12 @@ else
 
         <div class="sw-footer">
             <div class="sw-footer-buttons">
-                <button @onclick="SwSubmitRound" disabled="@(!_swSubmitEnabled)">Submit</button>
+                @* Submit only appears once every wager on every hand has been
+                   tapped (Win/Lose chosen) *@
+                @if (_swSubmitEnabled && SwAllAnswered)
+                {
+                    <button @onclick="SwSubmitRound">Submit</button>
+                }
                 <button @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Deal</button>
                 <button @onclick="EndSession">End Session</button>
             </div>
@@ -285,6 +281,18 @@ else
                 <p style="margin: 0.25rem 0 0 0;">@_swScoreText</p>
             </div>
         </div>
+
+        @* Reference chart toggle kept at the very bottom, out of the way *@
+        <div class="button-row rules-row">
+            <button @onclick="() => _swShowWagerRules = !_swShowWagerRules">@(_swShowWagerRules ? "Hide" : "Show") Wager Rules</button>
+        </div>
+
+        @if (_swShowWagerRules)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/SideWagerRules.png" alt="Side Wager Rules" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
     </div>
 }
 
@@ -528,11 +536,11 @@ else
 
         if (actualBlackjack)
         {
-            await FcEndRound("Dealer has Blackjack. Press Enter for the next hand.");
+            await FcEndRound("Dealer has Blackjack. Press Next for the next hand.");
         }
         else if (actualBust)
         {
-            await FcEndRound("Dealer busts. Press Enter for the next hand.");
+            await FcEndRound("Dealer busts. Press Next for the next hand.");
         }
         else if (_fcHand.MustHit(FcHitSoft17))
         {
@@ -545,7 +553,7 @@ else
         }
         else
         {
-            await FcEndRound("Dealer stands. Press Enter for the next hand.");
+            await FcEndRound("Dealer stands. Press Next for the next hand.");
         }
     }
 
@@ -765,6 +773,11 @@ else
         _swSubmitEnabled = true;
         _swCurrentHand = 0;
     }
+
+    // True once every hand has both of its wagers called (Win or Lose) --
+    // Submit only shows up at that point.
+    private bool SwAllAnswered => _swHands.Count > 0 && _swHands.All(h =>
+        h.LuckyLadiesSelection is not null && h.TwentyOnePlus3Selection is not null);
 
     private void SwPreviousHand()
     {

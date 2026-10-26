@@ -8,7 +8,8 @@
    added: in whole-number mode the bottom row becomes  <<  0  Enter
    (same arrangement as the LTD trainer apps); in decimal mode the
    bottom row stays  .  0  <<  and a full-width Enter row is added
-   below it. *@
+   below it. EnterLabel changes the Enter key's caption (e.g. "Next"
+   once a hand is finished, when Enter deals the next one). *@
 
 <div class="numeric-keypad">
     @for (int row = 0; row < 3; row++)
@@ -33,7 +34,7 @@
         {
             <button type="button" @onclick="Backspace">⌫</button>
             <button type="button" @onclick="() => AppendDigit(0)">0</button>
-            <button type="button" class="numeric-keypad-enter" @onclick="PressEnter">Enter</button>
+            <button type="button" class="numeric-keypad-enter" @onclick="PressEnter">@EnterLabel</button>
         }
         else
         {
@@ -45,7 +46,7 @@
     @if (AllowDecimal && OnEnter.HasDelegate)
     {
         <div class="numeric-keypad-row">
-            <button type="button" class="numeric-keypad-enter numeric-keypad-wide" @onclick="PressEnter">Enter</button>
+            <button type="button" class="numeric-keypad-enter numeric-keypad-wide" @onclick="PressEnter">@EnterLabel</button>
         </div>
     }
 </div>
@@ -56,6 +57,7 @@
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public EventCallback OnEnter { get; set; }
+    [Parameter] public string EnterLabel { get; set; } = "Enter";
 
     private async Task AppendDigit(int digit)
     {

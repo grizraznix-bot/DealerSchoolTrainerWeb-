@@ -102,15 +102,7 @@ else if (_mode == PaiGowMode.HandSetting)
     <div class="play-screen hs-screen">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
-            <button @onclick="() => _hsShowHouseWays = !_hsShowHouseWays">@(_hsShowHouseWays ? "Hide" : "Show") House Ways</button>
         </div>
-
-        @if (_hsShowHouseWays)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/HouseWays.png" alt="Pai Gow House Ways" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
 
         <div class="hs-top">
             <div class="hs-low">
@@ -185,6 +177,18 @@ else if (_mode == PaiGowMode.HandSetting)
             <button @onclick="HsDealAgain" disabled="@(!_hsDealEnabled)">Deal</button>
             <button @onclick="EndSession">End Session</button>
         </div>
+
+        @* Reference chart toggle kept at the bottom, out of the way *@
+        <div class="button-row rules-row">
+            <button @onclick="() => _hsShowHouseWays = !_hsShowHouseWays">@(_hsShowHouseWays ? "Hide" : "Show") House Ways</button>
+        </div>
+
+        @if (_hsShowHouseWays)
+        {
+            <div class="rules-image" style="margin: 1rem 0;">
+                <img src="images/cards/HouseWays.png" alt="Pai Gow House Ways" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
     </div>
 }
 else
@@ -196,15 +200,7 @@ else
     <div class="play-screen sb-screen">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
-            <button @onclick="() => _sbShowWagerRules = !_sbShowWagerRules">@(_sbShowWagerRules ? "Hide" : "Show") Wager Rules</button>
         </div>
-
-        @if (_sbShowWagerRules)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/SettlingBetsWagerRules.png" alt="Pai Gow - Settling Bets Wager Rules" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
 
         <div class="sb-player">
         <h3 style="margin-top: 1rem;">Player</h3>
@@ -322,6 +318,18 @@ else
             }
         </div>
         </div>
+
+        @* Reference chart toggle kept at the bottom, out of the way *@
+        <div class="button-row rules-row">
+            <button @onclick="() => _sbShowWagerRules = !_sbShowWagerRules">@(_sbShowWagerRules ? "Hide" : "Show") Wager Rules</button>
+        </div>
+
+        @if (_sbShowWagerRules)
+        {
+            <div class="rules-image" style="margin: 1rem 0;">
+                <img src="images/cards/SettlingBetsWagerRules.png" alt="Pai Gow - Settling Bets Wager Rules" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
     </div>
 }
 

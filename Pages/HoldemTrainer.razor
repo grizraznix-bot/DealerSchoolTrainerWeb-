@@ -58,32 +58,24 @@ else
     <div class="play-screen">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
-            <button @onclick="() => _showHandRankings = !_showHandRankings">@(_showHandRankings ? "Hide" : "Show") Hand Rankings</button>
         </div>
 
-        @if (_showHandRankings)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/HandRankings.png" alt="Hold'em Hand Rankings" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
-
         @* On phones (see app.css, "Heads-Up Hold'em") this table becomes a
-           single column in this order: community cards, dealer cards,
-           player pager and current hand, Submit/Deal/End Session, then
-           feedback. The
+           single column. Identify the Hands: community cards, then the
+           current player hand. Settle the Bets (hd-settle): the current
+           player hand first, then community and dealer cards. Both then
+           show Submit/Deal/End Session and the feedback. The
            fixed 900px width and the side-positioned feedback apply on
            desktop only. *@
-        <div class="hd-table">
+        <div class="hd-table @(_mode == TrainerMode.SettleBets ? "hd-settle" : "")">
             @* Phones only (hidden on desktop by CSS): one player hand is
-               shown at a time, so the community and dealer cards stay on
-               screen. Desktop still shows every hand side by side. *@
+               shown at a time. This banner names it; the Previous / Next
+               buttons sit beside that hand's answer control below, to save
+               a row. Desktop still shows every hand side by side. *@
             @if (_hands.Count > 1)
             {
                 <div class="hd-pager">
-                    <button @onclick="PreviousHand" disabled="@(_currentHand <= 0)">Previous</button>
                     <span class="hd-pager-label">Player @(_currentHand + 1) of @_hands.Count</span>
-                    <button @onclick="NextHand" disabled="@(_currentHand >= _hands.Count - 1)">Next Player</button>
                 </div>
             }
 
@@ -96,16 +88,22 @@ else
                 <div class="hd-hand @(handIndex == _currentHand ? "hd-hand-current" : "")">
                     <div class="hd-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
 
-                    <div style="position: relative; width: 130px; height: 195px;">
+                    <div class="hd-hand-cards" style="position: relative; width: 130px; height: 195px;">
                         <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
                              style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
                         <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Code"
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
+                    <div class="hd-hand-controls">
+                    @if (_hands.Count > 1)
+                    {
+                        <button class="hd-inline-pager" @onclick="PreviousHand" disabled="@(handIndex <= 0)">Previous</button>
+                    }
+
                     @if (_mode == TrainerMode.IdentifyHands)
                     {
-                        <select @bind="hand.SelectedRankIndex" style="margin-top: 0.5rem; @(hand.Wrong ? "background-color: #f8d0d0;" : (hand.SelectedRankIndex > 0 ? "background-color: #d0e0f8;" : ""))">
+                        <select @bind="hand.SelectedRankIndex" style="@(hand.Wrong ? "background-color: #f8d0d0;" : (hand.SelectedRankIndex > 0 ? "background-color: #d0e0f8;" : ""))">
                             @for (int i = 0; i < RankComboItems.Length; i++)
                             {
                                 <option value="@i">@RankComboItems[i]</option>
@@ -114,15 +112,19 @@ else
                     }
                     else
                     {
-                        <div style="margin-top: 0.5rem; display: flex; justify-content: center;">
-                            <WagerShape IsDiamond="false" AllowPush="true"
-                                        Selection="hand.WagerSelection" SelectionChanged="v => hand.WagerSelection = v"
-                                        Wrong="hand.WagerWrong" OnCycled="() => hand.WagerWrong = false"
-                                        ShowWrongShading="_roundScored">
-                                vs Dealer
-                            </WagerShape>
-                        </div>
+                        <WagerShape IsDiamond="false" AllowPush="true"
+                                    Selection="hand.WagerSelection" SelectionChanged="v => hand.WagerSelection = v"
+                                    Wrong="hand.WagerWrong" OnCycled="() => hand.WagerWrong = false"
+                                    ShowWrongShading="_roundScored">
+                            vs Dealer
+                        </WagerShape>
                     }
+
+                    @if (_hands.Count > 1)
+                    {
+                        <button class="hd-inline-pager" @onclick="NextHand" disabled="@(handIndex >= _hands.Count - 1)">Next</button>
+                    }
+                    </div>
                 </div>
             }
         </div>
@@ -142,7 +144,12 @@ else
              by side rather than overlapped like the player hands. -->
         <div class="hd-center">
             <div class="hd-buttons">
-                <button @onclick="SubmitRound" disabled="@(!_submitEnabled || (_mode == TrainerMode.SettleBets && SbRotatedCount != 2))">Submit</button>
+                @* Submit only appears once every player hand has an answer
+                   (a rank picked, or a Win/Lose/Push called) *@
+                @if (_submitEnabled && AllHandsAnswered)
+                {
+                    <button @onclick="SubmitRound" disabled="@(_mode == TrainerMode.SettleBets && SbRotatedCount != 2)">Submit</button>
+                }
                 <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
                 <button @onclick="EndSession">End Session</button>
             </div>
@@ -208,6 +215,18 @@ else
             <p style="margin: 0.25rem 0 0 0;">@_scoreText</p>
         </div>
         </div>
+
+        @* Reference chart toggle kept at the bottom, out of the way *@
+        <div class="button-row rules-row">
+            <button @onclick="() => _showHandRankings = !_showHandRankings">@(_showHandRankings ? "Hide" : "Show") Hand Rankings</button>
+        </div>
+
+        @if (_showHandRankings)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/HandRankings.png" alt="Hold'em Hand Rankings" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
     </div>
 }
 
@@ -402,6 +421,13 @@ else
     }
 
     private void DealAgain() => DealNewRound();
+
+    // True once every player hand has an answer: a rank chosen (Identify
+    // the Hands) or a Win/Lose/Push called (Settle the Bets). Submit only
+    // shows up at that point.
+    private bool AllHandsAnswered => _hands.Count > 0 && (_mode == TrainerMode.IdentifyHands
+        ? _hands.All(h => h.SelectedRankIndex > 0)
+        : _hands.All(h => h.WagerSelection is not null));
 
     private void PreviousHand()
     {

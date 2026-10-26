@@ -40,15 +40,7 @@ else
     <div class="play-screen">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
-            <button @onclick="() => _showWagerRules = !_showWagerRules">@(_showWagerRules ? "Hide" : "Show") Wager Rules</button>
         </div>
-
-        @if (_showWagerRules)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/ThreeCardWagerRules.png" alt="Three Card Prime Wager Rules" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
 
         <div class="tcp-table">
             <div class="tcp-hands">
@@ -108,6 +100,18 @@ else
             <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
             <button @onclick="EndSession">End Session</button>
         </div>
+
+        @* Reference chart toggle kept at the bottom, out of the way *@
+        <div class="button-row rules-row">
+            <button @onclick="() => _showWagerRules = !_showWagerRules">@(_showWagerRules ? "Hide" : "Show") Wager Rules</button>
+        </div>
+
+        @if (_showWagerRules)
+        {
+            <div style="margin: 1rem 0;">
+                <img src="images/cards/ThreeCardWagerRules.png" alt="Three Card Prime Wager Rules" style="max-width: 500px; width: 100%;" />
+            </div>
+        }
     </div>
 }
 
