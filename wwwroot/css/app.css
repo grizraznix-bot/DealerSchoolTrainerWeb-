@@ -1418,10 +1418,6 @@ label,
         gap: 4px;
     }
 
-    .hd-community.hd-community-settle {
-        gap: 18px;
-    }
-
     .hd-community-slot {
         flex: 1 1 0;
         min-width: 0;
@@ -1434,12 +1430,6 @@ label,
         aspect-ratio: 100 / 140;
     }
 
-    /* Smaller cards in Settle the Bets, so a card rotated to mark it
-       unused doesn't cover its neighbor */
-    .hd-community-settle .hd-community-slot {
-        max-width: 64px;
-    }
-
     .hd-dealer-title {
         order: 3;
         margin-top: 0.5rem;
@@ -1450,31 +1440,50 @@ label,
         gap: 2.5rem;
     }
 
-    /* Dealer cards: a little larger than the community cards, clearly
-       smaller than the player's cards, so each group reads as its own */
+    /* Dealer cards: clearly smaller than the community and player
+       cards, so each group reads as its own */
     .hd-dealer .hd-card {
         width: 66px;
         height: 92px;
     }
 
-    /* Identify the Hands only: larger community cards, each overlapping
-       the one before it by 25% (corner indexes stay visible). Five cards
-       at 75% spacing span 4 card widths, so each card is a quarter of
-       the screen width, up to the desktop size of 100px. */
-    .hd-table:not(.hd-settle) .hd-community {
+    /* Both modes: larger community cards, each overlapping the one
+       before it by 25% (corner indexes stay visible). Five cards at 75%
+       spacing span 4 card widths, so each card is a quarter of the
+       screen width, up to the desktop size of 100px. (.hd-table in the
+       selector outranks the desktop Settle the Bets 3rem gap.) */
+    .hd-table .hd-community {
         --hc-w: min(100px, calc((100vw - 2rem) / 4));
         gap: 0;
         max-width: none;
     }
 
-    .hd-table:not(.hd-settle) .hd-community-slot {
+    .hd-community-slot {
         flex: 0 0 var(--hc-w);
         max-width: none;
         position: relative;
     }
 
-    .hd-table:not(.hd-settle) .hd-community-slot + .hd-community-slot {
+    .hd-community-slot + .hd-community-slot {
         margin-left: calc(var(--hc-w) * -0.25);
+    }
+
+    /* Settle the Bets: a card marked unused (community or dealer) drops
+       down a quarter of its height and darkens (opaque, so the card
+       behind doesn't show through, and suit colors stay true), instead of the desktop's
+       45-degree turn -- a turned card would cover its neighbors in the
+       overlapped row. Room is left below the community row for the drop. */
+    .hd-community.hd-community-settle {
+        padding-bottom: calc(var(--hc-w) * 0.35);
+    }
+
+    .hd-settle .hd-card.hd-card-unused {
+        transform: translateY(25%) !important;
+        filter: brightness(0.7);
+    }
+
+    .hd-dealer {
+        padding-bottom: 23px;
     }
 
     /* Identify the Hands only: the player's two cards side by side
