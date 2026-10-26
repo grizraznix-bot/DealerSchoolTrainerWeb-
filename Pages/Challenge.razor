@@ -1,0 +1,650 @@
+@page "/challenge"
+@using System.Text.Json
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.FlashCardTrainer
+@using DealerSchoolTrainerWeb.Games.PayoutTrainer
+@implements IDisposable
+@inject GameResetService GameReset
+@inject IJSRuntime JS
+
+<PageTitle>Challenge Mode</PageTitle>
+
+@* Challenge Mode: timed runs that end on the first miss or time-out.
+   Scoring: each correct answer earns 100 points plus 10 points for every
+   second showing on the clock when it was answered. The best 5 runs of
+   each challenge are kept on this device only (browser storage). *@
+
+@if (_screen == Screen.Start)
+{
+    <div class="start-screen">
+        <h1>CHALLENGE MODE</h1>
+
+        <p class="ch-rules">One wrong answer or running out of time ends the run.
+            Each correct answer scores <strong>100 points + 10 points for every second left on the clock</strong>.</p>
+
+        <div class="mode-list">
+            <ModeCard Title="Blackjack Flash Cards"
+                      Description="The dealer's complete hand is shown. Enter its total, or BUST. 20 seconds per hand."
+                      Expanded="@(_openCard == ChallengeGame.FlashCards)"
+                      OnToggle="() => ToggleCard(ChallengeGame.FlashCards)"
+                      OnStart="() => StartRun(ChallengeGame.FlashCards)">
+                @RenderTopFive(_fcTop, null)
+            </ModeCard>
+
+            <ModeCard Title="Blackjack Payouts"
+                      Description="Pay each blackjack. Wagers grow as you go: $15-$100, then $25-$200, then $50-$300, then $15-$500. 30 seconds per wager."
+                      Expanded="@(_openCard == ChallengeGame.Payouts)"
+                      OnToggle="() => ToggleCard(ChallengeGame.Payouts)"
+                      OnStart="() => StartRun(ChallengeGame.Payouts)">
+                <div class="mode-options">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Payout</p>
+                        <label class="mode-choice">
+                            <input type="radio" name="ch-ratio" checked="@(_ratio == PayoutRatio.ThreeToTwo)" @onchange="() => _ratio = PayoutRatio.ThreeToTwo" />
+                            3:2 Payouts
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="ch-ratio" checked="@(_ratio == PayoutRatio.SixToFive)" @onchange="() => _ratio = PayoutRatio.SixToFive" />
+                            6:5 Payouts
+                        </label>
+                    </div>
+                </div>
+                @RenderTopFive(_ratio == PayoutRatio.ThreeToTwo ? _po32Top : _po65Top, _ratio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5")
+            </ModeCard>
+        </div>
+    </div>
+}
+else if (_screen == Screen.Playing)
+{
+    <div class="play-screen keypad-screen ch-screen">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        @* Score, count and the clock; the bar drains smoothly by CSS and
+           stops the moment an answer is given *@
+        <div class="ch-status">
+            <span class="ch-score">Score <strong>@_score</strong></span>
+            <span class="ch-count">Correct <strong>@_correct</strong></span>
+            <span class="ch-clock @(_clock <= 5 ? "ch-clock-low" : "")">@_clock</span>
+        </div>
+        <div class="ch-bar">
+            <div @key="_roundId"
+                 class="ch-bar-fill @(_clock <= 5 ? "ch-bar-low" : "")"
+                 style="animation-duration: @(_limitSeconds)s; animation-play-state: @(_answering ? "running" : "paused");"></div>
+        </div>
+
+        @if (_game == ChallengeGame.FlashCards)
+        {
+            <div class="card-row fc-fan" style="margin: 1rem 0; --n: @_hand.Count;">
+                @for (int i = 0; i < _hand.Count; i++)
+                {
+                    var card = _hand.CardAt(i);
+                    <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image fc-card" />
+                }
+            </div>
+
+            <p class="ch-msg">@if (_flashText.Length > 0) { <span class="ch-plus">@_flashText</span> } else { <span class="ch-hint">Dealer's total?</span> }</p>
+
+            <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+                @* inputmode="none": the on-screen keypad is used on phones;
+                   a PC keyboard still types into it (B = BUST) *@
+                <input type="text"
+                       inputmode="none"
+                       @bind="_answerText"
+                       @bind:event="oninput"
+                       @onkeydown="HandleKeyDown"
+                       @ref="_answerRef"
+                       disabled="@(!_answering)"
+                       placeholder="Total" />
+                <button class="bust-button" @onclick="AnswerBust" disabled="@(!_answering)">BUST</button>
+                <button class="answer-primary" @onclick="SubmitTyped" disabled="@(!_answering)">Submit</button>
+                <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
+            </div>
+
+            <div class="keypad-wrap @(_showKeypad ? "keypad-open" : "")">
+                <NumericKeypad AllowDecimal="false" @bind-Value="_answerText" OnEnter="SubmitTyped" EnterLabel="Enter" />
+            </div>
+        }
+        else
+        {
+            <div class="card-row po-cards" style="margin: 1rem 0;">
+                <img src="images/cards/AS.png" alt="AS" class="po-card" />
+                <img src="images/cards/JS.png" alt="JS" class="po-card" />
+            </div>
+
+            <p style="font-weight: bold;">BLACKJACK PAYS @(_ratio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
+
+            <p class="po-wager">Wager: <strong>@PayoutWager.FormatCents(_wagerCents)</strong></p>
+
+            <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+                <div class="po-display">
+                    @if (_flashText.Length > 0)
+                    {
+                        <div class="po-display-result ch-plus">@_flashText</div>
+                    }
+                    else if (_answerText.Length > 0)
+                    {
+                        <div class="po-display-amount">$@_answerText</div>
+                    }
+                    else
+                    {
+                        <div class="po-display-placeholder">Enter payout</div>
+                    }
+                </div>
+
+                <input type="text"
+                       inputmode="none"
+                       value="@_answerText"
+                       @oninput="HandleMoneyInput"
+                       @onkeydown="HandleKeyDown"
+                       @ref="_answerRef"
+                       readonly="@(!_answering)"
+                       placeholder="Amount" />
+                <button class="answer-primary" @onclick="SubmitTyped" disabled="@(!_answering)">Submit</button>
+                <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
+            </div>
+
+            <div class="keypad-wrap @(_showKeypad ? "keypad-open" : "")">
+                <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_answerText" OnEnter="SubmitTyped" EnterLabel="Enter" />
+            </div>
+
+            @* Desktop only: the result line under the text box (phones show
+               it in the display box above) *@
+            <div class="feedback-area">
+                <p class="ch-plus">@_flashText</p>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="play-screen ch-over">
+        <h1>@(_timedOut ? "TIME'S UP" : "RUN OVER")</h1>
+
+        <p class="ch-reason">@_overReason</p>
+        <p class="ch-answer">@_overAnswer</p>
+
+        @if (_placed >= 0)
+        {
+            <p class="ch-placed">@(_placed == 0 ? "New best score!" : $"#{_placed + 1} on your Top 5!")</p>
+        }
+
+        <div class="ch-final">
+            <div><span>Score</span><strong>@_score</strong></div>
+            <div><span>Correct</span><strong>@_correct</strong></div>
+            <div><span>Avg time</span><strong>@FormatAvg(_correct, _answerSeconds)</strong></div>
+        </div>
+
+        @RenderTopFive(CurrentTop, _game == ChallengeGame.Payouts ? (_ratio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5") : null, _placed)
+
+        <div class="button-row">
+            <button class="mode-start" @onclick="() => StartRun(_game)">Play Again</button>
+            <button @onclick="BackToStart">Back</button>
+        </div>
+    </div>
+}
+
+@code {
+    private enum Screen { Start, Playing, Over }
+    private enum ChallengeGame { FlashCards, Payouts }
+
+    // One finished run, as kept in the Top 5
+    private sealed class ChallengeScore
+    {
+        public int Score { get; set; }
+        public int Correct { get; set; }
+        public double AvgSeconds { get; set; }
+        public DateTime When { get; set; }
+    }
+
+    private const int FlashCardSeconds = 20;
+    private const int PayoutSeconds = 30;
+    private const int TopCount = 5;
+    private const bool HitSoft17 = true;
+
+    private const string FcKey = "dst-challenge-fc";
+    private const string Po32Key = "dst-challenge-po-32";
+    private const string Po65Key = "dst-challenge-po-65";
+
+    private static readonly Random Rng = new();
+
+    private Screen _screen = Screen.Start;
+    private ChallengeGame _game;
+    private ChallengeGame? _openCard;
+    private PayoutRatio _ratio = PayoutRatio.ThreeToTwo;
+
+    private List<ChallengeScore> _fcTop = new();
+    private List<ChallengeScore> _po32Top = new();
+    private List<ChallengeScore> _po65Top = new();
+
+    // Current run
+    private int _score;
+    private int _correct;
+    private double _answerSeconds;     // total time taken on correct answers
+    private int _roundId;              // bumps every hand/wager (restarts the bar)
+    private int _runId;                // bumps every run (stops stale timers)
+    private bool _answering;
+    private int _limitSeconds;
+    private int _clock;                // whole seconds showing on the clock
+    private string _answerText = string.Empty;
+    private string _flashText = string.Empty;
+    private bool _showKeypad;
+    private readonly System.Diagnostics.Stopwatch _watch = new();
+    private CancellationTokenSource? _clockCts;
+
+    private BlackjackShoe _shoe = new();
+    private BlackjackHand _hand = new();
+    private long _wagerCents;
+    private int _wagerNumber;          // wagers dealt so far this run (for the tiers)
+
+    // Run over
+    private bool _timedOut;
+    private string _overReason = string.Empty;
+    private string _overAnswer = string.Empty;
+    private int _placed = -1;
+
+    private ElementReference _answerRef;
+    private bool _focusAnswer;
+    private bool _lastRenderedPlaying;
+
+    private List<ChallengeScore> CurrentTop =>
+        _game == ChallengeGame.FlashCards ? _fcTop
+        : _ratio == PayoutRatio.ThreeToTwo ? _po32Top : _po65Top;
+
+    protected override void OnInitialized()
+    {
+        GameReset.ResetRequested += OnResetRequested;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _fcTop = await LoadTop(FcKey);
+        _po32Top = await LoadTop(Po32Key);
+        _po65Top = await LoadTop(Po65Key);
+    }
+
+    private void OnResetRequested()
+    {
+        StopRun();
+        _screen = Screen.Start;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        GameReset.ResetRequested -= OnResetRequested;
+        StopRun();
+    }
+
+    private void ToggleCard(ChallengeGame game) =>
+        _openCard = _openCard == game ? null : game;
+
+    private void BackToStart()
+    {
+        StopRun();
+        _screen = Screen.Start;
+    }
+
+    // ============================================================
+    // RUN CONTROL
+    // ============================================================
+
+    private void StartRun(ChallengeGame game)
+    {
+        StopRun();
+        _runId++;
+        _game = game;
+        _openCard = game;
+        _score = 0;
+        _correct = 0;
+        _answerSeconds = 0;
+        _placed = -1;
+        _timedOut = false;
+        _showKeypad = false;
+        _limitSeconds = game == ChallengeGame.FlashCards ? FlashCardSeconds : PayoutSeconds;
+
+        if (game == ChallengeGame.FlashCards)
+            _shoe = new BlackjackShoe();
+        else
+            _wagerNumber = 0;
+
+        _screen = Screen.Playing;
+        NextRound();
+
+        _clockCts = new CancellationTokenSource();
+        _ = RunClock(_runId, _clockCts.Token);
+    }
+
+    private void StopRun()
+    {
+        _answering = false;
+        _watch.Stop();
+        _clockCts?.Cancel();
+        _clockCts?.Dispose();
+        _clockCts = null;
+    }
+
+    private void NextRound()
+    {
+        if (_game == ChallengeGame.FlashCards)
+            DealDealerHand();
+        else
+            _wagerCents = NextWagerCents();
+
+        _roundId++;
+        _answerText = string.Empty;
+        _flashText = string.Empty;
+        _clock = _limitSeconds;
+        _answering = true;
+        _watch.Restart();
+        _focusAnswer = true;
+    }
+
+    // Checks the clock 10 times a second; the page only redraws when the
+    // whole-second number changes (the bar itself is animated by CSS)
+    private async Task RunClock(int runId, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested && runId == _runId)
+        {
+            try { await Task.Delay(100, token); }
+            catch (TaskCanceledException) { return; }
+
+            if (!_answering || runId != _runId) continue;
+
+            double left = _limitSeconds - _watch.Elapsed.TotalSeconds;
+            if (left <= 0)
+            {
+                _clock = 0;
+                TimeUp();
+                StateHasChanged();
+                continue;
+            }
+
+            int shown = (int)Math.Ceiling(left);
+            if (shown != _clock)
+            {
+                _clock = shown;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task Correct()
+    {
+        _answering = false;
+        _watch.Stop();
+
+        double left = _limitSeconds - _watch.Elapsed.TotalSeconds;
+        int secondsShown = Math.Max(0, (int)Math.Ceiling(left));
+        int points = 100 + 10 * secondsShown;
+
+        _score += points;
+        _correct++;
+        _answerSeconds += _watch.Elapsed.TotalSeconds;
+        _clock = secondsShown;
+        _flashText = $"Correct! +{points}";
+
+        // Short pause so the points can be seen, then the next one
+        int runId = _runId;
+        await Task.Delay(800);
+        if (runId != _runId || _screen != Screen.Playing) return;
+        NextRound();
+    }
+
+    private void Wrong(string yourAnswer)
+    {
+        _timedOut = false;
+        _overReason = "You answered " + yourAnswer + ".";
+        EndRun();
+    }
+
+    private void TimeUp()
+    {
+        _timedOut = true;
+        _overReason = "The clock ran out.";
+        EndRun();
+    }
+
+    private void EndRun()
+    {
+        StopRun();
+        _overAnswer = _game == ChallengeGame.FlashCards
+            ? (_hand.IsBust ? $"The dealer's hand was {_hand.Total} - BUST." : $"The dealer's hand was {_hand.Total}.")
+            : $"{PayoutWager.FormatCents(_wagerCents)} pays {PayoutWager.FormatCents(PayoutWager.CalculatePayoutCents(_wagerCents, _ratio))}.";
+
+        _placed = -1;
+        if (_correct > 0)
+        {
+            var entry = new ChallengeScore
+            {
+                Score = _score,
+                Correct = _correct,
+                AvgSeconds = Math.Round(_answerSeconds / _correct, 1),
+                When = DateTime.Now
+            };
+
+            List<ChallengeScore> top = CurrentTop;
+            top.Add(entry);
+            // Highest score first; on a tie the earlier run keeps its place
+            List<ChallengeScore> sorted = top.OrderByDescending(s => s.Score).ThenBy(s => s.When).Take(TopCount).ToList();
+            top.Clear();
+            top.AddRange(sorted);
+            _placed = top.IndexOf(entry);
+
+            if (_placed >= 0)
+                _ = SaveTop(CurrentKey, top);
+        }
+
+        _screen = Screen.Over;
+    }
+
+    private string CurrentKey =>
+        _game == ChallengeGame.FlashCards ? FcKey
+        : _ratio == PayoutRatio.ThreeToTwo ? Po32Key : Po65Key;
+
+    // ============================================================
+    // ANSWERS
+    // ============================================================
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (!_answering) return;
+
+        if (e.Key == "Enter")
+        {
+            await SubmitTyped();
+        }
+        else if (_game == ChallengeGame.FlashCards && (e.Key == "b" || e.Key == "B"))
+        {
+            await AnswerBust();
+        }
+    }
+
+    private async Task SubmitTyped()
+    {
+        if (!_answering) return;
+
+        string raw = _answerText.Trim();
+        if (raw.Length == 0) return; // nothing entered yet: not a miss
+
+        if (_game == ChallengeGame.FlashCards)
+        {
+            // Over 21: BUST or the exact total both count as right
+            if (int.TryParse(raw, out int total) && total == _hand.Total)
+                await Correct();
+            else
+                Wrong(raw);
+        }
+        else
+        {
+            long typed;
+            try { typed = PayoutWager.ParseCents(raw); }
+            catch { return; }
+
+            if (typed == PayoutWager.CalculatePayoutCents(_wagerCents, _ratio))
+                await Correct();
+            else
+                Wrong(PayoutWager.FormatCents(typed));
+        }
+    }
+
+    private async Task AnswerBust()
+    {
+        if (!_answering) return;
+
+        if (_hand.IsBust)
+            await Correct();
+        else
+            Wrong("BUST");
+    }
+
+    // Payout box: digits and one decimal point, at most 2 decimal digits
+    private void HandleMoneyInput(ChangeEventArgs e)
+    {
+        string raw = e.Value?.ToString() ?? string.Empty;
+        System.Text.StringBuilder filtered = new();
+        bool hasDot = false;
+        int decimals = 0;
+
+        foreach (char c in raw)
+        {
+            if (char.IsDigit(c))
+            {
+                if (!hasDot) filtered.Append(c);
+                else if (decimals < 2) { filtered.Append(c); decimals++; }
+            }
+            else if (c == '.' && !hasDot)
+            {
+                filtered.Append(c);
+                hasDot = true;
+            }
+        }
+
+        _answerText = filtered.ToString();
+    }
+
+    // ============================================================
+    // DEALING
+    // ============================================================
+
+    // A complete dealer hand: two cards, then hits per house rules
+    // (dealer hits soft 17) until it stands or busts
+    private void DealDealerHand()
+    {
+        _hand = new BlackjackHand();
+        _hand.AddCard(_shoe.Draw());
+        _hand.AddCard(_shoe.Draw());
+
+        while (!_hand.IsBust && _hand.MustHit(HitSoft17))
+            _hand.AddCard(_shoe.Draw());
+    }
+
+    // Wager tiers: 1-10 $15-$100, 11-20 $25-$200, 21-30 $50-$300, then
+    // $15-$500 for the rest of the run. $5 units throughout, except the
+    // last tier, where about 1 wager in 4 is an odd dollar amount.
+    private long NextWagerCents()
+    {
+        int n = _wagerNumber++;
+        int min, max;
+
+        if (n < 10) { min = 15; max = 100; }
+        else if (n < 20) { min = 25; max = 200; }
+        else if (n < 30) { min = 50; max = 300; }
+        else { min = 15; max = 500; }
+
+        int dollars;
+        if (n >= 30 && Rng.NextDouble() < 0.25)
+        {
+            // Whole dollars that aren't a multiple of $5
+            do { dollars = Rng.Next(min, max + 1); } while (dollars % 5 == 0);
+        }
+        else
+        {
+            dollars = Rng.Next(min / 5, max / 5 + 1) * 5;
+        }
+
+        return dollars * 100L;
+    }
+
+    // ============================================================
+    // TOP 5 (this device only)
+    // ============================================================
+
+    private async Task<List<ChallengeScore>> LoadTop(string key)
+    {
+        try
+        {
+            string? json = await JS.InvokeAsync<string?>("localStorage.getItem", key);
+            if (string.IsNullOrEmpty(json)) return new();
+            return JsonSerializer.Deserialize<List<ChallengeScore>>(json) ?? new();
+        }
+        catch
+        {
+            return new();
+        }
+    }
+
+    private async Task SaveTop(string key, List<ChallengeScore> top)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", key, JsonSerializer.Serialize(top));
+        }
+        catch
+        {
+            // Storage blocked (private browsing etc.): scores just aren't kept
+        }
+    }
+
+    private static string FormatAvg(int correct, double seconds) =>
+        correct == 0 ? "-" : (seconds / correct).ToString("0.0") + "s";
+
+    private RenderFragment RenderTopFive(List<ChallengeScore> top, string? ratioLabel, int highlight = -1) => __builder =>
+    {
+        <div class="ch-top">
+            <p class="mode-option-label">Your Top 5@(ratioLabel is null ? "" : $" ({ratioLabel})")</p>
+            @if (top.Count == 0)
+            {
+                <p class="ch-top-empty">No scores yet.</p>
+            }
+            else
+            {
+                <table class="ch-top-table">
+                    <thead>
+                        <tr><th>#</th><th>Score</th><th>Correct</th><th>Avg</th><th>Date</th></tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < top.Count; i++)
+                        {
+                            ChallengeScore s = top[i];
+                            <tr class="@(i == highlight ? "ch-top-new" : "")">
+                                <td>@(i + 1)</td>
+                                <td>@s.Score</td>
+                                <td>@s.Correct</td>
+                                <td>@s.AvgSeconds.ToString("0.0")s</td>
+                                <td class="ch-top-date">@s.When.ToString("M/d/yy h:mm tt")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        bool playing = _screen == Screen.Playing;
+        if (playing != _lastRenderedPlaying)
+        {
+            _lastRenderedPlaying = playing;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+
+        if (_focusAnswer)
+        {
+            _focusAnswer = false;
+            try { await _answerRef.FocusAsync(preventScroll: true); } catch { }
+        }
+    }
+}

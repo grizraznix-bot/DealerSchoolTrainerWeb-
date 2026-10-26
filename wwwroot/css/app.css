@@ -2613,3 +2613,214 @@ label,
         margin-left: -18.75px;
     }
 }
+
+/* ------------------------------------------------------------------
+   Challenge Mode
+   ------------------------------------------------------------------ */
+
+/* Menu: shaded gold so it stands apart from the regular trainers */
+.sidebar li.challenge-link {
+    margin-top: 1rem;
+}
+
+.sidebar li.challenge-link a {
+    background: #fff4d6;
+    border-color: #e0c060;
+}
+
+@media (hover: hover) {
+    .sidebar li.challenge-link a:hover {
+        background: #ffe9ad;
+        border-color: #d4ad3a;
+    }
+}
+
+.sidebar li.challenge-link a.active {
+    background: #b8860b;
+    border-color: #b8860b;
+    color: white;
+}
+
+.ch-rules {
+    margin: 0 0 1rem 0;
+}
+
+/* Top 5 table on the start cards and the end screen */
+.ch-top {
+    margin-top: 0.75rem;
+}
+
+.ch-top-empty {
+    color: #777;
+    font-style: italic;
+    margin: 0.25rem 0;
+}
+
+.ch-top-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.ch-top-table th,
+.ch-top-table td {
+    padding: 0.3rem 0.35rem;
+    border-bottom: 1px solid #ddd;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.ch-top-table th:first-child,
+.ch-top-table td:first-child {
+    text-align: left;
+}
+
+.ch-top-table th {
+    font-size: 0.8rem;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.ch-top-table .ch-top-date {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.ch-top-table tr.ch-top-new td {
+    background: #fff4d6;
+    font-weight: bold;
+}
+
+/* Play screen: score / correct / clock line, then the draining bar */
+.ch-status {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    margin-top: 0.5rem;
+    font-size: 1.05rem;
+}
+
+.ch-status .ch-clock {
+    margin-left: auto;
+    min-width: 2.2em;
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: #1b6ec2;
+    font-variant-numeric: tabular-nums;
+}
+
+.ch-status .ch-clock-low {
+    color: #c80000;
+}
+
+.ch-bar {
+    width: 100%;
+    height: 10px;
+    margin-top: 0.25rem;
+    border-radius: 5px;
+    background: #e3e3e3;
+    overflow: hidden;
+}
+
+.ch-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: #1b6ec2;
+    transform-origin: left center;
+    animation-name: ch-drain;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+.ch-bar-fill.ch-bar-low {
+    background: #c80000;
+}
+
+@keyframes ch-drain {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+
+/* One fixed-height line: the prompt, then "Correct! +N" */
+.ch-msg {
+    min-height: 1.6em;
+    margin: 0.4rem 0;
+    font-size: 1.15rem;
+}
+
+.ch-hint {
+    color: dimgray;
+    font-style: italic;
+}
+
+.ch-plus {
+    color: blue;
+    font-weight: bold;
+}
+
+/* Run over screen */
+.ch-over h1 {
+    color: #c80000;
+}
+
+.ch-reason {
+    font-size: 1.1rem;
+    margin: 0.25rem 0;
+}
+
+.ch-answer {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0.25rem 0 0.75rem 0;
+}
+
+.ch-placed {
+    display: inline-block;
+    margin: 0 0 0.75rem 0;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid #e0c060;
+    border-radius: 8px;
+    background: #fff4d6;
+    font-weight: bold;
+}
+
+.ch-final {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.ch-final > div {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #f7f9fc;
+}
+
+.ch-final span {
+    font-size: 0.8rem;
+    color: #555;
+    text-transform: uppercase;
+}
+
+.ch-final strong {
+    font-size: 1.5rem;
+}
+
+.ch-over .button-row {
+    margin-top: 1rem;
+}
+
+.ch-over .mode-start {
+    display: inline-block;
+    margin-top: 0;
+    width: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
