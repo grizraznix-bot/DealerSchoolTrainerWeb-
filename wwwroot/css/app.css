@@ -373,8 +373,21 @@ code {
 
 /* Payouts: blackjack shown as two cards side by side */
 .po-card {
-    width: 100px;
-    height: 140px;
+    width: 75px;
+    height: 105px;
+}
+
+/* Flash Cards: one line shared by the Ace reminder and the feedback,
+   always the same height so nothing below it moves */
+.fc-msg {
+    min-height: 2.6em;
+    margin: 0.4rem 0;
+}
+
+/* Hand over: total box and BUST hidden but still holding their space */
+.fc-answer-done input,
+.fc-answer-done .bust-button {
+    visibility: hidden;
 }
 
 /* Payouts: the wager amount, large enough to read at a glance, in a
@@ -2087,10 +2100,38 @@ label,
 
     .sb-player { order: 1; }
     .sb-wagers { order: 2; }
-    .sb-dealer { order: 3; }
-    .sb-push-note { order: 4; font-size: 0.8rem; margin: 0.3rem 0 0 0; }
-    .sb-actions { order: 5; margin-top: 0.5rem; }
-    .content .sb-wins { order: 6; }
+    .sb-push-note { order: 3; font-size: 0.8rem; margin: 0 0 0.25rem 0; }
+    .sb-dealer { order: 4; }
+    .content .sb-wins { order: 5; }
+    .sb-actions { order: 6; }
+
+    /* A little wider than the page padding, so the cards can be bigger */
+    .sb-screen {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+
+    /* Submit / Deal / End Session (with the result) pinned to the bottom
+       of the screen, so they're always visible; the page still scrolls
+       underneath. Sits above the iPhone's home bar. */
+    .sb-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        margin: 0.5rem 0 0 0;
+        padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
+        background-color: white;
+        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .sb-actions > p {
+        text-align: center;
+        font-size: 0.85rem;
+    }
+
+    .sb-actions > p:empty {
+        display: none;
+    }
 
     .sb-player h3,
     .sb-dealer h3 {
@@ -2127,22 +2168,22 @@ label,
         margin-bottom: 0.2rem !important;
     }
 
-    /* Cards overlap 20%: five cards span 4.2 card widths, so each card
-       is 1/4.2 (23.8%) of the row, capped at 100px. The low hands
-       overlap the same way at the same size. */
+    /* Cards overlap 25%: five cards span 4 card widths, so each card is
+       25% of the row, capped at 110px. The low hands overlap the same
+       way at the same size. */
     .content .sb-cards {
         gap: 0 !important;
     }
 
     .sb-card {
         position: relative;
-        width: min(100px, 23.8%);
+        width: min(110px, 25%);
         height: auto;
         aspect-ratio: 90 / 126;
     }
 
     .sb-card + .sb-card {
-        margin-left: calc(min(100px, 23.8%) * -0.2);
+        margin-left: calc(min(110px, 25%) * -0.25);
     }
 
     .content .sb-hand-labels {

@@ -98,12 +98,23 @@ else if (_mode == BlackjackMode.FlashCards)
 
         <p style="font-size: 1.2rem;">@_fcPromptText</p>
 
-        @if (_fcShowHint)
-        {
-            <p style="font-style: italic; color: dimgray;">Remember: an Ace can count as 1 or 11.</p>
-        }
+        @* One fixed-height line shared by the Ace reminder and the feedback:
+           feedback (when there is any) takes the reminder's place, and the
+           next hand brings the reminder back -- so nothing below shifts. *@
+        <p class="fc-msg" style="@(_fcFeedbackText.Length > 0 ? $"font-weight: bold; color: {_fcFeedbackColor};" : "font-style: italic; color: dimgray;")">
+            @if (_fcFeedbackText.Length > 0)
+            {
+                @_fcFeedbackText
+            }
+            else if (_fcShowHint)
+            {
+                <text>Remember: an Ace can count as 1 or 11.</text>
+            }
+        </p>
 
-        <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+        @* Once the hand is over, the total box and BUST are hidden but keep
+           their space (fc-answer-done), so the keypad doesn't move *@
+        <div class="button-row answer-row keypad-answer @(_fcNewRoundEnabled ? "fc-answer-done" : "")" style="margin: 1rem 0;">
             @* inputmode="none": on phones and tablets, tapping the box does
                NOT open the phone's own keyboard (which pushed the cards off
                screen) -- the on-screen keypad below is used instead. A
@@ -130,10 +141,6 @@ else if (_mode == BlackjackMode.FlashCards)
            shown, and the 123 button is hidden (see app.css, keypad-wrap). *@
         <div class="keypad-wrap @(_fcShowKeypad ? "keypad-open" : "")">
             <NumericKeypad AllowDecimal="false" @bind-Value="_fcAnswerText" OnEnter="FcKeypadEnter" EnterLabel="@(_fcNewRoundEnabled ? "Next" : "Enter")" />
-        </div>
-
-        <div class="feedback-area">
-            <p style="font-weight: bold; color: @_fcFeedbackColor;">@_fcFeedbackText</p>
         </div>
 
         <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
