@@ -14,79 +14,63 @@
     <div class="start-screen">
         <h1>BLACKJACK</h1>
 
-        <!-- Three genuinely independent trainers sharing one start
-             screen and one page, each mode's own options always
-             visible rather than toggling based on the current
-             selection -- matching the same combined-trainer pattern
-             established for Heads-Up Hold'em and Pai Gow. -->
-        <div style="margin-top: 1rem;">
-            <div class="mode-card">
-                <label class="mode-title" style="display: block;">
-                    <input type="radio" name="mode" checked="@(_mode == BlackjackMode.FlashCards)" @onchange="() => _mode = BlackjackMode.FlashCards" />
-                    Flash Cards
-                </label>
-                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
-                    Type the dealer's total, press Enter to Submit.
-                </p>
-                <label style="margin-left: 1.5rem;">
+        @* Three independent trainers on one page. Each mode is a
+           collapsible card: tap its title to open its settings and its
+           own Start button (one card open at a time). *@
+        <div class="mode-list">
+            <ModeCard Title="Flash Cards"
+                      Description="Type the dealer's total, press Enter to Submit."
+                      Expanded="@IsModeOpen(BlackjackMode.FlashCards)"
+                      OnToggle="() => ToggleMode(BlackjackMode.FlashCards)"
+                      OnStart="StartGame">
+                <label class="mode-choice">
                     <input type="checkbox" @bind="_fcRemoveTens" />
                     Remove all 10-value cards
                 </label>
-            </div>
+            </ModeCard>
 
-            <div class="mode-card">
-                <label class="mode-title" style="display: block;">
-                    <input type="radio" name="mode" checked="@(_mode == BlackjackMode.Payouts)" @onchange="() => _mode = BlackjackMode.Payouts" />
-                    Blackjack Payouts
-                </label>
-                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
-                    Pay each blackjack. Type the payout, then press Enter or Submit.
-                </p>
-                <div style="display: flex; gap: 3rem; margin-left: 1.5rem;">
-                    <div>
-                        <label style="display: block;">
+            <ModeCard Title="Blackjack Payouts"
+                      Description="Pay each blackjack. Type the payout, then press Enter or Submit."
+                      Expanded="@IsModeOpen(BlackjackMode.Payouts)"
+                      OnToggle="() => ToggleMode(BlackjackMode.Payouts)"
+                      OnStart="StartGame">
+                <div class="mode-options">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Payout</p>
+                        <label class="mode-choice">
                             <input type="radio" name="ratio" checked="@(_poRatio == PayoutRatio.ThreeToTwo)" @onchange="() => _poRatio = PayoutRatio.ThreeToTwo" />
                             3:2 Payouts
                         </label>
-                        <label style="display: block;">
+                        <label class="mode-choice">
                             <input type="radio" name="ratio" checked="@(_poRatio == PayoutRatio.SixToFive)" @onchange="() => _poRatio = PayoutRatio.SixToFive" />
                             6:5 Payouts
                         </label>
                     </div>
-                    <div>
-                        <label style="display: block;">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Difficulty</p>
+                        <label class="mode-choice">
                             <input type="radio" name="difficulty" checked="@(_poDifficulty == PayoutDifficulty.Beginner)" @onchange="() => _poDifficulty = PayoutDifficulty.Beginner" />
                             Beginner
                         </label>
-                        <label style="display: block;">
+                        <label class="mode-choice">
                             <input type="radio" name="difficulty" checked="@(_poDifficulty == PayoutDifficulty.Intermediate)" @onchange="() => _poDifficulty = PayoutDifficulty.Intermediate" />
                             Intermediate
                         </label>
-                        <label style="display: block;">
+                        <label class="mode-choice">
                             <input type="radio" name="difficulty" checked="@(_poDifficulty == PayoutDifficulty.Advanced)" @onchange="() => _poDifficulty = PayoutDifficulty.Advanced" />
                             Advanced
                         </label>
                     </div>
                 </div>
-            </div>
+            </ModeCard>
 
-            <div class="mode-card">
-                <label class="mode-title" style="display: block;">
-                    <input type="radio" name="mode" checked="@(_mode == BlackjackMode.SideWagers)" @onchange="() => _mode = BlackjackMode.SideWagers" />
-                    Side Wagers
-                </label>
-                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
-                    Settle the outcome of each side wager by tapping the wager to cycle Win / Lose, then Submit.
-                </p>
-                <label style="margin-left: 1.5rem;">
-                    Number of Hands (1-6):
-                    <input type="number" min="1" max="6" @bind="_swHandCount" style="width: 4rem;" />
-                </label>
-            </div>
-        </div>
-
-        <div style="margin-top: 1rem;">
-            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+            <ModeCard Title="Side Wagers"
+                      Description="Settle the outcome of each side wager by tapping the wager to cycle Win / Lose, then Submit."
+                      Expanded="@IsModeOpen(BlackjackMode.SideWagers)"
+                      OnToggle="() => ToggleMode(BlackjackMode.SideWagers)"
+                      OnStart="StartGame">
+                <CountStepper Label="Number of Hands" Min="1" Max="6" @bind-Value="_swHandCount" />
+            </ModeCard>
         </div>
     </div>
 }
@@ -380,6 +364,20 @@ else
     // to show, and the session-summary overlay.
     private bool _started;
     private BlackjackMode _mode = BlackjackMode.FlashCards;
+
+    // Start screen: which mode card is open (null = all closed). Opening
+    // a card also selects its mode, so that card's Start button starts
+    // it. The open card stays open after a session, so a returning
+    // trainee lands right back on the mode they were using.
+    private BlackjackMode? _openMode;
+
+    private bool IsModeOpen(BlackjackMode mode) => _openMode == mode;
+
+    private void ToggleMode(BlackjackMode mode)
+    {
+        _openMode = _openMode == mode ? null : mode;
+        if (_openMode is not null) _mode = mode;
+    }
     private bool _showSessionSummary;
 
     private void BackToStart() => _started = false;

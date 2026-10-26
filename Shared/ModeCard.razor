@@ -1,0 +1,48 @@
+@* One game mode on a start screen, as a collapsible card. Tapping the
+   title opens the card to show the mode's description, its settings
+   (ChildContent) and its own Start button, so Start always sits right
+   under the settings it uses instead of at the bottom of the page.
+   The page decides which card is open (Expanded) and handles the tap
+   (OnToggle), so it can keep only one card open at a time.
+   Collapsible="false" is for a game with a single mode: the card is
+   always open and its title is not a button. *@
+
+<div class="mode-card @(Expanded || !Collapsible ? "mode-card-open" : "") @(Collapsible ? "" : "mode-card-static")">
+    @if (Collapsible)
+    {
+        <button type="button" class="mode-header" aria-expanded="@(Expanded ? "true" : "false")" @onclick="OnToggle">
+            <span class="mode-title">@Title</span>
+            <span class="mode-chevron" aria-hidden="true"></span>
+        </button>
+    }
+    else
+    {
+        <div class="mode-header">
+            <span class="mode-title">@Title</span>
+        </div>
+    }
+
+    @if (Expanded || !Collapsible)
+    {
+        <div class="mode-body">
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <p class="mode-desc">@Description</p>
+            }
+
+            @ChildContent
+
+            <button type="button" class="mode-start" @onclick="OnStart">Start</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public bool Collapsible { get; set; } = true;
+    [Parameter] public EventCallback OnToggle { get; set; }
+    [Parameter] public EventCallback OnStart { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

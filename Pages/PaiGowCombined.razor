@@ -12,85 +12,73 @@
     <div class="start-screen">
         <h1>PAI GOW</h1>
 
-        <!-- Two genuinely independent trainers sharing one start
-             screen and one page, each mode's own options always
-             visible -- matching the same combined-trainer pattern
-             established for Blackjack and Heads-Up Hold'em. Each
-             mode's Joker Frequency is kept independent rather than
-             shared, consistent with how those other combined pages
-             also give each mode its own settings rather than one
-             shared value. -->
-        <div style="margin-top: 1rem;">
-            <div class="mode-card">
-                <label class="mode-title" style="display: block;">
-                    <input type="radio" name="mode" checked="@(_mode == PaiGowMode.HandSetting)" @onchange="() => _mode = PaiGowMode.HandSetting" />
-                    Hand Setting
-                </label>
-                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
-                    Arrange your 7 cards into a 5-card High hand and a 2-card Low hand per the House Way, then Submit.
-                </p>
-                <div style="margin-left: 1.5rem;">
-                    <p style="margin-bottom: 0.25rem;">Joker Frequency:</p>
-                    <label style="display: block;">
-                        <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 0)" @onchange="() => _hsJokerFrequencyLevel = 0" />
-                        Default
-                    </label>
-                    <label style="display: block;">
-                        <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 1)" @onchange="() => _hsJokerFrequencyLevel = 1" />
-                        +25%
-                    </label>
-                    <label style="display: block;">
-                        <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 2)" @onchange="() => _hsJokerFrequencyLevel = 2" />
-                        +50%
-                    </label>
+        @* Two independent trainers on one page. Each mode is a
+           collapsible card: tap its title to open its settings and its
+           own Start button (one card open at a time). Each mode keeps
+           its own Joker Frequency rather than one shared value. *@
+        <div class="mode-list">
+            <ModeCard Title="Hand Setting"
+                      Description="Arrange your 7 cards into a 5-card High hand and a 2-card Low hand per the House Way, then Submit."
+                      Expanded="@IsModeOpen(PaiGowMode.HandSetting)"
+                      OnToggle="() => ToggleMode(PaiGowMode.HandSetting)"
+                      OnStart="StartGame">
+                <div class="mode-options">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Joker Frequency</p>
+                        <label class="mode-choice">
+                            <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 0)" @onchange="() => _hsJokerFrequencyLevel = 0" />
+                            Default
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 1)" @onchange="() => _hsJokerFrequencyLevel = 1" />
+                            +25%
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 2)" @onchange="() => _hsJokerFrequencyLevel = 2" />
+                            +50%
+                        </label>
+                    </div>
                 </div>
-            </div>
+            </ModeCard>
 
-            <div class="mode-card">
-                <label class="mode-title" style="display: block;">
-                    <input type="radio" name="mode" checked="@(_mode == PaiGowMode.SettlingBets)" @onchange="() => _mode = PaiGowMode.SettlingBets" />
-                    Settling Bets
-                </label>
-                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
-                    Both dealer and player hands are already dealt and set. Judge each wager's outcome, flag the hand as Foul if it is one, then Submit.
-                </p>
-                <div style="display: flex; gap: 3rem; margin-left: 1.5rem;">
-                    <div>
-                        <p style="margin-bottom: 0.25rem;">Joker Frequency:</p>
-                        <label style="display: block;">
+            <ModeCard Title="Settling Bets"
+                      Description="Both dealer and player hands are already dealt and set. Judge each wager's outcome, flag the hand as Foul if it is one, then Submit."
+                      Expanded="@IsModeOpen(PaiGowMode.SettlingBets)"
+                      OnToggle="() => ToggleMode(PaiGowMode.SettlingBets)"
+                      OnStart="StartGame">
+                <div class="mode-options">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Joker Frequency</p>
+                        <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 0)" @onchange="() => _sbJokerFrequencyLevel = 0" />
                             Default
                         </label>
-                        <label style="display: block;">
+                        <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 1)" @onchange="() => _sbJokerFrequencyLevel = 1" />
                             +25%
                         </label>
-                        <label style="display: block;">
+                        <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 2)" @onchange="() => _sbJokerFrequencyLevel = 2" />
                             +50%
                         </label>
                     </div>
-                    <div>
-                        <p style="margin-bottom: 0.25rem;">Foul Frequency:</p>
-                        <label style="display: block;">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Foul Frequency</p>
+                        <label class="mode-choice">
                             <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 0)" @onchange="() => _sbFoulFrequencyLevel = 0" />
                             Rare (Default)
                         </label>
-                        <label style="display: block;">
+                        <label class="mode-choice">
                             <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 1)" @onchange="() => _sbFoulFrequencyLevel = 1" />
                             Occasional
                         </label>
-                        <label style="display: block;">
+                        <label class="mode-choice">
                             <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 2)" @onchange="() => _sbFoulFrequencyLevel = 2" />
                             Frequent
                         </label>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div style="margin-top: 1rem;">
-            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+            </ModeCard>
         </div>
     </div>
 }
@@ -404,6 +392,20 @@ else
     // Shared across both modes.
     private bool _started;
     private PaiGowMode _mode = PaiGowMode.HandSetting;
+
+    // Start screen: which mode card is open (null = all closed). Opening
+    // a card also selects its mode, so that card's Start button starts
+    // it. The open card stays open after a session, so a returning
+    // trainee lands right back on the mode they were using.
+    private PaiGowMode? _openMode;
+
+    private bool IsModeOpen(PaiGowMode mode) => _openMode == mode;
+
+    private void ToggleMode(PaiGowMode mode)
+    {
+        _openMode = _openMode == mode ? null : mode;
+        if (_openMode is not null) _mode = mode;
+    }
     private bool _showSessionSummary;
 
     private void BackToStart() => _started = false;

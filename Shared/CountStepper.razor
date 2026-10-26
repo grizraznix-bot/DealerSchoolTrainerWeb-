@@ -1,0 +1,31 @@
+@* Number picker for start-screen settings such as Number of Hands:
+   down arrow, the current number on a light-blue tag, up arrow. Each
+   arrow is disabled at its limit, so the value can never leave
+   Min..Max. Use with @bind-Value. *@
+
+<div class="count-stepper">
+    <span class="count-label">@Label</span>
+    <div class="count-controls">
+        <button type="button" class="count-btn" aria-label="Fewer" disabled="@(Value <= Min)" @onclick="Decrease">&#9660;</button>
+        <span class="count-value">@Value</span>
+        <button type="button" class="count-btn" aria-label="More" disabled="@(Value >= Max)" @onclick="Increase">&#9650;</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public int Value { get; set; }
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
+    [Parameter] public int Min { get; set; } = 1;
+    [Parameter] public int Max { get; set; } = 6;
+
+    private async Task Decrease()
+    {
+        if (Value > Min) await ValueChanged.InvokeAsync(Value - 1);
+    }
+
+    private async Task Increase()
+    {
+        if (Value < Max) await ValueChanged.InvokeAsync(Value + 1);
+    }
+}

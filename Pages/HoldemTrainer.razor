@@ -12,44 +12,27 @@
     <div class="start-screen">
         <h1>HEADS-UP HOLD'EM</h1>
 
-        <!-- Each mode gets its own always-visible hand-count input,
-             set independently, rather than one shared input that
-             switches based on the current radio selection. Settle the
-             Bets is capped narrower (1-4) than Identify the Hands
-             (1-6) specifically to leave room for the feedback block,
-             which sits beside the hands row rather than below it. -->
-        <div style="margin-top: 1rem;">
-            <div class="mode-card">
-                <label class="mode-title" style="display: block;">
-                    <input type="radio" name="mode" checked="@(_mode == TrainerMode.IdentifyHands)" @onchange="() => _mode = TrainerMode.IdentifyHands" />
-                    Identify the Hands
-                </label>
-                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
-                    Classify each dealt hand using the 5 community cards. Select a rank for every hand, then Submit.
-                </p>
-                <label style="margin-left: 1.5rem;">
-                    Number of Hands (1-6):
-                    <input type="number" min="1" max="6" @bind="_handCountIdentify" style="width: 4rem;" />
-                </label>
-            </div>
+        @* Each mode is a collapsible card: tap its title to open its
+           settings and its own Start button (one card open at a time).
+           Settle the Bets is capped narrower (1-4) than Identify the
+           Hands (1-6) to leave room for the feedback block, which sits
+           beside the hands row on desktop. *@
+        <div class="mode-list">
+            <ModeCard Title="Identify the Hands"
+                      Description="Classify each dealt hand using the 5 community cards. Select a rank for every hand, then Submit."
+                      Expanded="@IsModeOpen(TrainerMode.IdentifyHands)"
+                      OnToggle="() => ToggleMode(TrainerMode.IdentifyHands)"
+                      OnStart="StartGame">
+                <CountStepper Label="Number of Hands" Min="1" Max="6" @bind-Value="_handCountIdentify" />
+            </ModeCard>
 
-            <div class="mode-card">
-                <label class="mode-title" style="display: block;">
-                    <input type="radio" name="mode" checked="@(_mode == TrainerMode.SettleBets)" @onchange="() => _mode = TrainerMode.SettleBets" />
-                    Settle the Bets
-                </label>
-                <p style="font-style: italic; color: dimgray; max-width: 500px; margin: 0.25rem 0 0.5rem 1.5rem;">
-                    A dealer hand is dealt below the community cards. Tap the dealer's own two cards or any community card to mark it as NOT part of the dealer's best hand -- exactly two of the seven will always end up unused. Tap each player hand's circle to call its outcome (Win / Lose / Push) against the dealer's hand, then Submit.
-                </p>
-                <label style="margin-left: 1.5rem;">
-                    Number of Hands (1-4):
-                    <input type="number" min="1" max="4" @bind="_handCountSettleBets" style="width: 4rem;" />
-                </label>
-            </div>
-        </div>
-
-        <div style="margin-top: 1rem;">
-            <button class="btn btn-primary" @onclick="StartGame">Start</button>
+            <ModeCard Title="Settle the Bets"
+                      Description="A dealer hand is dealt below the community cards. Tap the dealer's own two cards or any community card to mark it as NOT part of the dealer's best hand -- exactly two of the seven will always end up unused. Tap each player hand's circle to call its outcome (Win / Lose / Push) against the dealer's hand, then Submit."
+                      Expanded="@IsModeOpen(TrainerMode.SettleBets)"
+                      OnToggle="() => ToggleMode(TrainerMode.SettleBets)"
+                      OnStart="StartGame">
+                <CountStepper Label="Number of Hands" Min="1" Max="4" @bind-Value="_handCountSettleBets" />
+            </ModeCard>
         </div>
     </div>
 }
@@ -316,6 +299,20 @@ else
     private int _handCountIdentify = 6;
     private int _handCountSettleBets = 4;
     private TrainerMode _mode = TrainerMode.IdentifyHands;
+
+    // Start screen: which mode card is open (null = all closed). Opening
+    // a card also selects its mode, so that card's Start button starts
+    // it. The open card stays open after a session, so a returning
+    // trainee lands right back on the mode they were using.
+    private TrainerMode? _openMode;
+
+    private bool IsModeOpen(TrainerMode mode) => _openMode == mode;
+
+    private void ToggleMode(TrainerMode mode)
+    {
+        _openMode = _openMode == mode ? null : mode;
+        if (_openMode is not null) _mode = mode;
+    }
 
     private Deck _deck = new();
     private readonly Card?[] _community = new Card?[CommunityCount];

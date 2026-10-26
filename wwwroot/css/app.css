@@ -491,6 +491,193 @@ h1:focus {
     padding: 1rem;
     margin-bottom: 1rem;
 }
+
+/* Start screens: each game mode is a collapsible card (Shared/ModeCard).
+   The title bar is the tap target; the open card's bar turns light blue
+   and shows the description, settings and that mode's Start button.
+   Scoped to .mode-list so the plain .mode-card boxes on the About and
+   Add to Home Screen pages are unchanged. */
+.mode-list {
+    margin-top: 1rem;
+    max-width: 600px;
+}
+
+.mode-list .mode-card {
+    padding: 0;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+
+.content .mode-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0.75rem 1rem;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background-color: #f3f3f3;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.content .mode-card-open .mode-header {
+    background-color: #d0e0f8;
+    border-bottom: 1px solid #9bb8e0;
+}
+
+.content .mode-card-static .mode-header {
+    cursor: default;
+}
+
+@media (hover: hover) {
+    .content button.mode-header:hover {
+        background-color: #e4e4e4;
+    }
+
+    .content .mode-card-open button.mode-header:hover {
+        background-color: #c2d6f4;
+    }
+}
+
+/* Down-pointing chevron; flips to point up when the card is open */
+.mode-chevron {
+    flex-shrink: 0;
+    width: 0.6rem;
+    height: 0.6rem;
+    margin: 0 0.25rem 0.25rem 1rem;
+    border-right: 2px solid #555;
+    border-bottom: 2px solid #555;
+    transform: rotate(45deg);
+    transition: transform 0.15s;
+}
+
+.mode-card-open .mode-chevron {
+    margin-bottom: -0.25rem;
+    transform: rotate(-135deg);
+}
+
+.mode-body {
+    padding: 0.75rem 1rem 1rem 1rem;
+}
+
+.mode-desc {
+    margin: 0 0 0.75rem 0;
+    font-style: italic;
+    color: dimgray;
+}
+
+/* Settings groups (e.g. Payout + Difficulty) side by side, wrapping
+   onto a new line when the screen is too narrow */
+.mode-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 3rem;
+}
+
+.mode-option-label {
+    margin: 0 0 0.25rem 0;
+    font-weight: bold;
+}
+
+.mode-choice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2rem;
+}
+
+/* The mode's Start button: blue, so a first-time user can't miss it */
+.content .mode-start {
+    display: block;
+    min-width: 9rem;
+    min-height: 44px;
+    margin-top: 1rem;
+    padding: 0.4rem 1.5rem;
+    border: 1px solid #0050b4;
+    border-radius: 6px;
+    background-color: #0064dc;
+    color: white;
+    font-size: 1.05rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .content .mode-start:hover {
+        background-color: #0050b4;
+    }
+}
+
+/* Number of Hands picker (Shared/CountStepper): down arrow, the number
+   on a light-blue tag, up arrow */
+.count-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 320px;
+}
+
+.count-label {
+    font-weight: bold;
+}
+
+.count-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.content .count-btn {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 1px solid #9bb8e0;
+    border-radius: 6px;
+    background-color: white;
+    color: #0050b4;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.content .count-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.count-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3rem;
+    height: 44px;
+    box-sizing: border-box;
+    border: 1px solid #9bb8e0;
+    border-radius: 6px;
+    background-color: #d0e0f8;
+    font-size: 1.3rem;
+    font-weight: bold;
+}
+
+/* Phones: Start fills the card width, like the in-game action rows */
+@media (max-width: 768px) {
+    .content .mode-start {
+        width: 100%;
+    }
+
+    .count-stepper {
+        max-width: none;
+    }
+}
 /* ------------------------------------------------------------------
    Shared layout helpers (used by Home and Three Card Prime so far).
    These reproduce the exact desktop look the old inline styles had;
