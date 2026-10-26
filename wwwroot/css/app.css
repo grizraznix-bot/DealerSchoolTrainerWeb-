@@ -2948,6 +2948,19 @@ label,
     color: #666;
 }
 
+/* Level choices: name, then its description on the line below */
+.rl-level {
+    display: flex;
+    flex-direction: column;
+    padding: 0.3rem 0;
+    line-height: 1.25;
+}
+
+.rl-level-desc {
+    font-size: 0.9rem;
+    color: #555;
+}
+
 .rl-pays-line {
     margin-top: 1rem;
     font-size: 0.95rem;
