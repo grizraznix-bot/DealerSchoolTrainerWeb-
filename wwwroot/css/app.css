@@ -866,6 +866,26 @@ h1:focus {
     font-size: 0.85rem;
 }
 
+/* Identify the Hands: "Dealer's hand: [rank]" picker under the dealer
+   cards */
+.hd-rank-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 1rem 0 0 0;
+    font-weight: bold;
+}
+
+/* With no player hands showing (Identify the Hands) the feedback sits
+   centered below the rank picker */
+.content .hd-feedback.hd-feedback-inline {
+    position: static;
+    max-width: 564px;
+    margin: 0.75rem auto 0 auto;
+    text-align: center;
+}
+
 /* Pai Gow - Hand Setting. Desktop values match the old inline styles. */
 .hs-top {
     display: flex;
@@ -1585,6 +1605,26 @@ label,
     .hd-settle .hd-community { order: 4; }
     .hd-settle .hd-dealer-title { order: 5; }
     .hd-settle .hd-dealer { order: 6; }
+
+    /* Identify the Hands: rank picker under the dealer cards, then the
+       Submit / Deal / End Session row, then the feedback */
+    .hd-rank-row {
+        order: 7;
+        width: min(100%, 360px);
+        margin: 0.25rem auto 0 auto;
+    }
+
+    .hd-rank-row select {
+        flex: 1 1 auto;
+    }
+
+    .hd-identify .hd-buttons {
+        order: 8;
+    }
+
+    .hd-identify .hd-feedback {
+        order: 9;
+    }
 
     .hd-pager-label {
         font-weight: bold;
