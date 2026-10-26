@@ -1678,8 +1678,31 @@ label,
         font-size: 0.95rem;
     }
 
-    .hd-hand-controls:not(:has(.hd-inline-pager)) .hd-outcomes {
-        width: min(100%, 360px);
+    /* Single player: no Previous, so Win Lose Push | Submit */
+    .hd-hand-controls.hd-hand-controls-single:has(.hd-inline-pager) {
+        grid-template-columns: 1fr 5rem;
+    }
+
+    /* Submit / Deal in the Next spot: blue like the other primary
+       buttons, grey while waiting for the last player's call */
+    .content .hd-inline-pager.hd-inline-action {
+        border: 1px solid #0050b4;
+        border-radius: 6px;
+        background-color: #0064dc;
+        color: white;
+        font-weight: bold;
+    }
+
+    .content .hd-inline-pager.hd-inline-action:disabled {
+        border-color: #bbb;
+        background-color: #e4e4e4;
+        color: #888;
+    }
+
+    /* Settle the Bets: Submit / Deal live in the player row on phones,
+       so the bottom row keeps only End Session */
+    .hd-table:not(.hd-identify) .hd-buttons .hd-main-action {
+        display: none;
     }
 
     /* Settle the Bets: the current player hand goes to the top, then the

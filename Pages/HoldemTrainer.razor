@@ -75,7 +75,11 @@ else
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
-                    <div class="hd-hand-controls">
+                    @* Phones: Previous | Win Lose Push | Next. On the last player
+                       the Next spot becomes Submit (enabled once that player
+                       has a call), then Deal after scoring. Desktop hides these
+                       inline buttons and uses the Submit / Deal row instead. *@
+                    <div class="hd-hand-controls @(_hands.Count == 1 ? "hd-hand-controls-single" : "")">
                     @if (_hands.Count > 1)
                     {
                         <button class="hd-inline-pager" @onclick="PreviousHand" disabled="@(handIndex <= 0)">Previous</button>
@@ -92,13 +96,21 @@ else
                             <button class="hd-outcome hd-outcome-@choice.ToString().ToLowerInvariant() @(picked ? "hd-outcome-picked" : "") @(_roundScored && picked && hand.WagerWrong ? "hd-outcome-wrong" : "") @(_roundScored && hand.WagerWrong && hand.ActualOutcome == choice ? "hd-outcome-answer" : "")"
                                     aria-pressed="@(picked ? "true" : "false")"
                                     disabled="@_roundScored"
-                                    @onclick="() => { hand.WagerSelection = choice; hand.WagerWrong = false; }">@choice</button>
+                                    @onclick="() => PickOutcome(handIndex, choice)">@choice</button>
                         }
                     </div>
 
-                    @if (_hands.Count > 1)
+                    @if (handIndex < _hands.Count - 1)
                     {
-                        <button class="hd-inline-pager" @onclick="NextHand" disabled="@(handIndex >= _hands.Count - 1)">Next</button>
+                        <button class="hd-inline-pager" @onclick="NextHand">Next</button>
+                    }
+                    else if (!_roundScored)
+                    {
+                        <button class="hd-inline-pager hd-inline-action" @onclick="SubmitRound" disabled="@(hand.WagerSelection is null)">Submit</button>
+                    }
+                    else
+                    {
+                        <button class="hd-inline-pager hd-inline-action" @onclick="DealAgain">Deal</button>
                     }
                     </div>
                 </div>
@@ -121,12 +133,12 @@ else
                    once the hand is set correctly (the rank picker shows). *@
                 @if (_submitEnabled && (_mode == TrainerMode.IdentifyHands ? _dealerHandSet : AllHandsAnswered))
                 {
-                    <button @onclick="SubmitRound">Submit</button>
+                    <button class="hd-main-action" @onclick="SubmitRound">Submit</button>
                 }
                 @* Deal only appears after Submit (once the round is scored) *@
                 @if (_dealEnabled)
                 {
-                    <button @onclick="DealAgain">Deal</button>
+                    <button class="hd-main-action" @onclick="DealAgain">Deal</button>
                 }
                 <button @onclick="EndSession">End Session</button>
             </div>
@@ -452,6 +464,18 @@ else
     private void NextHand()
     {
         if (_currentHand < _hands.Count - 1) _currentHand++;
+    }
+
+    // Settle the Bets: record the call, then move straight on to the next
+    // player (phones show one at a time). The last player stays put, so
+    // the Submit beside it is right there.
+    private void PickOutcome(int handIndex, WagerOutcome choice)
+    {
+        if (_roundScored) return;
+        HandState hand = _hands[handIndex];
+        hand.WagerSelection = choice;
+        hand.WagerWrong = false;
+        if (handIndex < _hands.Count - 1) _currentHand = handIndex + 1;
     }
 
     private void ToggleCommunityRotation(int index)
