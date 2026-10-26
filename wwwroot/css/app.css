@@ -724,6 +724,16 @@ h1:focus {
     gap: 1.5rem;
 }
 
+/* Three Card Prime slide-out wager panel: phones only (shown in the
+   phone section below) */
+.tcp-panel {
+    display: none;
+}
+
+.tcp-panel-setting {
+    margin-top: 0.5rem;
+}
+
 .tcp-wager-pair {
     display: flex;
     gap: 1.5rem;
@@ -2017,5 +2027,259 @@ label,
 
     .session-summary {
         max-width: none;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Three Card Prime on phones: the wagers move into a slide-out panel
+   anchored to the bottom or right edge (start-screen setting). Closed,
+   only its "Wagers" handle shows; open, it stops short of the cards.
+   ------------------------------------------------------------------ */
+@media (max-width: 768px) {
+    .tcp-play .tcp-wagers,
+    .tcp-play .tcp-main-action {
+        display: none;
+    }
+
+    /* Tighter spacing above and between the hands, so the open bottom
+       panel stops below the dealer cards */
+    .tcp-play .tcp-table {
+        margin-top: 0;
+    }
+
+    .tcp-play .tcp-hands h3 {
+        margin: 0.25rem 0;
+    }
+
+    .tcp-play .tcp-hands p {
+        margin: 0.4rem 0;
+        font-size: 0.8rem;
+    }
+
+
+    .tcp-panel {
+        display: flex;
+        position: fixed;
+        z-index: 900;
+        background-color: white;
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.25);
+        transition: transform 0.25s ease;
+    }
+
+    .content .tcp-panel-handle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background-color: #d0e0f8;
+        color: #0050b4;
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+        touch-action: none; /* a swipe on the handle doesn't scroll the page */
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .tcp-panel-grip {
+        display: block;
+        background-color: #7f9fcf;
+        border-radius: 3px;
+    }
+
+    .tcp-panel-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        box-sizing: border-box;
+        padding: 0.6rem 0.75rem;
+    }
+
+    /* Wager tiles: one per wager, filled with the result color */
+    .wt-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .wt {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        min-height: 46px;
+        padding: 0 14px;
+        border: 1px solid #c9c9c9;
+        border-radius: 10px;
+        background-color: white;
+        color: #222;
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .wt-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .wt-state {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #888;
+        text-align: right;
+    }
+
+    .wt.win {
+        background-color: #0064dc;
+        border-color: #0064dc;
+        color: white;
+    }
+
+    .wt.lose {
+        background-color: #c80000;
+        border-color: #c80000;
+        color: white;
+    }
+
+    .wt.push {
+        background-color: #e6c800;
+        border-color: #e6c800;
+        color: black;
+    }
+
+    .wt.win .wt-state,
+    .wt.lose .wt-state,
+    .wt.push .wt-state {
+        color: inherit;
+    }
+
+    .wt.wt-locked {
+        cursor: default;
+    }
+
+    .wt.wt-wrong {
+        box-shadow: 0 0 0 3px #222;
+    }
+
+    /* Ante Bonus chip inside the Ante tile: dashed outline when off,
+       solid white with a check when on */
+    .content .wt-bonus {
+        min-height: 0;
+        padding: 3px 9px;
+        border: 1px dashed currentColor;
+        border-radius: 12px;
+        background-color: transparent;
+        color: inherit;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .content .wt-bonus.on {
+        border: 1px solid #0050b4;
+        background-color: white;
+        color: #0050b4;
+    }
+
+    .content .wt-bonus:disabled {
+        opacity: 1;
+    }
+
+    .content .wt-bonus.wt-bonus-wrong {
+        box-shadow: 0 0 0 3px #c80000;
+    }
+
+    .tcp-panel-result {
+        margin: 0.25rem 0 0.5rem 0;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .content .tcp-panel-primary {
+        width: 100%;
+        min-height: 44px;
+        border: 1px solid #0050b4;
+        border-radius: 6px;
+        background-color: #0064dc;
+        color: white;
+        font-size: 1.05rem;
+        font-weight: bold;
+    }
+
+    /* Bottom: slides up; closed shows only the 44px handle bar. Open
+       height is capped so the cards above stay in view. */
+    .tcp-panel-bottom .tcp-panel {
+        flex-direction: column;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: 52vh;
+        border-radius: 12px 12px 0 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        transform: translateY(calc(100% - 44px - env(safe-area-inset-bottom, 0px)));
+    }
+
+    .tcp-panel-bottom .tcp-panel-handle {
+        height: 44px;
+        width: 100%;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .tcp-panel-bottom .tcp-panel-grip {
+        width: 2.5rem;
+        height: 5px;
+    }
+
+    /* Right: slides in from the right edge; closed shows only the 36px
+       handle strip. Rows stack the wager name above its buttons. */
+    .tcp-panel-right .tcp-panel {
+        flex-direction: row;
+        top: 52px;
+        bottom: 0;
+        right: 0;
+        width: min(80vw, 320px);
+        border-radius: 12px 0 0 12px;
+        transform: translateX(calc(100% - 36px));
+    }
+
+    .tcp-panel-right .tcp-panel-handle {
+        flex-direction: column;
+        width: 36px;
+        height: 100%;
+        border-radius: 12px 0 0 12px;
+    }
+
+    .tcp-panel-right .tcp-panel-handle-text {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+    }
+
+    .tcp-panel-right .tcp-panel-grip {
+        width: 5px;
+        height: 2.5rem;
+    }
+
+    .tcp-panel-right .tcp-panel-body {
+        padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .tcp-play .tcp-panel.tcp-panel-open {
+        transform: none;
+    }
+
+    /* Room at the bottom of the page so nothing hides behind the closed
+       bottom handle; on the right, room so the cards clear the strip */
+    .tcp-play.tcp-panel-bottom {
+        padding-bottom: 3rem;
+    }
+
+    .tcp-play.tcp-panel-right {
+        padding-right: 36px;
     }
 }

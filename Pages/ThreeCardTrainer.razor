@@ -17,15 +17,31 @@
            styled like the other games' start screens for consistency. *@
         <div class="mode-list">
             <ModeCard Title="Three Card Prime"
-                      Description="Settle the outcome of each wager by tapping each wager to cycle Win / Lose / Push, then Submit."
+                      Description="Settle the outcome of each wager (Win / Lose / Push), mark Ante Bonus if it pays, then Submit."
                       Collapsible="false"
-                      OnStart="StartGame" />
+                      OnStart="StartGame">
+                @* Phones only: which screen edge the slide-out wager panel
+                   comes from. Remembered on this device. *@
+                <div class="mode-options tcp-panel-setting">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Wager panel (phones)</p>
+                        <label class="mode-choice">
+                            <input type="radio" name="tcpPanelSide" checked="@(!_panelRight)" @onchange="() => SetPanelSide(false)" />
+                            Bottom
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="tcpPanelSide" checked="@_panelRight" @onchange="() => SetPanelSide(true)" />
+                            Right
+                        </label>
+                    </div>
+                </div>
+            </ModeCard>
         </div>
     </div>
 }
 else
 {
-    <div class="play-screen">
+    <div class="play-screen tcp-play @(_panelRight ? "tcp-panel-right" : "tcp-panel-bottom")">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -83,10 +99,71 @@ else
             <p>@_scoreText</p>
         </div>
 
+        @* Phones: Submit / Deal live in the wager panel, so this row keeps
+           only End Session there *@
         <div class="button-row">
-            <button @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
-            <button @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+            <button class="tcp-main-action" @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+            <button class="tcp-main-action" @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
             <button @onclick="EndSession">End Session</button>
+        </div>
+
+        @* Phones only (hidden on desktop by CSS): slide-out wager panel,
+           anchored to the bottom or right edge per the start-screen
+           setting. Tap the Wagers handle (or swipe it) to open/close. Each
+           wager is a row of Win / Lose (/ Push) buttons, then Ante Bonus,
+           then Submit / Deal and the result. *@
+        <div class="tcp-panel @(_panelOpen ? "tcp-panel-open" : "")">
+            <button class="tcp-panel-handle" aria-expanded="@(_panelOpen ? "true" : "false")"
+                    @onclick="TogglePanel"
+                    @ontouchstart="PanelTouchStart" @ontouchend="PanelTouchEnd">
+                <span class="tcp-panel-grip" aria-hidden="true"></span>
+                <span class="tcp-panel-handle-text">Wagers</span>
+            </button>
+
+            <div class="tcp-panel-body">
+                @* One tile per wager, top to bottom in settling order. Tap a
+                   tile to cycle Win / Lose (/ Push); the whole tile fills with
+                   the result color. Ante Bonus is a chip inside the Ante tile.
+                   After Submit: a check on right calls; on a wrong call, a
+                   heavy red outline and the actual result. *@
+                <div class="wt-list">
+                    @foreach (WagerState w in PanelOrder)
+                    {
+                        WagerState wager = w;
+                        <div class="wt @TileClass(wager) @(_roundScored && wager.Wrong ? "wt-wrong" : "") @(_roundScored ? "wt-locked" : "")"
+                             role="button" aria-label="@wager.Name"
+                             @onclick="() => TapTile(wager)">
+                            <span class="wt-left">
+                                @wager.Name
+                                @if (wager == _ante)
+                                {
+                                    <button type="button" class="wt-bonus @(_anteBonusChecked ? "on" : "") @(_anteBonusWrong ? "wt-bonus-wrong" : "")"
+                                            aria-pressed="@(_anteBonusChecked ? "true" : "false")"
+                                            disabled="@_roundScored"
+                                            @onclick="ToggleAnteBonus" @onclick:stopPropagation="true">Ante Bonus@(_anteBonusChecked ? " \u2713" : "")</button>
+                                }
+                            </span>
+                            <span class="wt-state">@TileStateText(wager)</span>
+                        </div>
+                    }
+                </div>
+
+                @if (_resultText.Length > 0)
+                {
+                    <p class="tcp-panel-result" style="color: @(_isCorrect ? "blue" : "red");">@_resultText &middot; @_scoreText</p>
+                }
+
+                <div class="tcp-panel-actions">
+                    @if (!_roundScored)
+                    {
+                        <button class="tcp-panel-primary" @onclick="SubmitRound">Submit</button>
+                    }
+                    else
+                    {
+                        <button class="tcp-panel-primary" @onclick="DealAgain">Deal</button>
+                    }
+                </div>
+            </div>
         </div>
 
         @* Reference chart toggle kept at the bottom, out of the way *@
@@ -156,6 +233,7 @@ else
         public bool AllowPush;
         public WagerOutcome? Selection;
         public bool Wrong;
+        public WagerOutcome? Actual; // set at Submit, to outline the right answer when the call was wrong
     }
 
     private bool _started;
@@ -183,6 +261,84 @@ else
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
     private bool _showWagerRules;
+
+    // Phones: slide-out wager panel. _panelRight = anchored to the right
+    // edge (else bottom); saved on this device under PanelSideKey.
+    private const string PanelSideKey = "tcpPanelSide";
+    private bool _panelRight;
+    private bool _panelOpen;
+    private double _touchStartX;
+    private double _touchStartY;
+
+    // Panel tiles in settling order, top to bottom
+    private WagerState[] PanelOrder => new[] { _play, _ante, _pairBonus, _prime, _allSix };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            string? side = await JS.InvokeAsync<string?>("localStorage.getItem", PanelSideKey);
+            _panelRight = side == "right";
+        }
+        catch { }
+    }
+
+    private async Task SetPanelSide(bool right)
+    {
+        _panelRight = right;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", PanelSideKey, right ? "right" : "bottom"); } catch { }
+    }
+
+    private void TogglePanel() => _panelOpen = !_panelOpen;
+
+    private void PanelTouchStart(TouchEventArgs e)
+    {
+        if (e.ChangedTouches.Length == 0) return;
+        _touchStartX = e.ChangedTouches[0].ClientX;
+        _touchStartY = e.ChangedTouches[0].ClientY;
+    }
+
+    // Swipe toward the screen's middle opens, toward the edge closes:
+    // up/down for the bottom panel, left/right for the right panel. (A
+    // swipe doesn't also produce a click, so it never double-toggles.)
+    private void PanelTouchEnd(TouchEventArgs e)
+    {
+        if (e.ChangedTouches.Length == 0) return;
+        double dx = e.ChangedTouches[0].ClientX - _touchStartX;
+        double dy = e.ChangedTouches[0].ClientY - _touchStartY;
+        double d = _panelRight ? -dx : -dy; // positive = toward the middle
+        if (Math.Abs(d) < 30) return;       // a tap, not a swipe
+        _panelOpen = d > 0;
+    }
+
+    private void TapTile(WagerState w)
+    {
+        if (_roundScored) return;
+        CycleWager(w);
+    }
+
+    private void ToggleAnteBonus()
+    {
+        if (_roundScored) return;
+        _anteBonusChecked = !_anteBonusChecked;
+        _anteBonusWrong = false;
+    }
+
+    private static string TileClass(WagerState w) => w.Selection switch
+    {
+        WagerOutcome.Win => "win",
+        WagerOutcome.Lose => "lose",
+        WagerOutcome.Push => "push",
+        _ => ""
+    };
+
+    private string TileStateText(WagerState w)
+    {
+        if (w.Selection is null) return "Tap to settle";
+        string picked = PillText(w.Selection);
+        if (!_roundScored) return picked;
+        return w.Wrong ? $"{picked} \u2717 actually {PillText(w.Actual)}" : $"{picked} \u2713";
+    }
 
     private void StartGame()
     {
@@ -213,6 +369,7 @@ else
         {
             w.Selection = null;
             w.Wrong = false;
+            w.Actual = null;
         }
 
         _anteBonusChecked = false;
@@ -331,6 +488,7 @@ else
 
     private static bool GradeWager(WagerState w, WagerOutcome actual)
     {
+        w.Actual = actual;
         if (w.Selection == actual)
         {
             w.Wrong = false;

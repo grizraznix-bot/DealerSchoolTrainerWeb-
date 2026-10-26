@@ -43,6 +43,30 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+    <!-- Phones (mainly iPhone): stop a quick second tap from zooming the
+         page (double-tap zoom), even where touch-action: manipulation in
+         app.css isn't honored. A second tap within 300 ms has its zoom
+         gesture cancelled; if it landed on something tappable (button,
+         checkbox, wager shape, card), the tap is still delivered as a
+         click, so fast tapping keeps working. Dropdowns, text boxes and
+         pinch zoom are left alone. -->
+    <script>
+        (function () {
+            var lastTouchEnd = 0;
+            document.addEventListener('touchend', function (e) {
+                var now = Date.now();
+                var quick = now - lastTouchEnd <= 300;
+                lastTouchEnd = now;
+                if (!quick || e.touches.length > 0) return;
+                var t = e.target;
+                if (!t || !t.closest) return;
+                if (t.closest('select, textarea, input[type=text], input[type=number]')) return;
+                e.preventDefault();
+                var tappable = t.closest('button, a, label, input[type=checkbox], input[type=radio], .wager-shape, .wt, .pai-gow-card, .menu-backdrop');
+                if (tappable && !tappable.disabled) tappable.click();
+            }, { passive: false });
+        })();
+    </script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 
