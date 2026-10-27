@@ -391,6 +391,7 @@ code {
    whole row is removed (below), so the keypad and everything under it
    move up instead of being pushed down by the longer end-of-hand text. */
 .fc-answer-done input,
+.fc-answer-done .reveal-button,
 .fc-answer-done .bust-button {
     visibility: hidden;
 }

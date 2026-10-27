@@ -132,6 +132,11 @@ else if (_mode == BlackjackMode.FlashCards)
                where the keypad's Enter / Next key does the same job. *@
             @* BUST: one tap when the dealer's total is over 21 (typing the
                total still counts too) *@
+            @* Reveal: shows the current total in a pop-up (the hand counts
+               as a miss), then the hand carries on as if it had been
+               answered. Sits between the total box and BUST; the box
+               narrows to make room. *@
+            <button class="reveal-button" @onclick="FcReveal" disabled="@(!_fcSubmitEnabled)">Reveal</button>
             <button class="bust-button" @onclick="FcBust" disabled="@(!_fcSubmitEnabled)">BUST</button>
             <button class="answer-primary" @onclick="FcKeypadEnter" disabled="@(!_fcSubmitEnabled && !_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">@(_fcNewRoundEnabled ? "Next" : "Submit")</button>
             <button class="keypad-toggle" @onclick="() => _fcShowKeypad = !_fcShowKeypad">123</button>
@@ -145,10 +150,7 @@ else if (_mode == BlackjackMode.FlashCards)
 
         <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
 
-        @* Reveal: shows the current total in a pop-up (the hand counts as
-           a miss), then the hand carries on as if it had been answered *@
         <div class="button-row keypad-actions">
-            <button class="reveal-button" @onclick="FcReveal" disabled="@(!_fcSubmitEnabled)">Reveal</button>
             <button @onclick="EndSession">End Session</button>
         </div>
 
