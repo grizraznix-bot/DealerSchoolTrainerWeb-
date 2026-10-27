@@ -2,12 +2,62 @@
 
 <PageTitle>Dealer School Trainer</PageTitle>
 
-<h1>Dealer School Trainer</h1>
+@* Home: what the site is, the games (each one tappable), and how a game
+   works -- so a first-time user knows where to start without having to
+   find the menu. *@
+<div class="home">
+    <h1>Dealer School Trainer</h1>
 
-<div class="card-row home-cards">
-    <img src="images/cards/AS.png" alt="AS" class="home-card" />
-    <img src="images/cards/KS.png" alt="KS" class="home-card" />
-    <img src="images/cards/QS.png" alt="QS" class="home-card" />
-    <img src="images/cards/JS.png" alt="JS" class="home-card" />
-    <img src="images/cards/TS.png" alt="TS" class="home-card" />
+    <p class="home-lead">Practice the skills you're learning in dealer school: card totals, payouts, hand rankings and settling bets. Go at your own pace, on your phone or computer.</p>
+
+    <div class="card-row home-cards">
+        <img src="images/cards/AS.png" alt="Ace of Spades" class="home-card" />
+        <img src="images/cards/KS.png" alt="King of Spades" class="home-card" />
+        <img src="images/cards/QS.png" alt="Queen of Spades" class="home-card" />
+        <img src="images/cards/JS.png" alt="Jack of Spades" class="home-card" />
+        <img src="images/cards/TS.png" alt="10 of Spades" class="home-card" />
+    </div>
+
+    <h2 class="home-heading">Pick a game</h2>
+
+    <div class="home-games">
+        <a class="home-game" href="blackjack-trainer">
+            <span class="home-game-name">Blackjack</span>
+            <span class="home-game-desc">Dealer totals, 3:2 and 6:5 payouts, Lucky Ladies and 21+3</span>
+        </a>
+        <a class="home-game" href="three-card-trainer">
+            <span class="home-game-name">Three Card Prime</span>
+            <span class="home-game-desc">Settle Ante, Play, Pair Bonus, Prime and All 6</span>
+        </a>
+        <a class="home-game" href="pai-gow">
+            <span class="home-game-name">Pai Gow</span>
+            <span class="home-game-desc">Set hands the House Way, then settle the bets</span>
+        </a>
+        <a class="home-game" href="holdem-trainer">
+            <span class="home-game-name">Heads-Up Hold'em</span>
+            <span class="home-game-desc">Find the dealer's best hand and settle each player</span>
+        </a>
+        <a class="home-game" href="roulette">
+            <span class="home-game-name">Roulette</span>
+            <span class="home-game-desc">Pay the winning chips around the winning number</span>
+        </a>
+        <a class="home-game home-game-challenge" href="challenge">
+            <span class="home-game-name">Challenge Mode</span>
+            <span class="home-game-desc">Timed Blackjack runs: one miss ends it. Beat your Top 5</span>
+        </a>
+    </div>
+
+    <h2 class="home-heading">How it works</h2>
+
+    <ol class="home-steps">
+        <li>Pick a game, choose a mode, and press <strong>Start</strong>.</li>
+        <li>Answer each hand. You'll see right away whether you got it, and the right answer if you didn't.</li>
+        <li>Stuck? Look for the <strong>Help</strong>, <strong>Rules</strong> or <strong>Reveal</strong> button.</li>
+        <li>Use the menu to switch games at any time.</li>
+    </ol>
+
+    @* Hidden once the site is running from its home-screen icon *@
+    <p class="home-tip install-link">On a phone? <a href="add-to-home-screen">Add the trainer to your home screen</a> to open it full screen, like an app.</p>
+
+    <p class="home-note">Games and procedures vary from casino to casino. Always follow the procedures taught at your property.</p>
 </div>

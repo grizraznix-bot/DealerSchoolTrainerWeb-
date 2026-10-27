@@ -151,6 +151,13 @@ else
                 {
                     <button class="hd-main-action" @onclick="DealAgain">Deal</button>
                 }
+                @* Identify the Hands: Reveal shows the dealer's best hand and
+                   its rank in a pop-up, sets them, and counts the round as a
+                   miss *@
+                @if (_mode == TrainerMode.IdentifyHands && !_roundScored)
+                {
+                    <button class="reveal-button" @onclick="RevealIdentify">Reveal</button>
+                }
                 <button @onclick="EndSession">End Session</button>
             </div>
 
@@ -233,6 +240,25 @@ else
             <p style="margin: 0.25rem 0 0 0;">@_scoreText</p>
         </div>
         </div>
+
+        @if (_showReveal)
+        {
+            <RevealPopup Title="Dealer's Hand" OnClose="() => _showReveal = false">
+                <p class="reveal-answer">@HandEvaluator.HandRankName(_revealRank)</p>
+                <p><strong>Best 5 cards:</strong>
+                    @foreach (Card c in OrderForShow(_revealBest))
+                    {
+                        <span class="reveal-card @(IsRedSuit(c) ? "reveal-red" : "")">@CardLabel(c)</span>
+                    }
+                </p>
+                <p><strong>Not used:</strong>
+                    @foreach (Card c in OrderForShow(DealerPool().Where(c => !_revealBest.Contains(c)).ToList()))
+                    {
+                        <span class="reveal-card @(IsRedSuit(c) ? "reveal-red" : "")">@CardLabel(c)</span>
+                    }
+                </p>
+            </RevealPopup>
+        }
 
         @* Reference chart toggle kept at the bottom, out of the way *@
         <div class="button-row rules-row">
@@ -416,6 +442,7 @@ else
 
     private void DealNewRound()
     {
+        _showReveal = false;
         _dealEnabled = false;
 
         _deck = new Deck();
@@ -542,6 +569,71 @@ else
         if (declared.Count != 5) return false;
         long best = HandEvaluator.HandScore(HandEvaluator.BestFiveCards(DealerPool()));
         return HandEvaluator.HandScore(declared) == best;
+    }
+
+    // Identify the Hands, Reveal button: set the hand and rank correctly,
+    // show them in a pop-up, and score the round as a miss
+    private bool _showReveal;
+    private List<Card> _revealBest = new();
+    private HandRank _revealRank;
+
+    private void RevealIdentify()
+    {
+        if (_mode != TrainerMode.IdentifyHands || _roundScored) return;
+
+        _revealBest = HandEvaluator.BestFiveCards(DealerPool());
+        _revealRank = HandEvaluator.BestHandRank(DealerPool());
+
+        MarkCorrectUnusedCards();
+        _dealerHandSet = true;
+        _dealerRankIndex = (int)_revealRank;
+        _dealerRankWrong = false;
+
+        _totalRounds++;
+        _isCorrect = false;
+        _resultText = "REVEALED";
+        _mistakesText = string.Empty;
+        _handRankLines.Clear();
+        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(_revealRank)}", "red"));
+
+        string pct = ((double)_correctCount / _totalRounds).ToString("0.0%");
+        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
+
+        _roundScored = true;
+        _submitEnabled = false;
+        _dealEnabled = true;
+        _showReveal = true;
+    }
+
+    // Pairs/trips first, then high to low (e.g. Q Q 5 5 A)
+    private static List<Card> OrderForShow(List<Card> cards)
+    {
+        Dictionary<Rank, int> counts = cards.GroupBy(c => c.Rank).ToDictionary(g => g.Key, g => g.Count());
+        return cards.OrderByDescending(c => counts[c.Rank]).ThenByDescending(c => (int)c.Rank).ToList();
+    }
+
+    private static bool IsRedSuit(Card c) => c.Suit is Suit.Hearts or Suit.Diamonds;
+
+    // e.g. "10♥", "A♠"
+    private static string CardLabel(Card c)
+    {
+        string rank = c.Rank switch
+        {
+            Rank.Ten => "10",
+            Rank.Jack => "J",
+            Rank.Queen => "Q",
+            Rank.King => "K",
+            Rank.Ace => "A",
+            _ => ((int)c.Rank).ToString()
+        };
+        string suit = c.Suit switch
+        {
+            Suit.Spades => "\u2660",
+            Suit.Hearts => "\u2665",
+            Suit.Diamonds => "\u2666",
+            _ => "\u2663"
+        };
+        return rank + suit;
     }
 
     // Marks exactly the 2 cards outside the dealer's best 5: Settle the

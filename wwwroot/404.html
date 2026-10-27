@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Dealer School Trainer</title>
+    <!-- GitHub Pages only knows the home page; any other address (a
+         refreshed game page, a bookmark, a shared link) lands here. This
+         sends the browser to the home page with the wanted page tucked
+         into the address (e.g. .../?/roulette); a script at the top of
+         index.html puts the real address back before the trainer starts,
+         so the right page opens. pathSegmentsToKeep = 1 keeps the
+         repository folder (/DealerSchoolTrainerWeb-/) in the address.
+         Based on the widely used "spa-github-pages" approach. -->
+    <script>
+        var pathSegmentsToKeep = 1;
+        var l = window.location;
+        l.replace(
+            l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+            l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
+            l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
+            (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+            l.hash
+        );
+    </script>
+</head>
+<body>
+</body>
+</html>

@@ -3242,3 +3242,148 @@ label,
     font-size: 0.9rem;
     color: #555;
 }
+
+/* ------------------------------------------------------------------
+   Home page
+   ------------------------------------------------------------------ */
+.home {
+    max-width: 520px;
+}
+
+.home-lead {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.home-heading {
+    margin: 1.5rem 0 0.6rem 0;
+    font-size: 1.25rem;
+}
+
+/* Each game is one big tappable row: name, then a line on what it drills */
+.home-games {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.home-game {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+    color: #111;
+    text-decoration: none;
+}
+
+.home-game-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.home-game-desc {
+    font-size: 0.95rem;
+    color: #555;
+}
+
+@media (hover: hover) {
+    .home-game:hover {
+        background-color: #eef3fa;
+        border-color: #b8d0ec;
+    }
+}
+
+/* Same gold shade as the Challenge Mode menu link */
+.home-game.home-game-challenge {
+    background-color: #fff4d6;
+    border-color: #e0c060;
+}
+
+.home-steps {
+    margin: 0;
+    padding-left: 1.4rem;
+}
+
+.home-steps li {
+    margin-bottom: 0.4rem;
+}
+
+.home-tip {
+    margin-top: 1.25rem;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #9bb8e0;
+    border-radius: 8px;
+    background-color: #dde8f8;
+}
+
+.home-note {
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* ------------------------------------------------------------------
+   Reveal button and its answer pop-up (Shared/RevealPopup.razor)
+   ------------------------------------------------------------------ */
+.content .reveal-button {
+    border: 1px solid #b8860b;
+    background-color: #fff4d6;
+    color: #5a4300;
+    font-weight: bold;
+}
+
+.reveal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background-color: rgba(0, 0, 0, 0.35);
+}
+
+.reveal-box {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 31;
+    width: min(340px, calc(100vw - 2rem));
+    transform: translate(-50%, -50%);
+    padding: 1rem 1.25rem;
+    box-sizing: border-box;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.reveal-title {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.05rem;
+    font-weight: bold;
+    color: #555;
+}
+
+.reveal-body p {
+    margin: 0.4rem 0;
+}
+
+.reveal-body .reveal-answer {
+    margin: 0.25rem 0 0.5rem 0;
+    font-size: 1.6rem;
+    font-weight: bold;
+}
+
+.reveal-note {
+    margin: 0.75rem 0 0 0;
+    font-size: 0.9rem;
+    color: #a00000;
+}
+
+.reveal-card {
+    margin-left: 0.4rem;
+    font-weight: bold;
+}
+
+.reveal-red {
+    color: #c80000;
+}

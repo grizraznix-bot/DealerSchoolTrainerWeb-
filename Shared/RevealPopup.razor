@@ -1,0 +1,21 @@
+@* Answer pop-up used by the Reveal buttons: a box in the middle of the
+   screen over a dimmed page. OK (or tapping outside the box) closes it
+   and runs OnClose, which moves the game on. *@
+
+<div class="reveal-backdrop" @onclick="Close"></div>
+<div class="reveal-box" role="dialog" aria-label="@Title">
+    <p class="reveal-title">@Title</p>
+    <div class="reveal-body">
+        @ChildContent
+    </div>
+    <p class="reveal-note">This one counts as a miss.</p>
+    <button type="button" class="mode-start" @onclick="Close">OK</button>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Answer";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private Task Close() => OnClose.InvokeAsync();
+}

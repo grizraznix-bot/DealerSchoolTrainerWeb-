@@ -145,9 +145,24 @@ else if (_mode == BlackjackMode.FlashCards)
 
         <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
 
+        @* Reveal: shows the current total in a pop-up (the hand counts as
+           a miss), then the hand carries on as if it had been answered *@
         <div class="button-row keypad-actions">
+            <button class="reveal-button" @onclick="FcReveal" disabled="@(!_fcSubmitEnabled)">Reveal</button>
             <button @onclick="EndSession">End Session</button>
         </div>
+
+        @if (_fcShowReveal)
+        {
+            <RevealPopup Title="Dealer's Total" OnClose="FcCloseReveal">
+                <p class="reveal-answer">@(_fcHand.IsBlackjack ? "21 - Blackjack" : _fcHand.IsBust ? $"BUST ({_fcHand.Total})" : _fcHand.Total.ToString())</p>
+                @if (!_fcHand.IsBust && !_fcHand.IsBlackjack && _fcHand.IsSoft)
+                {
+                    <p>Soft @_fcHand.Total: the Ace counts as 11. Counting the Ace as 1 it's @(_fcHand.HardTotal)@(_fcHand.MustHit(FcHitSoft17) ? $", so {_fcHand.HardTotal} is also accepted" : "").</p>
+                }
+                <p>@FcNextStepText</p>
+            </RevealPopup>
+        }
     </div>
 }
 else if (_mode == BlackjackMode.Payouts)
@@ -470,6 +485,7 @@ else
         _fcHand.AddCard(_fcShoe.Draw());
 
         _fcRoundHasMistake = false;
+        _fcShowReveal = false;
         _fcFeedbackText = string.Empty;
         _fcNewRoundEnabled = false;
 
@@ -586,8 +602,51 @@ else
                     ? $"Correct.  Actual total: {actualTotal} soft ({_fcHand.HardTotal} hard)"
                     : $"Correct.  Actual total: {actualTotal} (hard)";
 
-        _fcFeedbackText = msg;
-        _fcFeedbackColor = "blue";
+        await FcAdvance(msg, "blue");
+    }
+
+    // Reveal button: show the answer in a pop-up and count the hand as a miss
+    private bool _fcShowReveal;
+
+    private void FcReveal()
+    {
+        if (!_fcSubmitEnabled) return;
+        _fcRoundHasMistake = true;
+        _fcShowReveal = true;
+    }
+
+    // Closing the pop-up moves the hand on exactly as a right answer would
+    // (next card, or the end of the hand), with the answer shown in red
+    private async Task FcCloseReveal()
+    {
+        _fcShowReveal = false;
+
+        string msg = _fcHand.IsBlackjack
+            ? "Answer: 21 - Blackjack"
+            : _fcHand.IsBust
+                ? $"Answer: BUST ({_fcHand.Total})"
+                : _fcHand.IsSoft
+                    ? $"Answer: {_fcHand.Total} soft ({_fcHand.HardTotal} hard)"
+                    : $"Answer: {_fcHand.Total}";
+
+        await FcAdvance(msg, "red");
+    }
+
+    private string FcNextStepText =>
+        _fcHand.IsBlackjack ? "Dealer has Blackjack."
+        : _fcHand.IsBust ? "Over 21: the dealer busts."
+        : _fcHand.MustHit(FcHitSoft17) ? "Dealer must hit."
+        : "Dealer stands.";
+
+    // After a right answer (or a Reveal): deal the dealer's next card, or
+    // end the hand when the dealer has Blackjack, busts or stands
+    private async Task FcAdvance(string feedback, string color)
+    {
+        bool actualBlackjack = _fcHand.IsBlackjack;
+        bool actualBust = _fcHand.IsBust;
+
+        _fcFeedbackText = feedback;
+        _fcFeedbackColor = color;
         _fcAnswerText = string.Empty;
         _fcAnswerEnabled = false;
         _fcSubmitEnabled = false;
