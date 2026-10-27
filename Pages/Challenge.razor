@@ -77,15 +77,17 @@ else if (_screen == Screen.Playing)
 
         @if (_game == ChallengeGame.FlashCards)
         {
-            <div class="card-row fc-fan" style="margin: 1rem 0; --n: @_hand.Count;">
-                @for (int i = 0; i < _hand.Count; i++)
-                {
-                    var card = _hand.CardAt(i);
-                    <img src="images/cards/@(card.Code).png" alt="@card.Name" class="card-image fc-card" />
-                }
+            <div class="felt fc-felt">
+                <div class="card-row fc-fan" style="--n: @_hand.Count;">
+                    @for (int i = 0; i < _hand.Count; i++)
+                    {
+                        var card = _hand.CardAt(i);
+                        <img src="images/cards/@(card.Code).png" alt="@card.Name" class="card-image fc-card" />
+                    }
+                </div>
             </div>
 
-            <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+            <div class="button-row answer-row keypad-answer">
                 @* inputmode="none": the on-screen keypad is used on phones;
                    a PC keyboard still types into it (B = BUST) *@
                 <input type="text"
@@ -112,7 +114,7 @@ else if (_screen == Screen.Playing)
 
             <p class="po-wager ch-wager">Wager: <strong>@PayoutWager.FormatCents(_wagerCents)</strong></p>
 
-            <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+            <div class="button-row answer-row keypad-answer">
                 <div class="po-display">
                     @if (_flashText.Length > 0)
                     {

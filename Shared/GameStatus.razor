@@ -1,0 +1,22 @@
+@* The score line at the top of every play screen: the game or mode on
+   the left (or ChildContent, e.g. Roulette's winning number), "Score
+   6 / 7" on the right. Same place and format in every game. *@
+
+<div class="game-status">
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+    else
+    {
+        <span class="game-status-title">@Title</span>
+    }
+    <span>Score <strong>@Correct / @Played</strong></span>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public int Correct { get; set; }
+    [Parameter] public int Played { get; set; }
+}

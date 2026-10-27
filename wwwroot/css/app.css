@@ -4,6 +4,24 @@
    inherit the page font on their own, so they're told to as well. */
 :root {
     --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* The site's colours, defined once and used by name everywhere */
+    --c-primary: #0064dc;       /* main buttons, Win, selected items */
+    --c-primary-dark: #0050b4;  /* borders/hover of the above */
+    --c-ok: #0050b4;            /* CORRECT and other right-answer text */
+    --c-lose: #c80000;          /* Lose, INCORRECT, wrong-answer text */
+    --c-lose-dark: #a00000;
+    --c-push: #e6c800;          /* Push */
+    --c-foul: #e67e00;          /* Foul */
+    --c-text: #111;
+    --c-muted: #555;            /* secondary text, labels */
+    --c-border: #999;
+    --c-line: #ddd;             /* light dividers, card outlines */
+    --c-felt: #0b6b3a;          /* table felt behind the cards */
+    --c-info-bg: #dde8f8;       /* light blue panels and tags */
+    --c-info-line: #9bb8e0;
+    --c-gold-bg: #fff4d6;       /* Challenge Mode, Reveal */
+    --c-gold-line: #e0c060;
 }
 
 /* Stops phones zooming the page when something is tapped twice quickly
@@ -93,7 +111,7 @@ textarea {
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: var(--c-primary);
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }
@@ -198,9 +216,9 @@ code {
 }
 
 .sidebar a.active {
-    background: #1b6ec2;
+    background: var(--c-primary);
     color: white;
-    border-color: #1b6ec2;
+    border-color: var(--c-primary);
 }
 
 .content {
@@ -281,7 +299,7 @@ code {
 }
 
 /* Opt-in fill shading (via ShowWrongShading) -- deliberately much
-   lighter than the pill's own red (#c80000) so the pill still reads
+   lighter than the pill's own red (var(--c-lose)) so the pill still reads
    clearly against the shape behind it. Used by Side Wagers, Three
    Card Prime, and Pai Gow - Settling Bets. */
 .wager-circle.wager-shaded-wrong {
@@ -441,7 +459,7 @@ code {
 .po-wager strong {
     display: inline-block;
     background-color: #d0e0f8;
-    border: 1px solid #9bb8e0;
+    border: 1px solid var(--c-info-line);
     border-radius: 8px;
     padding: 0.1rem 0.75rem;
 }
@@ -502,15 +520,15 @@ code {
 }
 
 .pill-win {
-    background-color: #0064dc;
+    background-color: var(--c-primary);
 }
 
 .pill-lose {
-    background-color: #c80000;
+    background-color: var(--c-lose);
 }
 
 .pill-push {
-    background-color: #e6c800;
+    background-color: var(--c-push);
     color: black;
 }
 
@@ -584,7 +602,7 @@ h1:focus {
 
 .content .mode-card-open .mode-header {
     background-color: #d0e0f8;
-    border-bottom: 1px solid #9bb8e0;
+    border-bottom: 1px solid var(--c-info-line);
 }
 
 .content .mode-card-static .mode-header {
@@ -655,9 +673,9 @@ h1:focus {
     min-height: 44px;
     margin-top: 1rem;
     padding: 0.4rem 1.5rem;
-    border: 1px solid #0050b4;
+    border: 1px solid var(--c-primary-dark);
     border-radius: 6px;
-    background-color: #0064dc;
+    background-color: var(--c-primary);
     color: white;
     font-size: 1.05rem;
     font-weight: bold;
@@ -666,7 +684,7 @@ h1:focus {
 
 @media (hover: hover) {
     .content .mode-start:hover {
-        background-color: #0050b4;
+        background-color: var(--c-primary-dark);
     }
 }
 
@@ -695,10 +713,10 @@ h1:focus {
     height: 44px;
     min-height: 44px;
     padding: 0;
-    border: 1px solid #9bb8e0;
+    border: 1px solid var(--c-info-line);
     border-radius: 6px;
     background-color: white;
-    color: #0050b4;
+    color: var(--c-primary-dark);
     font-size: 1rem;
     line-height: 1;
     cursor: pointer;
@@ -717,7 +735,7 @@ h1:focus {
     min-width: 3rem;
     height: 44px;
     box-sizing: border-box;
-    border: 1px solid #9bb8e0;
+    border: 1px solid var(--c-info-line);
     border-radius: 6px;
     background-color: #d0e0f8;
     font-size: 1.3rem;
@@ -827,29 +845,29 @@ h1:focus {
 
 .content .wp-btn.wp-win,
 .content .wp-choice.wp-win {
-    background-color: #0064dc;
-    border-color: #0064dc;
+    background-color: var(--c-primary);
+    border-color: var(--c-primary);
     color: white;
 }
 
 .content .wp-btn.wp-lose,
 .content .wp-choice.wp-lose {
-    background-color: #c80000;
-    border-color: #c80000;
+    background-color: var(--c-lose);
+    border-color: var(--c-lose);
     color: white;
 }
 
 .content .wp-btn.wp-push,
 .content .wp-choice.wp-push {
-    background-color: #e6c800;
-    border-color: #e6c800;
+    background-color: var(--c-push);
+    border-color: var(--c-push);
     color: black;
 }
 
 .content .wp-btn.wp-foul,
 .content .wp-choice.wp-foul {
-    background-color: #e67e00;
-    border-color: #e67e00;
+    background-color: var(--c-foul);
+    border-color: var(--c-foul);
     color: white;
 }
 
@@ -866,9 +884,9 @@ h1:focus {
     display: flex;
     gap: 6px;
     padding: 6px;
-    border: 1px solid #9bb8e0;
+    border: 1px solid var(--c-info-line);
     border-radius: 12px;
-    background-color: #dde8f8;
+    background-color: var(--c-info-bg);
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
     white-space: nowrap;
 }
@@ -1045,26 +1063,26 @@ h1:focus {
 }
 
 .content .hd-outcome-win.hd-outcome-picked {
-    background-color: #0064dc;
-    border-color: #0064dc;
+    background-color: var(--c-primary);
+    border-color: var(--c-primary);
     color: white;
 }
 
 .content .hd-outcome-lose.hd-outcome-picked {
-    background-color: #c80000;
-    border-color: #c80000;
+    background-color: var(--c-lose);
+    border-color: var(--c-lose);
     color: white;
 }
 
 .content .hd-outcome-push.hd-outcome-picked {
-    background-color: #e6c800;
-    border-color: #e6c800;
+    background-color: var(--c-push);
+    border-color: var(--c-push);
     color: black;
 }
 
 /* After Submit: wrong pick and the right answer */
 .content .hd-outcome.hd-outcome-wrong {
-    box-shadow: 0 0 0 3px #c80000;
+    box-shadow: 0 0 0 3px var(--c-lose);
     text-decoration: line-through;
 }
 
@@ -1142,7 +1160,7 @@ h1:focus {
 .hd-set-caption.hd-set-caption-wrong {
     font-style: normal;
     font-weight: bold;
-    color: #c80000;
+    color: var(--c-lose);
 }
 
 /* With no player hands showing (Identify the Hands) the feedback sits
@@ -1962,20 +1980,20 @@ label,
 
 .hd-result-banner.hd-result-ok {
     background-color: #d0e0f8;
-    color: #0050b4;
+    color: var(--c-primary-dark);
 }
 
 .hd-result-banner.hd-result-bad {
     background-color: #f8d0d0;
-    color: #a00000;
+    color: var(--c-lose-dark);
 }
 
 .hd-hand-result.hd-result-ok {
-    color: #0050b4;
+    color: var(--c-primary-dark);
 }
 
 .hd-hand-result.hd-result-bad {
-    color: #c80000;
+    color: var(--c-lose);
 }
 
 /* Settle the Bets: the current player hand goes to the top, then the
@@ -2423,20 +2441,20 @@ label,
 }
 
 .content .tcp-rail-btn.win {
-    background-color: #0064dc;
-    border-color: #0064dc;
+    background-color: var(--c-primary);
+    border-color: var(--c-primary);
     color: white;
 }
 
 .content .tcp-rail-btn.lose {
-    background-color: #c80000;
-    border-color: #c80000;
+    background-color: var(--c-lose);
+    border-color: var(--c-lose);
     color: white;
 }
 
 .content .tcp-rail-btn.push {
-    background-color: #e6c800;
-    border-color: #e6c800;
+    background-color: var(--c-push);
+    border-color: var(--c-push);
     color: black;
 }
 
@@ -2453,9 +2471,9 @@ label,
     z-index: 16;
     min-height: 42px;
     padding: 0;
-    border: 1px solid #0050b4;
+    border: 1px solid var(--c-primary-dark);
     border-radius: 8px;
-    background-color: #0064dc;
+    background-color: var(--c-primary);
     color: white;
     font-size: 0.95rem;
     font-weight: bold;
@@ -2477,9 +2495,9 @@ label,
     gap: 6px;
     box-sizing: border-box;
     padding: 6px;
-    border: 1px solid #9bb8e0;
+    border: 1px solid var(--c-info-line);
     border-radius: 12px;
-    background-color: #dde8f8;
+    background-color: var(--c-info-bg);
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
     animation: tcp-fly-in 0.15s ease-out;
 }
@@ -2503,20 +2521,20 @@ label,
 }
 
 .content .tcp-fly-choice.tcp-fly-win {
-    background-color: #0064dc;
-    border-color: #0064dc;
+    background-color: var(--c-primary);
+    border-color: var(--c-primary);
     color: white;
 }
 
 .content .tcp-fly-choice.tcp-fly-lose {
-    background-color: #c80000;
-    border-color: #c80000;
+    background-color: var(--c-lose);
+    border-color: var(--c-lose);
     color: white;
 }
 
 .content .tcp-fly-choice.tcp-fly-push {
-    background-color: #e6c800;
-    border-color: #e6c800;
+    background-color: var(--c-push);
+    border-color: var(--c-push);
     color: black;
 }
 
@@ -2532,8 +2550,8 @@ label,
 }
 
 .content .tcp-fly-bonus.on {
-    border: 1px solid #0050b4;
-    background-color: #0050b4;
+    border: 1px solid var(--c-primary-dark);
+    background-color: var(--c-primary-dark);
     color: white;
 }
 
@@ -2655,8 +2673,8 @@ label,
 }
 
 .sidebar li.challenge-link a {
-    background: #fff4d6;
-    border-color: #e0c060;
+    background: var(--c-gold-bg);
+    border-color: var(--c-gold-line);
 }
 
 @media (hover: hover) {
@@ -2722,10 +2740,10 @@ label,
     margin-top: 0.5rem;
     min-height: 36px;
     padding: 0.2rem 0.9rem;
-    border: 1px solid #c80000;
+    border: 1px solid var(--c-lose);
     border-radius: 6px;
     background-color: white;
-    color: #c80000;
+    color: var(--c-lose);
     font-size: 0.9rem;
     font-weight: bold;
 }
@@ -2755,13 +2773,13 @@ label,
 }
 
 .content .ch-clear-buttons .ch-clear-yes {
-    border-color: #a00000;
-    background-color: #c80000;
+    border-color: var(--c-lose-dark);
+    background-color: var(--c-lose);
     color: white;
 }
 
 .ch-top-table tr.ch-top-new td {
-    background: #fff4d6;
+    background: var(--c-gold-bg);
     font-weight: bold;
 }
 
@@ -2781,12 +2799,12 @@ label,
     text-align: center;
     font-size: 1.6rem;
     font-weight: bold;
-    color: #1b6ec2;
+    color: var(--c-primary);
     font-variant-numeric: tabular-nums;
 }
 
 .ch-status .ch-clock-low {
-    color: #c80000;
+    color: var(--c-lose);
 }
 
 .ch-bar {
@@ -2801,7 +2819,7 @@ label,
 .ch-bar-fill {
     height: 100%;
     width: 100%;
-    background: #1b6ec2;
+    background: var(--c-primary);
     transform-origin: left center;
     animation-name: ch-drain;
     animation-timing-function: linear;
@@ -2809,7 +2827,7 @@ label,
 }
 
 .ch-bar-fill.ch-bar-low {
-    background: #c80000;
+    background: var(--c-lose);
 }
 
 @keyframes ch-drain {
@@ -2861,9 +2879,9 @@ label,
     display: block;
     width: 100%;
     min-height: 44px;
-    border: 1px solid #a00000;
+    border: 1px solid var(--c-lose-dark);
     border-radius: 6px;
-    background-color: #c80000;
+    background-color: var(--c-lose);
     color: white;
     font-size: 1.05rem;
     font-weight: bold;
@@ -2888,11 +2906,11 @@ label,
 
 /* Run over screen */
 .ch-over h1 {
-    color: #c80000;
+    color: var(--c-lose);
 }
 
 .ch-over h1.ch-ended {
-    color: #1b6ec2;
+    color: var(--c-primary);
 }
 
 .ch-reason {
@@ -2910,9 +2928,9 @@ label,
     display: inline-block;
     margin: 0 0 0.75rem 0;
     padding: 0.25rem 0.75rem;
-    border: 1px solid #e0c060;
+    border: 1px solid var(--c-gold-line);
     border-radius: 8px;
-    background: #fff4d6;
+    background: var(--c-gold-bg);
     font-weight: bold;
 }
 
@@ -3016,7 +3034,7 @@ label,
     align-self: stretch;
     padding: 0.5rem 0;
     border-radius: 10px;
-    background-color: #0b6b3a;
+    background-color: var(--c-felt);
 }
 
 .rl-winner {
@@ -3207,8 +3225,8 @@ label,
 
 .content .rl-bar .rl-next {
     flex-grow: 2;
-    border: 1px solid #0050b4;
-    background-color: #0064dc;
+    border: 1px solid var(--c-primary-dark);
+    background-color: var(--c-primary);
     color: white;
 }
 
@@ -3329,8 +3347,8 @@ label,
 
 /* Same gold shade as the Challenge Mode menu link */
 .home-game.home-game-challenge {
-    background-color: #fff4d6;
-    border-color: #e0c060;
+    background-color: var(--c-gold-bg);
+    border-color: var(--c-gold-line);
 }
 
 .home-steps {
@@ -3345,9 +3363,9 @@ label,
 .home-tip {
     margin-top: 1.25rem;
     padding: 0.6rem 0.8rem;
-    border: 1px solid #9bb8e0;
+    border: 1px solid var(--c-info-line);
     border-radius: 8px;
-    background-color: #dde8f8;
+    background-color: var(--c-info-bg);
 }
 
 .home-note {
@@ -3361,7 +3379,7 @@ label,
    ------------------------------------------------------------------ */
 .content .reveal-button {
     border: 1px solid #b8860b;
-    background-color: #fff4d6;
+    background-color: var(--c-gold-bg);
     color: #5a4300;
     font-weight: bold;
 }
@@ -3407,7 +3425,7 @@ label,
 .reveal-note {
     margin: 0.75rem 0 0 0;
     font-size: 0.9rem;
-    color: #a00000;
+    color: var(--c-lose-dark);
 }
 
 .reveal-card {
@@ -3416,7 +3434,7 @@ label,
 }
 
 .reveal-red {
-    color: #c80000;
+    color: var(--c-lose);
 }
 
 /* ------------------------------------------------------------------
@@ -3472,8 +3490,8 @@ label,
 
 .content .game-bar .game-bar-main {
     flex-grow: 1.4;
-    border-color: #0050b4;
-    background-color: #0064dc;
+    border-color: var(--c-primary-dark);
+    background-color: var(--c-primary);
     color: white;
 }
 
@@ -3485,7 +3503,7 @@ label,
 
 .content .game-bar .reveal-button {
     border-color: #b8860b;
-    background-color: #fff4d6;
+    background-color: var(--c-gold-bg);
     color: #5a4300;
 }
 
@@ -3552,7 +3570,7 @@ label,
     align-self: stretch;
     margin: 0.5rem 0;
     padding: 0.4rem 0.6rem;
-    border-left: 4px solid #9bb8e0;
+    border-left: 4px solid var(--c-info-line);
     background-color: #eef3fa;
     color: #333;
     font-size: 0.95rem;
@@ -3577,4 +3595,278 @@ label,
     order: 6;
     margin-top: 0.5rem;
     text-align: center;
+}
+
+/* ------------------------------------------------------------------
+   Theme helpers (replacing styles that used to be typed into each page)
+   ------------------------------------------------------------------ */
+
+/* Right / wrong / plain text, the same everywhere */
+.txt-ok { color: var(--c-ok); }
+.txt-bad { color: var(--c-lose); }
+.txt-plain { color: var(--c-text); }
+.txt-muted { color: var(--c-muted); }
+.txt-bold { font-weight: bold; }
+
+/* Result line under a hand: CORRECT / INCORRECT */
+.result-line {
+    margin: 0;
+    font-weight: bold;
+}
+
+/* Small grey caption above a row of cards ("High Hand", hand number) */
+.caption {
+    color: var(--c-muted);
+    font-size: 0.85rem;
+}
+
+/* A table rule printed above the cards, e.g. DEALER MUST HIT SOFT 17 */
+.table-rule {
+    font-weight: bold;
+}
+
+.prompt-line {
+    font-size: 1.2rem;
+}
+
+.narrow-card {
+    max-width: 500px;
+}
+
+.tight { margin: 0; }
+.tight-top { margin: 0.25rem 0 0 0; }
+
+.keypad-answer { margin: 1rem 0; }
+.rl-screen .keypad-answer { margin: 0.5rem 0; }
+.card-row.fc-fan,
+.card-row.po-cards { margin: 1rem 0; }
+
+/* Two cards of a player hand, the second dropped down and to the left
+   (Side Wagers and Hold'em) */
+.stack-2 {
+    position: relative;
+    width: 130px;
+    height: 195px;
+}
+
+.stack-2 img {
+    position: absolute;
+    width: 100px;
+    height: 140px;
+}
+
+.stack-2 img:first-child { top: 0; left: 25px; }
+.stack-2 img:last-child { top: 45px; left: 0; }
+
+/* Pai Gow card rows */
+.pg-row {
+    display: flex;
+    gap: 8px;
+}
+
+.pg-row.pg-row-gap { margin-bottom: 0.5rem; }
+
+.pg-slot-img {
+    width: 100%;
+    height: 100%;
+}
+
+.hs-card { cursor: pointer; }
+.hs-card.hs-card-moved { opacity: 0; }
+
+.pg-compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.1rem 1.5rem;
+    white-space: pre-line;
+}
+
+.pg-compare .pg-gap { margin-top: 0.4rem; }
+
+.pre-line { white-space: pre-line; }
+
+/* Hold'em cards the trainee can tap; marked-unused cards turn 45deg */
+.hd-card.hd-tappable { cursor: pointer; }
+.hd-card.hd-rotated { transform: rotate(45deg); }
+
+.hd-rank-row select.rank-wrong { background-color: #f8d0d0; }
+.hd-rank-row select.rank-picked { background-color: #d0e0f8; }
+
+/* ------------------------------------------------------------------
+   Score line at the top of every play screen (Shared/GameStatus):
+   the game or mode on the left, "Score 6 / 7" on the right
+   ------------------------------------------------------------------ */
+.game-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    align-self: stretch;
+    gap: 0.75rem;
+    margin: 0.25rem 0 0.5rem 0;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.game-status-title {
+    font-weight: bold;
+}
+
+/* ------------------------------------------------------------------
+   Table felt: the green panel behind the cards in every game (the
+   same green as Roulette's layout). The panel reaches 0.5rem past the
+   content on each side so the cards keep their full width. Text on it
+   is white; result notes on it sit on a white tag so red/blue stay
+   readable.
+   ------------------------------------------------------------------ */
+.felt {
+    align-self: stretch;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding: 0.5rem;
+    border-radius: 10px;
+    background-color: var(--c-felt);
+    color: white;
+}
+
+.felt h3,
+.felt .caption,
+.felt .table-rule,
+.felt .hd-hand-number,
+.felt .paged-hand-number {
+    color: white;
+}
+
+.felt .caption {
+    opacity: 0.85;
+}
+
+.felt .feedback-area {
+    color: white;
+}
+
+.felt .hd-hand-result {
+    display: inline-block;
+    margin-top: 0.25rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    background-color: white;
+}
+
+/* Pai Gow Settling Bets is already 0.5rem wider than the page */
+.sb-screen .felt {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Low Hand slots: show as outlines on the felt */
+.felt .hs-low-slot {
+    border-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Hold'em: community cards and the dealer's cards share one panel */
+.hd-board {
+    order: 3;
+    margin-top: 0.5rem;
+}
+
+/* Theme pass: classes that replace the old inline styles */
+.fc-hint {
+    font-style: italic;
+    color: var(--c-muted);
+}
+
+.sw-result {
+    height: 1.5rem;
+}
+
+.hs-result-header {
+    margin: 0 0 0.35rem 0;
+}
+
+.hs-hand {
+    order: 2;
+}
+
+.felt .card-row {
+    margin: 0 !important;
+}
+
+.felt .table-rule {
+    margin: 0.35rem 0 0 0;
+}
+
+.hd-hands.felt {
+    width: auto;
+}
+
+.felt .hd-board,
+.hd-board.felt {
+    box-sizing: border-box;
+}
+
+/* Three Card Prime: Ante Bonus box sits just right of the Ante circle */
+.tcp-ante-box {
+    position: relative;
+    width: 90px;
+}
+
+.tcp-ante-bonus {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0.75rem;
+    white-space: nowrap;
+}
+
+.tcp-ante-bonus.tcp-ante-bonus-wrong {
+    background-color: #f8d0d0;
+}
+
+/* Cards on the felt: size them to the space inside the panel (the
+   column less the felt's padding), so the last card doesn't run past
+   the green edge on phones. Desktop is unaffected (cards cap at 100px). */
+.felt .hs-cards {
+    --hs-row: calc(var(--col-w) - 3rem);
+}
+
+.hd-board .hd-community {
+    --hc-w: min(100px, calc((var(--col-w) - 3rem) / 4));
+}
+
+.hd-board .hd-dealer .hd-card,
+.hd-table .felt .hd-hand-cards img {
+    width: min(100px, calc((var(--col-w) - 3rem) / 4)) !important;
+}
+
+/* No extra space above the first title or below the last row inside
+   the Hold'em board panel */
+.hd-board > .hd-community-title {
+    margin-top: 0;
+}
+
+.hd-board > .hd-dealer {
+    margin-bottom: 0;
+}
+
+/* Phones: the score line and felt add some height, so Flash Cards and
+   Payouts trim their spacing to keep the whole keypad above the bar */
+@media (max-width: 768px), (pointer: coarse) {
+    .game-status {
+        margin: 0 0 0.35rem 0;
+    }
+
+    .felt.fc-felt,
+    .felt.po-felt {
+        padding: 0.35rem 0.5rem;
+    }
+
+    .fc-msg {
+        min-height: 1.3em;
+        margin: 0.25rem 0;
+    }
+
+    .po-wager {
+        margin: 0.25rem 0;
+    }
 }

@@ -39,6 +39,8 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
+        <GameStatus Title="@(_mode == TrainerMode.IdentifyHands ? "Identify the Hands" : "Settle the Bets")" Correct="_correctCount" Played="_totalRounds" />
+
         @* On phones (see app.css, "Heads-Up Hold'em") this table becomes a
            single column: the current player hand (Settle the Bets only),
            community cards, dealer cards, the rank picker (Identify the
@@ -53,7 +55,7 @@ else
             {
                 <div class="hd-result-banner @(_isCorrect ? "hd-result-ok" : "hd-result-bad")">
                     <div class="hd-result-main">@_resultText</div>
-                    <div>@(_handRankLines.Count > 0 ? _handRankLines[0].Text : "") &middot; @_scoreText</div>
+                    <div>@(_handRankLines.Count > 0 ? _handRankLines[0].Text : "")</div>
                 </div>
             }
 
@@ -70,20 +72,18 @@ else
 
             @if (PlayersVisible)
             {
-            <div class="hd-hands">
+            <div class="hd-hands felt">
             @for (int h = 0; h < _hands.Count; h++)
             {
                 int handIndex = h;
                 HandState hand = _hands[handIndex];
 
                 <div class="hd-hand @(handIndex == _currentHand ? "hd-hand-current" : "")">
-                    <div class="hd-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
+                    <div class="hd-hand-number caption">@(handIndex + 1)</div>
 
-                    <div class="hd-hand-cards" style="position: relative; width: 130px; height: 195px;">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name"
-                             style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name"
-                             style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
+                    <div class="hd-hand-cards stack-2">
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
                     </div>
 
                     @* Phones: Previous | Win Lose Push | Next (Submit / Deal are
@@ -145,6 +145,8 @@ else
                 <p class="first-hint hd-first-hint">Call each player Win, Lose or Push against the dealer's marked hand, then Submit.</p>
             }
 
+            @* On the felt: the community cards and the dealer's cards *@
+            <div class="hd-board felt">
             <h3 class="hd-community-title">Community Cards</h3>
             <div class="hd-community hd-community-settle">
                 @for (int i = 0; i < _community.Length; i++)
@@ -156,8 +158,7 @@ else
                     <div class="hd-community-slot">
                         <img src="images/cards/@(c?.Code).png" alt="@c?.Name"
                              @onclick="() => ToggleCommunityRotation(communityIndex)"
-                             class="pai-gow-card hd-card @(unused ? "hd-card-unused" : "")"
-                             style="cursor: @(CanMarkCards ? "pointer" : "default"); @(unused ? "transform: rotate(45deg);" : "")" />
+                             class="pai-gow-card hd-card @(unused ? "hd-card-unused" : "") @(CanMarkCards ? "hd-tappable" : "")" />
                     </div>
                 }
             </div>
@@ -166,12 +167,11 @@ else
             <div class="hd-dealer">
                 <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Name"
                      @onclick="() => ToggleDealerCard(1)"
-                     class="pai-gow-card hd-card @(_dealerCard1Rotated ? "hd-card-unused" : "")"
-                     style="cursor: @(CanMarkCards ? "pointer" : "default"); @(_dealerCard1Rotated ? "transform: rotate(45deg);" : "")" />
+                     class="pai-gow-card hd-card @(_dealerCard1Rotated ? "hd-card-unused" : "") @(CanMarkCards ? "hd-tappable" : "")" />
                 <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Name"
                      @onclick="() => ToggleDealerCard(2)"
-                     class="pai-gow-card hd-card @(_dealerCard2Rotated ? "hd-card-unused" : "")"
-                     style="cursor: @(CanMarkCards ? "pointer" : "default"); @(_dealerCard2Rotated ? "transform: rotate(45deg);" : "")" />
+                     class="pai-gow-card hd-card @(_dealerCard2Rotated ? "hd-card-unused" : "") @(CanMarkCards ? "hd-tappable" : "")" />
+            </div>
             </div>
 
             @* Identify the Hands: until the right 2 cards are marked, a
@@ -190,7 +190,7 @@ else
                 <div class="hd-rank-row">
                     <label for="hd-rank">Dealer's hand:</label>
                     <select id="hd-rank" @bind="_dealerRankIndex" disabled="@_roundScored"
-                            style="@(_dealerRankWrong ? "background-color: #f8d0d0;" : (_dealerRankIndex > 0 ? "background-color: #d0e0f8;" : ""))">
+                            class="@(_dealerRankWrong ? "rank-wrong" : (_dealerRankIndex > 0 ? "rank-picked" : ""))">
                         @for (int i = 0; i < RankComboItems.Length; i++)
                         {
                             <option value="@i">@RankComboItems[i]</option>
@@ -207,21 +207,20 @@ else
              hands (Identify the Hands) it sits below the rank picker instead
              (hd-feedback-inline). Phones always show it below. -->
         <div class="feedback-area hd-feedback @(PlayersVisible ? "" : "hd-feedback-inline")" style="--hd-feedback-left: @(_hands.Count * 154)px;">
-            <div style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</div>
+            <div class="result-line @(_isCorrect ? "txt-ok" : "txt-bad")">@_resultText</div>
             @if (_mistakesText.Length > 0)
             {
-                <div style="white-space: pre-line; margin-top: 0.25rem;">@_mistakesText</div>
+                <div class="pre-line tight-top">@_mistakesText</div>
             }
             @if (_handRankLines.Count > 0)
             {
-                <div style="margin-top: 0.25rem;">
+                <div class="tight-top">
                     @foreach ((string text, string color) in _handRankLines)
                     {
-                        <p style="margin: 0; font-weight: bold; color: @color;">@text</p>
+                        <p class="result-line @color">@text</p>
                     }
                 </div>
             }
-            <p style="margin: 0.25rem 0 0 0;">@_scoreText</p>
         </div>
         </div>
 
@@ -260,7 +259,7 @@ else
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+                    <button class="game-bar-main" @onclick="DealAgain" disabled="@(!_dealEnabled)">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -590,7 +589,7 @@ else
         _resultText = "REVEALED";
         _mistakesText = string.Empty;
         _handRankLines.Clear();
-        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(_revealRank)}", "red"));
+        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(_revealRank)}", "txt-bad"));
 
         string pct = ((double)_correctCount / _totalRounds).ToString("0.0%");
         _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
@@ -673,7 +672,7 @@ else
 
         _dealerRankWrong = !rankCorrect;
         _mistakesText = rankCorrect ? string.Empty : $"Rank: actually {HandEvaluator.HandRankName(bestRank)}";
-        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(bestRank)}", rankCorrect ? "darkblue" : "red"));
+        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(bestRank)}", rankCorrect ? "txt-ok" : "txt-bad"));
 
         bool allCorrect = rankCorrect;
 
@@ -757,9 +756,9 @@ else
                     ? $"Same 5-card strength as the dealer's {dealerName}: push"
                     : $"Both {dealerName}: the higher cards (kickers) {(actualOutcome == WagerOutcome.Win ? "are the player's" : "are the dealer's")}";
 
-            _handRankLines.Add(($"Hand {h + 1}: {hand.Reason}", hand.WagerWrong ? "red" : "darkblue"));
+            _handRankLines.Add(($"Hand {h + 1}: {hand.Reason}", hand.WagerWrong ? "txt-bad" : "txt-ok"));
         }
-        _handRankLines.Insert(0, ($"Dealer: {HandEvaluator.HandRankName(dealerRank)}", "darkblue"));
+        _handRankLines.Insert(0, ($"Dealer: {HandEvaluator.HandRankName(dealerRank)}", "txt-ok"));
         // The per-hand lines below already say who won and why
         _mistakesText = string.Empty;
 

@@ -56,10 +56,9 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <div class="rl-status">
+        <GameStatus Correct="_correct" Played="_played">
             <span class="rl-winner">Winning number <span class="rl-num @(RedNumbers.Contains(WinningNumber) ? "rl-red" : "rl-black") rl-winner-num">@WinningNumber</span></span>
-            <span>Score <strong>@_correct / @_played</strong></span>
-        </div>
+        </GameStatus>
 
         @* The layout close-up. Rows 10-12 and 22-24 are only partly shown
            and faded, so the eye goes to the rows around 17. Chips sit on
@@ -88,7 +87,7 @@ else
 
         @if (!_answered)
         {
-            <div class="button-row answer-row keypad-answer" style="margin: 0.5rem 0;">
+            <div class="button-row answer-row keypad-answer">
                 @* Phones: shows what's being keyed in (the text box is
                    hidden there). Desktop: the text box below is used. *@
                 <div class="po-display">
@@ -118,7 +117,7 @@ else
         }
         else
         {
-            <p class="rl-result" style="color: @(_isCorrect ? "blue" : "red");">
+            <p class="rl-result result-line @(_isCorrect ? "txt-ok" : "txt-bad")">
                 @(_isCorrect ? $"CORRECT - {_correctTotal} chips" : $"INCORRECT - you entered {_enteredTotal}, the payout is {_correctTotal} chips")
             </p>
 

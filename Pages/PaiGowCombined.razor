@@ -92,10 +92,12 @@ else if (_mode == PaiGowMode.HandSetting)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
+        <GameStatus Title="Hand Setting" Correct="_hsCorrectCount" Played="_hsTotalRounds" />
+
         <div class="hs-top">
-            <div class="hs-low">
-                <h3 style="margin-top: 1rem;">Low Hand</h3>
-                <div style="display: flex; gap: 8px;">
+            <div class="hs-low felt">
+                <h3 class="tight">Low Hand</h3>
+                <div class="pg-row">
                     @for (int slot = 1; slot <= 2; slot++)
                     {
                         int lowSlot = slot;
@@ -105,7 +107,7 @@ else if (_mode == PaiGowMode.HandSetting)
                              class="pai-gow-card hs-low-slot">
                             @if (cardAtSlot >= 0)
                             {
-                                <img src="images/cards/@(_hsCards[cardAtSlot].ImageCode).png" alt="@_hsCards[cardAtSlot].Name" style="width: 100%; height: 100%;" />
+                                <img src="images/cards/@(_hsCards[cardAtSlot].ImageCode).png" alt="@_hsCards[cardAtSlot].Name" class="pg-slot-img" />
                             }
                         </div>
                     }
@@ -115,34 +117,35 @@ else if (_mode == PaiGowMode.HandSetting)
             <div class="feedback-area hs-feedback">
                 @if (_hsErrorText.Length > 0)
                 {
-                    <p style="color: red;">@_hsErrorText</p>
+                    <p class="txt-bad">@_hsErrorText</p>
                 }
 
                 @if (_hsResultHeader.Length > 0)
                 {
-                    <p style="font-weight: bold; color: @(_hsResultIsCorrect ? "blue" : "red"); margin: 0 0 0.35rem 0;">@_hsResultHeader</p>
+                    <p class="result-line hs-result-header @(_hsResultIsCorrect ? "txt-ok" : "txt-bad")">@_hsResultHeader</p>
                 }
 
                 @if (_hsShowComparison)
                 {
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.1rem 1.5rem; white-space: pre-line;">
-                        <div style="font-weight: bold; color: red;">YOUR LOW HAND</div>
-                        <div style="font-weight: bold; color: darkgreen;">CORRECT LOW HAND</div>
-                        <div style="color: red;">@_hsYourLowLabel</div>
-                        <div style="color: darkgreen;">@_hsCorrectLowLabel</div>
-                        <div style="font-weight: bold; color: red; margin-top: 0.4rem;">YOUR HIGH HAND</div>
-                        <div style="font-weight: bold; color: darkgreen; margin-top: 0.4rem;">CORRECT HIGH HAND</div>
-                        <div style="color: red;">@_hsYourHighDescription</div>
-                        <div style="color: darkgreen;">@_hsCorrectHighDescription</div>
+                    <div class="pg-compare">
+                        <div class="txt-bold txt-bad">YOUR LOW HAND</div>
+                        <div class="txt-bold txt-ok">CORRECT LOW HAND</div>
+                        <div class="txt-bad">@_hsYourLowLabel</div>
+                        <div class="txt-ok">@_hsCorrectLowLabel</div>
+                        <div class="txt-bold txt-bad pg-gap">YOUR HIGH HAND</div>
+                        <div class="txt-bold txt-ok pg-gap">CORRECT HIGH HAND</div>
+                        <div class="txt-bad">@_hsYourHighDescription</div>
+                        <div class="txt-ok">@_hsCorrectHighDescription</div>
                     </div>
                 }
                 else if (_hsSingleBody.Length > 0)
                 {
-                    <div style="white-space: pre-line; font-weight: bold; color: @(_hsResultIsCorrect ? "blue" : "red");">@_hsSingleBody</div>
+                    <div class="pre-line txt-bold @(_hsResultIsCorrect ? "txt-ok" : "txt-bad")">@_hsSingleBody</div>
                 }
             </div>
         </div>
 
+        <div class="hs-hand felt">
         <h3 class="hs-cards-title">Your 7 Cards</h3>
         <div class="hs-cards">
             @for (int i = 0; i < _hsCards.Count; i++)
@@ -152,9 +155,9 @@ else if (_mode == PaiGowMode.HandSetting)
 
                 <img src="images/cards/@(_hsCards[cardIndex].ImageCode).png" alt="@_hsCards[cardIndex].Name"
                      @onclick="() => HsCardClicked(cardIndex)"
-                     class="pai-gow-card hs-card"
-                     style="cursor: pointer; @(inLow ? "opacity: 0;" : "")" />
+                     class="pai-gow-card hs-card @(inLow ? "hs-card-moved" : "")" />
             }
+        </div>
         </div>
 
         @* First round only: what to do *@
@@ -163,11 +166,9 @@ else if (_mode == PaiGowMode.HandSetting)
             <p class="first-hint">Tap 2 cards to move them to the Low Hand (tap a Low Hand card to send it back). Sort lines your cards up. Then Submit.</p>
         }
 
-        <p class="hs-score">@_hsScoreText</p>
-
         @* Pinned bottom bar: Help | one step button that changes as the
            hand progresses: Sort -> (once sorted) Submit -> (once scored)
-           Deal | End Session *@
+           Next | End Session *@
         <GameBar HelpTitle="House Ways" OnEnd="EndSession">
             <ChildContent>
                 @if (_hsSortEnabled)
@@ -180,7 +181,7 @@ else if (_mode == PaiGowMode.HandSetting)
                 }
                 else if (_hsDealEnabled)
                 {
-                    <button class="game-bar-main" @onclick="HsDealAgain">Deal</button>
+                    <button class="game-bar-main" @onclick="HsDealAgain">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -200,19 +201,21 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <div class="sb-player">
-        <h3 style="margin-top: 1rem;">Player</h3>
+        <GameStatus Title="Settling Bets" Correct="_sbCorrectCount" Played="_sbTotalRounds" />
+
+        <div class="sb-player felt">
+        <h3 class="tight">Player</h3>
         <div class="sb-hand-row">
             <div>
-                <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
-                <div class="sb-cards" style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                <div class="caption">High Hand</div>
+                <div class="sb-cards pg-row pg-row-gap">
                     @foreach (PaiGowCard c in _sbPlayerHighSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
                     }
                 </div>
-                <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
-                <div class="sb-cards" style="display: flex; gap: 8px;">
+                <div class="caption">Low Hand</div>
+                <div class="sb-cards pg-row">
                     @foreach (PaiGowCard c in _sbPlayerLowSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
@@ -223,8 +226,8 @@ else
             @if (_sbRoundScored)
             {
                 <div class="feedback-area sb-hand-labels">
-                    <p style="margin: 0;">High Hand: @_sbPlayerHighLabel</p>
-                    <p style="margin: 0.25rem 0 0 0;">Low Hand: @_sbPlayerLowLabel</p>
+                    <p class="tight">High Hand: @_sbPlayerHighLabel</p>
+                    <p class="tight-top">Low Hand: @_sbPlayerLowLabel</p>
                 </div>
             }
         </div>
@@ -262,8 +265,7 @@ else
             }
 
             <div class="sb-status">
-                <p style="font-weight: bold; color: @(_sbIsCorrect ? "blue" : "red"); margin: 0;">@_sbResultText</p>
-                <p style="margin: 0;">@_sbScoreText</p>
+                <p class="result-line @(_sbIsCorrect ? "txt-ok" : "txt-bad")">@_sbResultText</p>
             </div>
 
             @if (_sbRoundScored && _sbWinningWagerLines.Count > 0)
@@ -271,7 +273,7 @@ else
                 <div class="feedback-area sb-wins">
                     @foreach ((string text, string color) in _sbWinningWagerLines)
                     {
-                        <p style="margin: 0; font-weight: bold; color: @color;">@text</p>
+                        <p class="result-line @color">@text</p>
                     }
                 </div>
             }
@@ -279,19 +281,19 @@ else
 
         <p class="sb-push-note">All Hands Push with a Dealer Ace-High Pai Gow</p>
 
-        <div class="sb-dealer">
-        <h3>Dealer</h3>
+        <div class="sb-dealer felt">
+        <h3 class="tight">Dealer</h3>
         <div class="sb-hand-row">
             <div>
-                <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
-                <div class="sb-cards" style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
+                <div class="caption">Low Hand</div>
+                <div class="sb-cards pg-row pg-row-gap">
                     @foreach (PaiGowCard c in _sbDealerLowSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
                     }
                 </div>
-                <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
-                <div class="sb-cards" style="display: flex; gap: 8px;">
+                <div class="caption">High Hand</div>
+                <div class="sb-cards pg-row">
                     @foreach (PaiGowCard c in _sbDealerHighSorted)
                     {
                         <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
@@ -302,14 +304,14 @@ else
             @if (_sbRoundScored)
             {
                 <div class="feedback-area sb-hand-labels">
-                    <p style="margin: 0;">Low Hand: @_sbDealerLowLabel</p>
-                    <p style="margin: 0.25rem 0 0 0;">High Hand: @_sbDealerHighLabel</p>
+                    <p class="tight">Low Hand: @_sbDealerLowLabel</p>
+                    <p class="tight-top">High Hand: @_sbDealerHighLabel</p>
                 </div>
             }
         </div>
         </div>
 
-        @* Pinned bottom bar: Help | Submit, then Deal | End Session *@
+        @* Pinned bottom bar: Help | Submit, then Next | End Session *@
         <GameBar HelpTitle="Settling Bets Wager Rules" OnEnd="EndSession">
             <ChildContent>
                 @if (!_sbRoundScored)
@@ -318,7 +320,7 @@ else
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="SbDealAgain" disabled="@(!_sbDealEnabled)">Deal</button>
+                    <button class="game-bar-main" @onclick="SbDealAgain" disabled="@(!_sbDealEnabled)">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -887,7 +889,7 @@ else
 
             if (!foulCorrect)
             {
-                _sbWinningWagerLines.Add(("This hand was not actually Foul.", "red"));
+                _sbWinningWagerLines.Add(("This hand was not actually Foul.", "txt-bad"));
             }
 
             string foulPct = _sbTotalRounds > 0
@@ -977,21 +979,21 @@ else
 
         if (_sbMainWager.Wrong)
         {
-            _sbWinningWagerLines.Add(($"Main Wager: INCORRECT — Correct answer: {mainOutcome}", "red"));
+            _sbWinningWagerLines.Add(($"Main Wager: INCORRECT — Correct answer: {mainOutcome}", "txt-bad"));
         }
         else if (mainOutcome == WagerOutcome.Win)
         {
-            _sbWinningWagerLines.Add(("Main Wager: WIN", "blue"));
+            _sbWinningWagerLines.Add(("Main Wager: WIN", "txt-ok"));
         }
 
         if (insuranceActual)
         {
-            _sbWinningWagerLines.Add(("Pai Gow Insurance: WIN — High Card", "blue"));
+            _sbWinningWagerLines.Add(("Pai Gow Insurance: WIN — High Card", "txt-ok"));
         }
 
         if (emperorsActual)
         {
-            _sbWinningWagerLines.Add(($"Emperor's Treasure: WIN — {_sbPlayerSolver.EmperorsTreasureCategoryName()}", "blue"));
+            _sbWinningWagerLines.Add(($"Emperor's Treasure: WIN — {_sbPlayerSolver.EmperorsTreasureCategoryName()}", "txt-ok"));
         }
 
         _sbRoundScored = true;

@@ -84,25 +84,29 @@ else if (_mode == BlackjackMode.FlashCards)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        @* Cards fanned: each overlaps the previous one by 30%, leaving every
-           card's rank/suit corner visible. --n (card count) lets the CSS
-           size them so the whole hand fits across a phone screen. *@
-        <div class="card-row fc-fan" style="margin: 1rem 0; --n: @_fcHand.Count;">
-            @for (int i = 0; i < _fcHand.Count; i++)
-            {
-                var card = _fcHand.CardAt(i);
-                <img src="images/cards/@(card.Code).png" alt="@card.Name" class="card-image fc-card" />
-            }
+        <GameStatus Title="Flash Cards" Correct="_fcRoundsCorrect" Played="_fcRoundsPlayed" />
+
+        @* On the felt: the cards fanned (each overlaps the previous one by
+           30%, leaving every card's rank/suit corner visible; --n, the card
+           count, lets the CSS size them to fit across a phone screen) and
+           the table's printed rule *@
+        <div class="felt fc-felt">
+            <div class="card-row fc-fan" style="--n: @_fcHand.Count;">
+                @for (int i = 0; i < _fcHand.Count; i++)
+                {
+                    var card = _fcHand.CardAt(i);
+                    <img src="images/cards/@(card.Code).png" alt="@card.Name" class="card-image fc-card" />
+                }
+            </div>
+            <p class="table-rule">DEALER MUST HIT SOFT 17</p>
         </div>
 
-        <p style="font-weight: bold;">DEALER MUST HIT SOFT 17</p>
-
-        <p style="font-size: 1.2rem;">@_fcPromptText</p>
+        <p class="prompt-line">@_fcPromptText</p>
 
         @* One fixed-height line shared by the Ace reminder and the feedback:
            feedback (when there is any) takes the reminder's place, and the
            next hand brings the reminder back -- so nothing below shifts. *@
-        <p class="fc-msg" style="@(_fcFeedbackText.Length > 0 ? $"font-weight: bold; color: {_fcFeedbackColor};" : "font-style: italic; color: dimgray;")">
+        <p class="fc-msg @(_fcFeedbackText.Length > 0 ? $"txt-bold {_fcFeedbackColor}" : "fc-hint")">
             @if (_fcFeedbackText.Length > 0)
             {
                 @_fcFeedbackText
@@ -115,7 +119,7 @@ else if (_mode == BlackjackMode.FlashCards)
 
         @* Once the hand is over, the total box and BUST are hidden but keep
            their space (fc-answer-done), so the keypad doesn't move *@
-        <div class="button-row answer-row keypad-answer @(_fcNewRoundEnabled ? "fc-answer-done" : "")" style="margin: 1rem 0;">
+        <div class="button-row answer-row keypad-answer @(_fcNewRoundEnabled ? "fc-answer-done" : "")">
             @* inputmode="none": on phones and tablets, tapping the box does
                NOT open the phone's own keyboard (which pushed the cards off
                screen) -- the on-screen keypad below is used instead. A
@@ -144,8 +148,6 @@ else if (_mode == BlackjackMode.FlashCards)
         <div class="keypad-wrap @(_fcShowKeypad ? "keypad-open" : "")">
             <NumericKeypad AllowDecimal="false" @bind-Value="_fcAnswerText" OnEnter="FcKeypadEnter" EnterLabel="@(_fcNewRoundEnabled ? "Next" : "Enter")" />
         </div>
-
-        <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
 
         @* Pinned bottom bar (Shared/GameBar): Help | Submit, or Next once
            the hand is over (same as the keypad's Enter) | End Session *@
@@ -184,22 +186,25 @@ else if (_mode == BlackjackMode.Payouts)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        @* Blackjack shown as two cards side by side (was overlapped and
-           offset) -- shorter, so more of the screen is left for the answer *@
-        <div class="card-row po-cards" style="margin: 1rem 0;">
-            <img src="images/cards/AS.png" alt="Ace of Spades" class="po-card" />
-            <img src="images/cards/JS.png" alt="Jack of Spades" class="po-card" />
-        </div>
+        <GameStatus Title="@($"Payouts {(_poRatio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5")}")" Correct="_poCorrectCount" Played="_poTotalRounds" />
 
-        <p style="font-weight: bold;">BLACKJACK PAYS @(_poRatio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
+        @* On the felt: the blackjack, two cards side by side, and the
+           table's printed payout *@
+        <div class="felt po-felt">
+            <div class="card-row po-cards">
+                <img src="images/cards/AS.png" alt="Ace of Spades" class="po-card" />
+                <img src="images/cards/JS.png" alt="Jack of Spades" class="po-card" />
+            </div>
+            <p class="table-rule">BLACKJACK PAYS @(_poRatio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
+        </div>
 
         <p class="po-wager">Wager: <strong>@PayoutWager.FormatCents(_poWagerCents)</strong></p>
 
-        <div class="button-row answer-row keypad-answer" style="margin: 1rem 0;">
+        <div class="button-row answer-row keypad-answer">
             @* Phones: this display box takes the place of the text box --
                it shows the amount being keyed in, then the result (with the
                correct payout) in the same spot, so nothing shifts down. *@
-            <div class="po-display" style="color: @(_poPromptText.Length == 0 ? "black" : (_poIsCorrect ? "blue" : "red"));">
+            <div class="po-display @(_poPromptText.Length == 0 ? "txt-plain" : (_poIsCorrect ? "txt-ok" : "txt-bad"))">
                 @if (_poPromptText.Length > 0)
                 {
                     <div class="po-display-result">@_poPromptText</div>
@@ -232,8 +237,8 @@ else if (_mode == BlackjackMode.Payouts)
         </div>
 
         <div class="feedback-area">
-            <p style="font-weight: bold; color: @(_poIsCorrect ? "blue" : "red");">@_poPromptText</p>
-            <p style="color: @(_poIsCorrect ? "blue" : "red");">@_poPromptDetailText</p>
+            <p class="txt-bold @(_poIsCorrect ? "txt-ok" : "txt-bad")">@_poPromptText</p>
+            <p class="@(_poIsCorrect ? "txt-ok" : "txt-bad")">@_poPromptDetailText</p>
         </div>
 
         @* Pinned bottom bar: Help | Submit, or Next once scored | End Session *@
@@ -259,6 +264,8 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
+        <GameStatus Title="Side Wagers" Correct="_swTotalCorrect" Played="_swTotalAnswered" />
+
         @* Phones only (hidden on desktop by CSS): one player hand is
            shown at a time. Desktop still shows every hand side by side. *@
         @if (_swHands.Count > 1)
@@ -268,20 +275,18 @@ else
             </div>
         }
 
-        <div class="sw-hands">
+        <div class="sw-hands felt">
             @for (int h = 0; h < _swHands.Count; h++)
             {
                 int handIndex = h;
                 SwHandState hand = _swHands[handIndex];
 
                 <div class="sw-hand paged-hand @(handIndex == _swCurrentHand ? "paged-hand-current" : "")">
-                    <div class="paged-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
+                    <div class="paged-hand-number caption">@(handIndex + 1)</div>
 
-                    <div class="sw-hand-cards" style="position: relative; width: 130px; height: 195px;">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name"
-                             style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name"
-                             style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
+                    <div class="sw-hand-cards stack-2">
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
                     </div>
 
                     @* Phones: Previous / Next sit either side of the two wagers,
@@ -320,24 +325,23 @@ else
 
         <div class="sw-footer">
 
-            <div class="sw-footer-dealer">
-                <h3 style="color: black; margin: 0;">Dealer</h3>
+            <div class="sw-footer-dealer felt">
+                <h3 class="tight">Dealer</h3>
                 <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Name" class="sw-dealer-card" />
             </div>
 
             <div class="feedback-area sw-footer-feedback">
-                <p style="font-weight: bold; color: @(_swIsCorrect ? "blue" : "red"); margin: 0; height: 1.5rem;">@_swResultText</p>
+                <p class="result-line sw-result @(_swIsCorrect ? "txt-ok" : "txt-bad")">@_swResultText</p>
                 @* After Submit: why each wager won or lost *@
                 @foreach (string line in _swWhyLines)
                 {
                     <p class="why-line">@line</p>
                 }
-                <p style="margin: 0.25rem 0 0 0;">@_swScoreText</p>
             </div>
         </div>
 
         @* Pinned bottom bar: Help | Submit (once every wager is called),
-           then Deal | End Session *@
+           then Next | End Session *@
         <GameBar HelpTitle="Side Wager Rules" OnEnd="EndSession">
             <ChildContent>
                 @if (!_swRoundScored)
@@ -346,7 +350,7 @@ else
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Deal</button>
+                    <button class="game-bar-main" @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -482,7 +486,7 @@ else
     private string _fcFeedbackText = string.Empty;
     // Blue for a correct answer, red for wrong -- same as the other games;
     // plain black for prompts like "Enter the dealer's total."
-    private string _fcFeedbackColor = "black";
+    private string _fcFeedbackColor = "txt-plain"; // CSS class: txt-ok / txt-bad / txt-plain
     private bool _fcShowHint;
     private bool _fcAnswerEnabled;
     private bool _fcSubmitEnabled;
@@ -562,8 +566,8 @@ else
         {
             _fcRoundHasMistake = true;
             _fcAnswerText = string.Empty;
-            _fcFeedbackText = "Incorrect - not a bust. Try again.";
-            _fcFeedbackColor = "red";
+            _fcFeedbackText = "INCORRECT \u2014 not a bust. Try again.";
+            _fcFeedbackColor = "txt-bad";
         }
     }
 
@@ -574,14 +578,14 @@ else
         if (raw.Length == 0)
         {
             _fcFeedbackText = "Enter the dealer's total.";
-            _fcFeedbackColor = "black";
+            _fcFeedbackColor = "txt-plain";
             return;
         }
 
         if (!long.TryParse(raw, out long enteredValue) || enteredValue < 2)
         {
             _fcFeedbackText = "Enter a valid total.";
-            _fcFeedbackColor = "black";
+            _fcFeedbackColor = "txt-plain";
             return;
         }
 
@@ -616,20 +620,20 @@ else
         {
             _fcRoundHasMistake = true;
             _fcAnswerText = string.Empty;
-            _fcFeedbackText = "Incorrect - try again.";
-            _fcFeedbackColor = "red";
+            _fcFeedbackText = "INCORRECT \u2014 try again.";
+            _fcFeedbackColor = "txt-bad";
             return;
         }
 
         string msg = actualBlackjack
-            ? "Correct.  Blackjack!"
+            ? "CORRECT \u2014 Blackjack!"
             : actualBust
-                ? $"Correct.  Actual: BUST ({actualTotal})"
+                ? $"CORRECT \u2014 BUST ({actualTotal})"
                 : _fcHand.IsSoft
-                    ? $"Correct.  Actual total: {actualTotal} soft ({_fcHand.HardTotal} hard)"
-                    : $"Correct.  Actual total: {actualTotal} (hard)";
+                    ? $"CORRECT \u2014 {actualTotal} soft ({_fcHand.HardTotal} hard)"
+                    : $"CORRECT \u2014 {actualTotal} (hard)";
 
-        await FcAdvance(msg, "blue");
+        await FcAdvance(msg, "txt-ok");
     }
 
     // Reveal button: show the answer in a pop-up and count the hand as a miss
@@ -649,14 +653,14 @@ else
         _fcShowReveal = false;
 
         string msg = _fcHand.IsBlackjack
-            ? "Answer: 21 - Blackjack"
+            ? "REVEALED \u2014 21, Blackjack"
             : _fcHand.IsBust
-                ? $"Answer: BUST ({_fcHand.Total})"
+                ? $"REVEALED \u2014 BUST ({_fcHand.Total})"
                 : _fcHand.IsSoft
-                    ? $"Answer: {_fcHand.Total} soft ({_fcHand.HardTotal} hard)"
-                    : $"Answer: {_fcHand.Total}";
+                    ? $"REVEALED \u2014 {_fcHand.Total} soft ({_fcHand.HardTotal} hard)"
+                    : $"REVEALED \u2014 {_fcHand.Total}";
 
-        await FcAdvance(msg, "red");
+        await FcAdvance(msg, "txt-bad");
     }
 
     private string FcNextStepText =>
