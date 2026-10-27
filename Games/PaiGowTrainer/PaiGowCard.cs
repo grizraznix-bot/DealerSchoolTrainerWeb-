@@ -38,6 +38,33 @@ public sealed class PaiGowCard
         _ => int.TryParse(Rank, out int n) ? n : 0
     };
 
+    /// <summary>Spoken name for screen readers and alt text, e.g. "4 of Clubs", "Joker".</summary>
+    public string Name
+    {
+        get
+        {
+            if (IsJoker) return "Joker";
+
+            string r = Rank switch
+            {
+                "A" => "Ace",
+                "K" => "King",
+                "Q" => "Queen",
+                "J" => "Jack",
+                "T" => "10",
+                _ => Rank
+            };
+            string s = Suit switch
+            {
+                "S" => "Spades",
+                "H" => "Hearts",
+                "D" => "Diamonds",
+                _ => "Clubs"
+            };
+            return r + " of " + s;
+        }
+    }
+
     /// <summary>Short text representation, e.g. "A♠", "K♥", "10♦", "JOKER".</summary>
     public string ShortLabel
     {

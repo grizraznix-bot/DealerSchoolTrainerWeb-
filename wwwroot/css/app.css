@@ -1544,7 +1544,7 @@ label,
     }
 
     .keypad-screen > .card-row {
-        margin: 0.75rem 0 0.25rem 0 !important;
+        margin: 0.5rem 0 0.25rem 0 !important;
     }
 
     /* Flash Cards: card width chosen so the whole fanned hand (--n cards,
@@ -1554,9 +1554,11 @@ label,
         --fc-w: min(100px, calc((var(--col-w) - 2rem) / (1 + 0.7 * (var(--n, 2) - 1))));
     }
 
+    /* 44px keys (still a full-size tap target) so the whole keypad
+       fits above the pinned bottom bar */
     .keypad-screen .numeric-keypad-row button,
     .keypad-screen .numeric-keypad-row span {
-        height: 48px;
+        height: 44px;
     }
 
     .keypad-screen > .feedback-area {
@@ -1613,7 +1615,7 @@ label,
         min-width: 5.5rem;
     }
 
-    .keypad-screen > .keypad-answer { order: 2; margin: 0.5rem 0 0.75rem 0 !important; align-self: stretch; }
+    .keypad-screen > .keypad-answer { order: 2; margin: 0.4rem 0 0.5rem 0 !important; align-self: stretch; }
     .keypad-screen > .keypad-wrap { order: 3; align-self: stretch; }
     .keypad-screen > .keypad-score { order: 4; }
     .keypad-screen > .keypad-actions { order: 5; }
@@ -3415,4 +3417,164 @@ label,
 
 .reveal-red {
     color: #c80000;
+}
+
+/* ------------------------------------------------------------------
+   Shared bottom bar (Shared/GameBar.razor), the same in every game:
+   Help | main action(s) | End Session, pinned to the bottom of the
+   screen. Phones: full width. Desktop: lined up with the game column
+   (sidebar 220px). Play screens using it get room at the bottom so
+   nothing ends up hidden behind it.
+   ------------------------------------------------------------------ */
+.has-game-bar {
+    padding-bottom: 4.5rem;
+}
+
+.game-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.75rem;
+    box-sizing: border-box;
+    background-color: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.content .game-bar button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+    padding: 0 0.3rem;
+    white-space: nowrap;
+    border: 1px solid #999;
+    border-radius: 6px;
+    background-color: white;
+    color: #111;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.content .game-bar .game-bar-end {
+    flex-grow: 1.25;
+}
+
+/* Four buttons (Hold'em Identify the Hands adds Reveal): a little
+   smaller text so End Session still fits on a phone */
+.content .game-bar:has(> button:nth-child(4)) button {
+    padding: 0 0.15rem;
+    font-size: 0.88rem;
+}
+
+.content .game-bar .game-bar-main {
+    flex-grow: 1.4;
+    border-color: #0050b4;
+    background-color: #0064dc;
+    color: white;
+}
+
+.content .game-bar .game-bar-main:disabled {
+    border-color: #c9c9c9;
+    background-color: #e3e3e3;
+    color: #888;
+}
+
+.content .game-bar .reveal-button {
+    border-color: #b8860b;
+    background-color: #fff4d6;
+    color: #5a4300;
+}
+
+@media (min-width: 769px) {
+    .game-bar {
+        --gb-col: min(520px, 100% - 220px - 4rem);
+        left: calc(220px + (100% - 220px - var(--gb-col)) / 2);
+        right: auto;
+        width: var(--gb-col);
+        padding-left: 0;
+        padding-right: 0;
+        box-shadow: none;
+    }
+}
+
+/* Help pop-up: the game's rules or chart; scrolls if taller than the
+   screen */
+.reveal-box.help-box {
+    width: min(480px, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+}
+
+.help-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.15rem;
+    font-weight: bold;
+}
+
+.help-body ul {
+    margin: 0;
+    padding-left: 1.2rem;
+}
+
+.help-body li {
+    margin-bottom: 0.4rem;
+}
+
+.help-image {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.help-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1.05rem;
+}
+
+.help-table td {
+    padding: 0.3rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.help-table td:last-child {
+    text-align: right;
+    font-weight: bold;
+}
+
+/* One-line "what to do" shown on a game's first round only */
+.first-hint {
+    align-self: stretch;
+    margin: 0.5rem 0;
+    padding: 0.4rem 0.6rem;
+    border-left: 4px solid #9bb8e0;
+    background-color: #eef3fa;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.sw-screen > .first-hint { order: 2; }
+.hs-screen > .first-hint { order: 4; }
+.sb-first-hint { order: 2; }
+.hd-settle .hd-first-hint { order: 2; }
+
+/* After Submit: why each wager won or lost */
+.why-line {
+    margin: 0.15rem 0;
+    font-size: 0.92rem;
+    font-weight: normal;
+    color: #333;
+}
+
+/* Pai Gow Settling Bets: result and score (the buttons moved to the
+   shared bar) */
+.sb-status {
+    order: 6;
+    margin-top: 0.5rem;
+    text-align: center;
 }

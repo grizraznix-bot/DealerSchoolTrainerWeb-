@@ -3,6 +3,7 @@
 @using DealerSchoolTrainerWeb.Games.FlashCardTrainer
 @using DealerSchoolTrainerWeb.Games.PayoutTrainer
 @using DealerSchoolTrainerWeb.Games.SideWagerTrainer
+@using DealerSchoolTrainerWeb.Games.ThreeCardTrainer
 @implements IDisposable
 @inject GameResetService GameReset
 @inject IJSRuntime JS
@@ -78,7 +79,7 @@ else if (_mode == BlackjackMode.FlashCards)
 {
     @* keypad-screen: on phones the feedback line moves up above the
        answer box so it isn't hidden below the keypad (see app.css) *@
-    <div class="play-screen keypad-screen">
+    <div class="play-screen keypad-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -90,7 +91,7 @@ else if (_mode == BlackjackMode.FlashCards)
             @for (int i = 0; i < _fcHand.Count; i++)
             {
                 var card = _fcHand.CardAt(i);
-                <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image fc-card" />
+                <img src="images/cards/@(card.Code).png" alt="@card.Name" class="card-image fc-card" />
             }
         </div>
 
@@ -127,9 +128,6 @@ else if (_mode == BlackjackMode.FlashCards)
                    @ref="_fcAnswerInputRef"
                    disabled="@(!_fcAnswerEnabled)"
                    placeholder="Total" />
-            @* One button: Submit while answering, Next once the hand is over
-               (replaces the old separate New Round button). Hidden on phones,
-               where the keypad's Enter / Next key does the same job. *@
             @* BUST: one tap when the dealer's total is over 21 (typing the
                total still counts too) *@
             @* Reveal: shows the current total in a pop-up (the hand counts
@@ -138,7 +136,6 @@ else if (_mode == BlackjackMode.FlashCards)
                narrows to make room. *@
             <button class="reveal-button" @onclick="FcReveal" disabled="@(!_fcSubmitEnabled)">Reveal</button>
             <button class="bust-button" @onclick="FcBust" disabled="@(!_fcSubmitEnabled)">BUST</button>
-            <button class="answer-primary" @onclick="FcKeypadEnter" disabled="@(!_fcSubmitEnabled && !_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">@(_fcNewRoundEnabled ? "Next" : "Submit")</button>
             <button class="keypad-toggle" @onclick="() => _fcShowKeypad = !_fcShowKeypad">123</button>
         </div>
 
@@ -150,9 +147,22 @@ else if (_mode == BlackjackMode.FlashCards)
 
         <p class="keypad-score">Score: @_fcRoundsCorrect / @_fcRoundsPlayed</p>
 
-        <div class="button-row keypad-actions">
-            <button @onclick="EndSession">End Session</button>
-        </div>
+        @* Pinned bottom bar (Shared/GameBar): Help | Submit, or Next once
+           the hand is over (same as the keypad's Enter) | End Session *@
+        <GameBar HelpTitle="Flash Cards" OnEnd="EndSession">
+            <ChildContent>
+                <button class="game-bar-main" @onclick="FcKeypadEnter" disabled="@(!_fcSubmitEnabled && !_fcNewRoundEnabled)" @ref="_fcNewRoundButtonRef">@(_fcNewRoundEnabled ? "Next" : "Submit")</button>
+            </ChildContent>
+            <HelpContent>
+                <ul>
+                    <li>Number cards count their number; 10, J, Q and K count 10.</li>
+                    <li>An Ace counts 11, or 1 when 11 would put the hand over 21. While it can still count 11, the hand is "soft".</li>
+                    <li>The dealer must hit 16 or less and must hit soft 17; the dealer stands on 17 or more otherwise.</li>
+                    <li>Enter the dealer's total each time a card is dealt. Over 21: tap BUST or enter the total.</li>
+                    <li>Stuck? Reveal shows the total (the hand counts as a miss).</li>
+                </ul>
+            </HelpContent>
+        </GameBar>
 
         @if (_fcShowReveal)
         {
@@ -169,7 +179,7 @@ else if (_mode == BlackjackMode.FlashCards)
 }
 else if (_mode == BlackjackMode.Payouts)
 {
-    <div class="play-screen keypad-screen">
+    <div class="play-screen keypad-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -177,8 +187,8 @@ else if (_mode == BlackjackMode.Payouts)
         @* Blackjack shown as two cards side by side (was overlapped and
            offset) -- shorter, so more of the screen is left for the answer *@
         <div class="card-row po-cards" style="margin: 1rem 0;">
-            <img src="images/cards/AS.png" alt="AS" class="po-card" />
-            <img src="images/cards/JS.png" alt="JS" class="po-card" />
+            <img src="images/cards/AS.png" alt="Ace of Spades" class="po-card" />
+            <img src="images/cards/JS.png" alt="Jack of Spades" class="po-card" />
         </div>
 
         <p style="font-weight: bold;">BLACKJACK PAYS @(_poRatio == PayoutRatio.ThreeToTwo ? "3 TO 2" : "6 TO 5")</p>
@@ -214,9 +224,6 @@ else if (_mode == BlackjackMode.Payouts)
                    @ref="_poAnswerInputRef"
                    readonly="@(!_poAnswerEnabled)"
                    placeholder="Amount" />
-            @* Submit while answering, Next once scored (replaces New Round);
-               hidden on phones where the keypad's Enter / Next key is used *@
-            <button class="answer-primary" @onclick="PoKeypadEnter" disabled="@(!_poSubmitEnabled && !_poNewRoundEnabled)" @ref="_poNewRoundButtonRef">@(_poNewRoundEnabled ? "Next" : "Submit")</button>
             <button class="keypad-toggle" @onclick="() => _poShowKeypad = !_poShowKeypad">123</button>
         </div>
 
@@ -229,14 +236,25 @@ else if (_mode == BlackjackMode.Payouts)
             <p style="color: @(_poIsCorrect ? "blue" : "red");">@_poPromptDetailText</p>
         </div>
 
-        <div class="button-row keypad-actions">
-            <button @onclick="EndSession">End Session</button>
-        </div>
+        @* Pinned bottom bar: Help | Submit, or Next once scored | End Session *@
+        <GameBar HelpTitle="Blackjack Payouts" OnEnd="EndSession">
+            <ChildContent>
+                <button class="game-bar-main" @onclick="PoKeypadEnter" disabled="@(!_poSubmitEnabled && !_poNewRoundEnabled)" @ref="_poNewRoundButtonRef">@(_poNewRoundEnabled ? "Next" : "Submit")</button>
+            </ChildContent>
+            <HelpContent>
+                <ul>
+                    <li><strong>3 to 2:</strong> pay the wager plus half of it. $20 pays $30; $15 pays $22.50.</li>
+                    <li><strong>6 to 5:</strong> pay $6 for every $5 wagered. $25 pays $30; $15 pays $18.</li>
+                    <li>A wager with 50 cents at 3 to 2: the 50 cents is paid even money. $5.50 pays $7.50 + $0.50 = $8.00.</li>
+                    <li>Enter only the payout, not the wager.</li>
+                </ul>
+            </HelpContent>
+        </GameBar>
     </div>
 }
 else
 {
-    <div class="play-screen sw-screen">
+    <div class="play-screen sw-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -260,9 +278,9 @@ else
                     <div class="paged-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
 
                     <div class="sw-hand-cards" style="position: relative; width: 130px; height: 195px;">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name"
                              style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Code"
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name"
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
@@ -294,40 +312,47 @@ else
             }
         </div>
 
+        @* First round only: what to do *@
+        @if (_swTotalAnswered == 0 && !_swRoundScored)
+        {
+            <p class="first-hint">Tap Lucky Ladies and 21 + 3 on each hand to call Win or Lose, then Submit.</p>
+        }
+
         <div class="sw-footer">
-            <div class="sw-footer-buttons">
-                @* Submit only appears once every wager on every hand has been
-                   tapped (Win/Lose chosen) *@
-                @if (_swSubmitEnabled && SwAllAnswered)
-                {
-                    <button @onclick="SwSubmitRound">Submit</button>
-                }
-                <button @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Deal</button>
-                <button @onclick="EndSession">End Session</button>
-            </div>
 
             <div class="sw-footer-dealer">
                 <h3 style="color: black; margin: 0;">Dealer</h3>
-                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Code" class="sw-dealer-card" />
+                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Name" class="sw-dealer-card" />
             </div>
 
             <div class="feedback-area sw-footer-feedback">
                 <p style="font-weight: bold; color: @(_swIsCorrect ? "blue" : "red"); margin: 0; height: 1.5rem;">@_swResultText</p>
+                @* After Submit: why each wager won or lost *@
+                @foreach (string line in _swWhyLines)
+                {
+                    <p class="why-line">@line</p>
+                }
                 <p style="margin: 0.25rem 0 0 0;">@_swScoreText</p>
             </div>
         </div>
 
-        @* Reference chart toggle kept at the very bottom, out of the way *@
-        <div class="button-row rules-row">
-            <button @onclick="() => _swShowWagerRules = !_swShowWagerRules">@(_swShowWagerRules ? "Hide" : "Show") Wager Rules</button>
-        </div>
-
-        @if (_swShowWagerRules)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/SideWagerRules.png" alt="Side Wager Rules" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
+        @* Pinned bottom bar: Help | Submit (once every wager is called),
+           then Deal | End Session *@
+        <GameBar HelpTitle="Side Wager Rules" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_swRoundScored)
+                {
+                    <button class="game-bar-main" @onclick="SwSubmitRound" disabled="@(!(_swSubmitEnabled && SwAllAnswered))">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Deal</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <img src="images/cards/SideWagerRules.png" alt="Side Wager Rules" class="help-image" />
+            </HelpContent>
+        </GameBar>
     </div>
 }
 
@@ -855,7 +880,7 @@ else
     private string _swResultText = string.Empty;
     private bool _swIsCorrect;
     private string _swScoreText = "Score: 0 / 0 (0.0%)";
-    private bool _swShowWagerRules;
+
     private int _swCurrentHand; // phone layout only: which player hand is showing
 
     private void SwStartGame()
@@ -908,8 +933,11 @@ else
         if (_swCurrentHand < _swHands.Count - 1) _swCurrentHand++;
     }
 
+    private readonly List<string> _swWhyLines = new();
+
     private void SwDealAgain()
     {
+        _swWhyLines.Clear();
         foreach (SwHandState hand in _swHands)
         {
             hand.LuckyLadiesSelection = null;
@@ -969,6 +997,28 @@ else
         }
 
         _swTotalAnswered++;
+
+        // Why each wager won or lost, hand by hand
+        _swWhyLines.Clear();
+        for (int h = 0; h < _swHands.Count; h++)
+        {
+            SwHandState hand = _swHands[h];
+            BlackjackHand two = new();
+            two.AddCard(hand.Card1);
+            two.AddCard(hand.Card2);
+            bool ll = SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2);
+            bool tc = SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _swDealerCard!);
+            string tcName = !tc ? "no straight, flush or trips"
+                : ThreeCardEvaluator.GetCategory(new[] { hand.Card1, hand.Card2, _swDealerCard! }) switch
+                {
+                    ThreeCardCategory.StraightFlush => "Straight Flush",
+                    ThreeCardCategory.ThreeOfAKind => "Three of a Kind",
+                    ThreeCardCategory.Straight => "Straight",
+                    _ => "Flush"
+                };
+            string prefix = _swHands.Count > 1 ? $"Hand {h + 1}: " : "";
+            _swWhyLines.Add($"{prefix}Lucky Ladies {two.Total}: {(ll ? "wins (20)" : "loses (needs 20)")}. 21 + 3 with the dealer card: {tcName}, {(tc ? "wins" : "loses")}.");
+        }
 
         if (roundCorrect == _swHandCount * 2)
         {

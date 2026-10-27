@@ -1,0 +1,33 @@
+@* The bar pinned to the bottom of every game's play screen, the same in
+   every game: Help on the left, the game's own main action(s) in the
+   middle (ChildContent: Submit / Next / Deal / Sort / Reveal), and End
+   Session on the right. Help opens the game's rules or chart (HelpContent)
+   in a pop-up; OK or tapping outside it closes it. *@
+
+<div class="game-bar">
+    <button type="button" class="game-bar-help" @onclick="() => _showHelp = true">Help</button>
+    @ChildContent
+    <button type="button" class="game-bar-end" @onclick="OnEnd">@EndLabel</button>
+</div>
+
+@if (_showHelp)
+{
+    <div class="reveal-backdrop" @onclick="() => _showHelp = false"></div>
+    <div class="reveal-box help-box" role="dialog" aria-label="@HelpTitle">
+        <p class="help-title">@HelpTitle</p>
+        <div class="help-body">
+            @HelpContent
+        </div>
+        <button type="button" class="mode-start" @onclick="() => _showHelp = false">OK</button>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string HelpTitle { get; set; } = "Help";
+    [Parameter] public RenderFragment? HelpContent { get; set; }
+    [Parameter] public EventCallback OnEnd { get; set; }
+    [Parameter] public string EndLabel { get; set; } = "End Session";
+
+    private bool _showHelp;
+}

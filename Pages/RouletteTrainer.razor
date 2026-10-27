@@ -51,7 +51,7 @@
 }
 else
 {
-    <div class="play-screen keypad-screen rl-screen">
+    <div class="play-screen keypad-screen rl-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -109,7 +109,6 @@ else
                        @onkeydown="HandleAnswerKeyDown"
                        @ref="_answerRef"
                        placeholder="Total payout (chips)" />
-                <button class="answer-primary" @onclick="Submit">Submit</button>
                 <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
             </div>
 
@@ -140,36 +139,61 @@ else
             </div>
         }
 
-        @* Pinned to the bottom of the screen: Help (the pays) always;
-           Next once the round has been answered *@
-        <div class="rl-bar">
-            <button type="button" class="rl-help-btn" @onclick="() => _showHelp = true">Help</button>
-            @if (_answered)
-            {
-                <button type="button" class="rl-next" @onclick="NextRound" @ref="_nextRef">Next</button>
-            }
-        </div>
-
-        @if (_showHelp)
-        {
-            <div class="rl-help-backdrop" @onclick="() => _showHelp = false"></div>
-            <div class="rl-help" role="dialog" aria-label="Roulette pays">
-                <p class="rl-help-title">Roulette Pays</p>
-                <table>
+        @* Pinned bottom bar: Help (the pays) | Submit, then Next once
+           answered (same as the keypad's Enter) | End Session *@
+        <GameBar HelpTitle="Roulette Pays" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_answered)
+                {
+                    <button class="game-bar-main" @onclick="Submit">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="NextRound" @ref="_nextRef">Next</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <table class="help-table">
                     <tr><td>Straight up</td><td>35 to 1</td></tr>
                     <tr><td>Split</td><td>17 to 1</td></tr>
                     <tr><td>Street</td><td>11 to 1</td></tr>
                     <tr><td>Corner</td><td>8 to 1</td></tr>
                     <tr><td>Six-line</td><td>5 to 1</td></tr>
                 </table>
-                <p class="rl-help-note">Enter the winnings only. The chips on the layout stay with the player and aren't counted.</p>
-                <button type="button" class="mode-start" @onclick="() => _showHelp = false">Close</button>
-            </div>
-        }
+                <p>Enter the winnings only. The chips on the layout stay with the player and aren't counted.</p>
+            </HelpContent>
+        </GameBar>
+    </div>
+}
+
+@if (_showSessionSummary)
+{
+    <div class="session-summary">
+        <h3>Session Summary</h3>
+        <p>Rounds Played: @_played</p>
+        <p>Correct: @_correct</p>
+        <p>Incorrect: @(_played - _correct)</p>
+        <button @onclick="CloseSummary">OK</button>
     </div>
 }
 
 @code {
+    // End Session: the summary when any rounds were played, otherwise
+    // straight back to the start screen (same as the other games)
+    private bool _showSessionSummary;
+
+    private void EndSession()
+    {
+        if (_played > 0) _showSessionSummary = true;
+        else BackToStart();
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        BackToStart();
+    }
+
     private enum RouletteLevel { Beginner, Intermediate, Advanced }
 
     // One betting spot that wins on 17. X/Y are where its chip sits, in
@@ -244,6 +268,7 @@ else
 
     private void OnResetRequested()
     {
+        _showSessionSummary = false;
         _started = false;
         _showHelp = false;
         InvokeAsync(StateHasChanged);

@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Components
 @using DealerSchoolTrainerWeb.Core
 @using DealerSchoolTrainerWeb.Games.ThreeCardTrainer
+@using DealerSchoolTrainerWeb.Games.HoldemTrainer
 @implements IDisposable
 @inject GameResetService GameReset
 @inject IJSRuntime JS
@@ -26,7 +27,7 @@
 }
 else
 {
-    <div class="play-screen tcp-play">
+    <div class="play-screen tcp-play has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -37,7 +38,7 @@ else
                 <div class="card-row">
                     @foreach (Card c in _playerCards)
                     {
-                        <img src="images/cards/@(c.Code).png" alt="@c.Code" class="game-card" />
+                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="game-card" />
                     }
                 </div>
 
@@ -47,7 +48,7 @@ else
                 <div class="card-row">
                     @foreach (Card c in _dealerCards)
                     {
-                        <img src="images/cards/@(c.Code).png" alt="@c.Code" class="game-card" />
+                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="game-card" />
                     }
                 </div>
             </div>
@@ -116,15 +117,6 @@ else
                         }
                     </div>
                 }
-
-                @if (!_roundScored)
-                {
-                    <button class="tcp-rail-primary" @onclick="SubmitRound">Submit</button>
-                }
-                else
-                {
-                    <button class="tcp-rail-primary" @onclick="DealAgain">Deal</button>
-                }
             </div>
         </div>
 
@@ -134,30 +126,38 @@ else
             <div class="tcp-fly-backdrop" @onclick="CloseWager"></div>
         }
 
+        @* First round only: what to do *@
+        @if (_totalRounds == 0 && !_roundScored)
+        {
+            <p class="first-hint">Tap each wager on the right to call it, mark Ante Bonus inside Ante if it pays, then Submit.</p>
+        }
+
         <div class="feedback-area">
             <p style="font-weight: bold; color: @(_isCorrect ? "blue" : "red");">@_resultText</p>
+            @* After Submit: why each wager won, lost or pushed *@
+            @foreach (string line in _whyLines)
+            {
+                <p class="why-line">@line</p>
+            }
             <p>@_scoreText</p>
         </div>
 
-        @* Phones: Submit / Deal live at the bottom of the wager buttons,
-           so this row keeps only End Session there *@
-        <div class="button-row">
-            <button class="tcp-main-action" @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
-            <button class="tcp-main-action" @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
-            <button @onclick="EndSession">End Session</button>
-        </div>
-
-        @* Reference chart toggle kept at the bottom, out of the way *@
-        <div class="button-row rules-row">
-            <button @onclick="() => _showWagerRules = !_showWagerRules">@(_showWagerRules ? "Hide" : "Show") Wager Rules</button>
-        </div>
-
-        @if (_showWagerRules)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/ThreeCardWagerRules.png" alt="Three Card Prime Wager Rules" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
+        @* Pinned bottom bar: Help | Submit, then Deal | End Session *@
+        <GameBar HelpTitle="Three Card Prime Wager Rules" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_roundScored)
+                {
+                    <button class="game-bar-main" @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <img src="images/cards/ThreeCardWagerRules.png" alt="Three Card Prime Wager Rules" class="help-image" />
+            </HelpContent>
+        </GameBar>
     </div>
 }
 
@@ -241,7 +241,6 @@ else
     private bool _isCorrect;
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
-    private bool _showWagerRules;
 
     // Phones: which wager's choices are slid out (null = none)
     private WagerState? _openWager;
@@ -318,6 +317,7 @@ else
 
     private void DealNewRound()
     {
+        _whyLines.Clear();
         _dealEnabled = false;
 
         // Training boost: All 6 (Three of a Kind or better from all six
@@ -452,6 +452,8 @@ else
         _totalRounds++;
         if (allCorrect) _correctCount++;
 
+        BuildWhyLines(anteOutcome, playOutcome, pairPlusOutcome, primeOutcome, allSixOutcome, anteBonusActual);
+
         _isCorrect = allCorrect;
         _resultText = allCorrect ? "CORRECT" : "INCORRECT";
 
@@ -464,6 +466,77 @@ else
         _submitEnabled = false;
         _dealEnabled = true;
     }
+
+    // After Submit: one short line per wager saying why it won, lost or
+    // pushed, so a miss teaches the rule rather than just marking it wrong
+    private readonly List<string> _whyLines = new();
+
+    private void BuildWhyLines(WagerOutcome ante, WagerOutcome play, WagerOutcome pairBonus,
+                               WagerOutcome prime, WagerOutcome allSix, bool anteBonus)
+    {
+        _whyLines.Clear();
+
+        string player = DescribeThree(_playerCards);
+        string dealer = DescribeThree(_dealerCards);
+        bool qualifies = ThreeCardEvaluator.DealerQualifies(_dealerCards);
+
+        if (!qualifies)
+        {
+            _whyLines.Add($"Dealer {dealer} does not qualify (needs Queen high or better): Ante wins, Play pushes.");
+        }
+        else
+        {
+            int cmp = ThreeCardEvaluator.Compare(_playerCards, _dealerCards);
+            string vs = cmp > 0 ? "beats" : cmp < 0 ? "loses to" : "ties";
+            _whyLines.Add($"Dealer qualifies with {dealer}. Player {player} {vs} the dealer: Ante and Play {Word(ante).ToLowerInvariant()}.");
+        }
+
+        _whyLines.Add(anteBonus
+            ? $"Ante Bonus pays: player has {player} (Straight or better)."
+            : "Ante Bonus: no (needs a Straight or better).");
+        _whyLines.Add($"Pair Bonus {Word(pairBonus).ToLowerInvariant()}: player has {player}{(pairBonus == WagerOutcome.Win ? "" : " (needs a Pair or better)")}.");
+
+        bool playerOneColor = _playerCards.All(IsRed) || !_playerCards.Any(IsRed);
+        _whyLines.Add(prime == WagerOutcome.Win
+            ? (playerOneColor ? "Prime wins: the player's 3 cards are all one color." : "Prime wins: all 6 cards are one color.")
+            : "Prime loses: the player's cards are mixed colors.");
+
+        HandRank six = HandEvaluator.BestHandRank(_playerCards.Concat(_dealerCards).ToList());
+        _whyLines.Add($"All 6 {Word(allSix).ToLowerInvariant()}: best 5 of all 6 cards is {HandEvaluator.HandRankName(six)}{(allSix == WagerOutcome.Win ? "" : " (needs Three of a Kind or better)")}.");
+    }
+
+    private static string Word(WagerOutcome o) => o.ToString();
+
+    private static bool IsRed(Card c) => c.Suit is Suit.Hearts or Suit.Diamonds;
+
+    // e.g. "a Pair of 7s", "King high", "a Straight"
+    private static string DescribeThree(IReadOnlyList<Card> cards)
+    {
+        ThreeCardCategory cat = ThreeCardEvaluator.GetCategory(cards);
+        switch (cat)
+        {
+            case ThreeCardCategory.StraightFlush: return "a Straight Flush";
+            case ThreeCardCategory.ThreeOfAKind: return $"Three {RankPlural(cards[0].Rank)}";
+            case ThreeCardCategory.Straight: return "a Straight";
+            case ThreeCardCategory.Flush: return "a Flush";
+            case ThreeCardCategory.Pair:
+                Rank pair = cards.GroupBy(c => c.Rank).First(g => g.Count() == 2).Key;
+                return $"a Pair of {RankPlural(pair)}";
+            default:
+                return $"{RankName(cards.Max(c => c.Rank))} high";
+        }
+    }
+
+    private static string RankName(Rank r) => r switch
+    {
+        Rank.Ace => "Ace",
+        Rank.King => "King",
+        Rank.Queen => "Queen",
+        Rank.Jack => "Jack",
+        _ => ((int)r).ToString()
+    };
+
+    private static string RankPlural(Rank r) => r == Rank.Six ? "6s" : RankName(r) + "s";
 
     private static bool GradeWager(WagerState w, WagerOutcome actual)
     {

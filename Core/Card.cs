@@ -69,5 +69,15 @@ public sealed class Card
         _ => throw new ArgumentOutOfRangeException(nameof(Suit), Suit, "Unrecognized suit.")
     };
 
+    /// <summary>Spoken name for screen readers and alt text, e.g. "4 of Clubs", "Ace of Spades".</summary>
+    public string Name => (Rank switch
+    {
+        Rank.Ace => "Ace",
+        Rank.King => "King",
+        Rank.Queen => "Queen",
+        Rank.Jack => "Jack",
+        _ => ((int)Rank).ToString()
+    }) + " of " + Suit;
+
     public override string ToString() => Code;
 }

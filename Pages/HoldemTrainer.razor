@@ -34,7 +34,7 @@
 }
 else
 {
-    <div class="play-screen">
+    <div class="play-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -80,9 +80,9 @@ else
                     <div class="hd-hand-number" style="color: dimgray; font-size: 0.85rem;">@(handIndex + 1)</div>
 
                     <div class="hd-hand-cards" style="position: relative; width: 130px; height: 195px;">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Code"
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name"
                              style="position: absolute; top: 0; left: 25px; width: 100px; height: 140px;" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Code"
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name"
                              style="position: absolute; top: 45px; left: 0; width: 100px; height: 140px;" />
                     </div>
 
@@ -122,6 +122,7 @@ else
                     {
                         <p class="hd-hand-result @(hand.WagerWrong ? "hd-result-bad" : "hd-result-ok")">
                             @hand.RankName &middot; @(hand.WagerWrong ? $"\u2717 actually {hand.ActualOutcome}" : "\u2713 correct")
+                            <br /><span class="why-line">@hand.Reason</span>
                         </p>
                     }
                 </div>
@@ -138,28 +139,11 @@ else
              the trainee taps to mark the 2 unused cards. Settle the Bets:
              the dealer's best hand comes already marked. -->
         <div class="hd-center">
-            <div class="hd-buttons">
-                @* Settle the Bets: Submit only appears once every player
-                   hand has a Win/Lose/Push called. Identify the Hands: only
-                   once the hand is set correctly (the rank picker shows). *@
-                @if (_submitEnabled && (_mode == TrainerMode.IdentifyHands ? _dealerHandSet : AllHandsAnswered))
-                {
-                    <button class="hd-main-action" @onclick="SubmitRound">Submit</button>
-                }
-                @* Deal only appears after Submit (once the round is scored) *@
-                @if (_dealEnabled)
-                {
-                    <button class="hd-main-action" @onclick="DealAgain">Deal</button>
-                }
-                @* Identify the Hands: Reveal shows the dealer's best hand and
-                   its rank in a pop-up, sets them, and counts the round as a
-                   miss *@
-                @if (_mode == TrainerMode.IdentifyHands && !_roundScored)
-                {
-                    <button class="reveal-button" @onclick="RevealIdentify">Reveal</button>
-                }
-                <button @onclick="EndSession">End Session</button>
-            </div>
+            @* First round of Settle the Bets only: what to do *@
+            @if (_mode == TrainerMode.SettleBets && _totalRounds == 0 && !_roundScored)
+            {
+                <p class="first-hint hd-first-hint">Call each player Win, Lose or Push against the dealer's marked hand, then Submit.</p>
+            }
 
             <h3 class="hd-community-title">Community Cards</h3>
             <div class="hd-community hd-community-settle">
@@ -170,7 +154,7 @@ else
                     bool unused = _communityRotated[communityIndex];
 
                     <div class="hd-community-slot">
-                        <img src="images/cards/@(c?.Code).png" alt="@c?.Code"
+                        <img src="images/cards/@(c?.Code).png" alt="@c?.Name"
                              @onclick="() => ToggleCommunityRotation(communityIndex)"
                              class="pai-gow-card hd-card @(unused ? "hd-card-unused" : "")"
                              style="cursor: @(CanMarkCards ? "pointer" : "default"); @(unused ? "transform: rotate(45deg);" : "")" />
@@ -180,11 +164,11 @@ else
 
             <h3 class="hd-dealer-title">Dealer</h3>
             <div class="hd-dealer">
-                <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Code"
+                <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Name"
                      @onclick="() => ToggleDealerCard(1)"
                      class="pai-gow-card hd-card @(_dealerCard1Rotated ? "hd-card-unused" : "")"
                      style="cursor: @(CanMarkCards ? "pointer" : "default"); @(_dealerCard1Rotated ? "transform: rotate(45deg);" : "")" />
-                <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Code"
+                <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Name"
                      @onclick="() => ToggleDealerCard(2)"
                      class="pai-gow-card hd-card @(_dealerCard2Rotated ? "hd-card-unused" : "")"
                      style="cursor: @(CanMarkCards ? "pointer" : "default"); @(_dealerCard2Rotated ? "transform: rotate(45deg);" : "")" />
@@ -233,7 +217,7 @@ else
                 <div style="margin-top: 0.25rem;">
                     @foreach ((string text, string color) in _handRankLines)
                     {
-                        <p style="margin: 0; font-weight: bold; color: @color; white-space: nowrap;">@text</p>
+                        <p style="margin: 0; font-weight: bold; color: @color;">@text</p>
                     }
                 </div>
             }
@@ -260,17 +244,29 @@ else
             </RevealPopup>
         }
 
-        @* Reference chart toggle kept at the bottom, out of the way *@
-        <div class="button-row rules-row">
-            <button @onclick="() => _showHandRankings = !_showHandRankings">@(_showHandRankings ? "Hide" : "Show") Hand Rankings</button>
-        </div>
-
-        @if (_showHandRankings)
-        {
-            <div style="margin: 1rem 0;">
-                <img src="images/cards/HandRankings.png" alt="Hold'em Hand Rankings" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
+        @* Pinned bottom bar: Help | (Identify the Hands: Reveal) Submit, then
+           Deal | End Session. Submit is enabled once every player hand is
+           called (Settle the Bets) or the hand is set (Identify the Hands). *@
+        <GameBar HelpTitle="Hand Rankings" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_roundScored)
+                {
+                    @if (_mode == TrainerMode.IdentifyHands)
+                    {
+                        <button class="reveal-button" @onclick="RevealIdentify">Reveal</button>
+                    }
+                    <button class="game-bar-main" @onclick="SubmitRound"
+                            disabled="@(!(_submitEnabled && (_mode == TrainerMode.IdentifyHands ? _dealerHandSet : AllHandsAnswered)))">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="DealAgain" disabled="@(!_dealEnabled)">Deal</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <img src="images/cards/HandRankings.png" alt="Hold'em Hand Rankings" class="help-image" />
+            </HelpContent>
+        </GameBar>
     </div>
 }
 
@@ -349,6 +345,7 @@ else
         public bool WagerWrong;
         public WagerOutcome? ActualOutcome; // set at Submit, to outline the right answer when the call was wrong
         public string RankName = string.Empty; // set at Submit: this hand's poker rank, for the phone result line
+        public string Reason = string.Empty;   // set at Submit: why it won, lost or pushed
     }
 
     private bool _started;
@@ -393,7 +390,6 @@ else
     private readonly List<(string Text, string Color)> _handRankLines = new();
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
-    private bool _showHandRankings;
 
     // Settle the Bets mode state only.
     private Card? _dealerCard1;
@@ -751,10 +747,21 @@ else
 
             HandRank handRank = HandEvaluator.BestHandRank(sevenCards);
             hand.RankName = HandEvaluator.HandRankName(handRank);
-            _handRankLines.Add(($"Hand {h + 1}: {HandEvaluator.HandRankName(handRank)}", hand.WagerWrong ? "red" : "darkblue"));
+
+            // Why: a higher rank wins outright; the same rank is decided by
+            // the higher cards (kickers); identical 5-card hands push
+            string dealerName = HandEvaluator.HandRankName(dealerRank);
+            hand.Reason = handRank != dealerRank
+                ? $"{hand.RankName} {(handRank > dealerRank ? "beats" : "loses to")} the dealer's {dealerName}"
+                : actualOutcome == WagerOutcome.Push
+                    ? $"Same 5-card strength as the dealer's {dealerName}: push"
+                    : $"Both {dealerName}: the higher cards (kickers) {(actualOutcome == WagerOutcome.Win ? "are the player's" : "are the dealer's")}";
+
+            _handRankLines.Add(($"Hand {h + 1}: {hand.Reason}", hand.WagerWrong ? "red" : "darkblue"));
         }
         _handRankLines.Insert(0, ($"Dealer: {HandEvaluator.HandRankName(dealerRank)}", "darkblue"));
-        _mistakesText = mistakes.ToString();
+        // The per-hand lines below already say who won and why
+        _mistakesText = string.Empty;
 
         _totalRounds++;
         if (allCorrect) _correctCount++;

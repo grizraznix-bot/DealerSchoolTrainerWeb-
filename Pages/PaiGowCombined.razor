@@ -87,7 +87,7 @@ else if (_mode == PaiGowMode.HandSetting)
     @* On phones (see app.css, "Pai Gow - Hand Setting") this screen
        becomes one column: Low hand, the 7 cards (wrapping 4 + 3),
        action buttons, score, then the result. *@
-    <div class="play-screen hs-screen">
+    <div class="play-screen hs-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -105,7 +105,7 @@ else if (_mode == PaiGowMode.HandSetting)
                              class="pai-gow-card hs-low-slot">
                             @if (cardAtSlot >= 0)
                             {
-                                <img src="images/cards/@(_hsCards[cardAtSlot].ImageCode).png" alt="@_hsCards[cardAtSlot].ImageCode" style="width: 100%; height: 100%;" />
+                                <img src="images/cards/@(_hsCards[cardAtSlot].ImageCode).png" alt="@_hsCards[cardAtSlot].Name" style="width: 100%; height: 100%;" />
                             }
                         </div>
                     }
@@ -150,44 +150,43 @@ else if (_mode == PaiGowMode.HandSetting)
                 int cardIndex = i;
                 bool inLow = _hsCardPosition[cardIndex] != 0;
 
-                <img src="images/cards/@(_hsCards[cardIndex].ImageCode).png" alt="@_hsCards[cardIndex].ImageCode"
+                <img src="images/cards/@(_hsCards[cardIndex].ImageCode).png" alt="@_hsCards[cardIndex].Name"
                      @onclick="() => HsCardClicked(cardIndex)"
                      class="pai-gow-card hs-card"
                      style="cursor: pointer; @(inLow ? "opacity: 0;" : "")" />
             }
         </div>
 
+        @* First round only: what to do *@
+        @if (_hsTotalRounds == 0 && !_hsDealEnabled)
+        {
+            <p class="first-hint">Tap 2 cards to move them to the Low Hand (tap a Low Hand card to send it back). Sort lines your cards up. Then Submit.</p>
+        }
+
         <p class="hs-score">@_hsScoreText</p>
 
-        <div class="button-row hs-buttons">
-            @* One step button that changes as the hand progresses:
-               Sort -> (once sorted) Submit -> (once scored) Deal *@
-            @if (_hsSortEnabled)
-            {
-                <button @onclick="HsSortHand">Sort</button>
-            }
-            else if (_hsSubmitEnabled)
-            {
-                <button @onclick="HsSubmitHand">Submit</button>
-            }
-            else if (_hsDealEnabled)
-            {
-                <button @onclick="HsDealAgain">Deal</button>
-            }
-            <button @onclick="EndSession">End Session</button>
-        </div>
-
-        @* Reference chart toggle kept at the bottom, out of the way *@
-        <div class="button-row rules-row">
-            <button @onclick="() => _hsShowHouseWays = !_hsShowHouseWays">@(_hsShowHouseWays ? "Hide" : "Show") House Ways</button>
-        </div>
-
-        @if (_hsShowHouseWays)
-        {
-            <div class="rules-image" style="margin: 1rem 0;">
-                <img src="images/cards/HouseWays.png" alt="Pai Gow House Ways" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
+        @* Pinned bottom bar: Help | one step button that changes as the
+           hand progresses: Sort -> (once sorted) Submit -> (once scored)
+           Deal | End Session *@
+        <GameBar HelpTitle="House Ways" OnEnd="EndSession">
+            <ChildContent>
+                @if (_hsSortEnabled)
+                {
+                    <button class="game-bar-main" @onclick="HsSortHand">Sort</button>
+                }
+                else if (_hsSubmitEnabled)
+                {
+                    <button class="game-bar-main" @onclick="HsSubmitHand">Submit</button>
+                }
+                else if (_hsDealEnabled)
+                {
+                    <button class="game-bar-main" @onclick="HsDealAgain">Deal</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <img src="images/cards/HouseWays.png" alt="Pai Gow House Ways" class="help-image" />
+            </HelpContent>
+        </GameBar>
     </div>
 }
 else
@@ -196,7 +195,7 @@ else
        becomes one column: player hands, dealer hands, the Ace-High
        push note, the four wagers (2 x 2), action buttons, then the
        winning-wager results. *@
-    <div class="play-screen sb-screen">
+    <div class="play-screen sb-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -209,14 +208,14 @@ else
                 <div class="sb-cards" style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                     @foreach (PaiGowCard c in _sbPlayerHighSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
                     }
                 </div>
                 <div style="color: dimgray; font-size: 0.85rem;">Low Hand</div>
                 <div class="sb-cards" style="display: flex; gap: 8px;">
                     @foreach (PaiGowCard c in _sbPlayerLowSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
                     }
                 </div>
             </div>
@@ -256,13 +255,14 @@ else
                        Locked="_sbRoundScored" Wrong="_sbFoulWrong" />
             </div>
 
-            <div class="sb-actions">
+            @* First round only: what to do *@
+            @if (_sbTotalRounds == 0 && !_sbRoundScored)
+            {
+                <p class="first-hint sb-first-hint">Call each wager Win, Lose or Push, or mark the player's hand Foul, then Submit.</p>
+            }
+
+            <div class="sb-status">
                 <p style="font-weight: bold; color: @(_sbIsCorrect ? "blue" : "red"); margin: 0;">@_sbResultText</p>
-                <div>
-                    <button @onclick="SbSubmitRound" disabled="@(!_sbSubmitEnabled)">Submit</button>
-                    <button @onclick="SbDealAgain" disabled="@(!_sbDealEnabled)">Deal</button>
-                    <button @onclick="EndSession">End Session</button>
-                </div>
                 <p style="margin: 0;">@_sbScoreText</p>
             </div>
 
@@ -287,14 +287,14 @@ else
                 <div class="sb-cards" style="display: flex; gap: 8px; margin-bottom: 0.5rem;">
                     @foreach (PaiGowCard c in _sbDealerLowSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
                     }
                 </div>
                 <div style="color: dimgray; font-size: 0.85rem;">High Hand</div>
                 <div class="sb-cards" style="display: flex; gap: 8px;">
                     @foreach (PaiGowCard c in _sbDealerHighSorted)
                     {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.ImageCode" class="sb-card" />
+                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
                     }
                 </div>
             </div>
@@ -309,17 +309,22 @@ else
         </div>
         </div>
 
-        @* Reference chart toggle kept at the bottom, out of the way *@
-        <div class="button-row rules-row">
-            <button @onclick="() => _sbShowWagerRules = !_sbShowWagerRules">@(_sbShowWagerRules ? "Hide" : "Show") Wager Rules</button>
-        </div>
-
-        @if (_sbShowWagerRules)
-        {
-            <div class="rules-image" style="margin: 1rem 0;">
-                <img src="images/cards/SettlingBetsWagerRules.png" alt="Pai Gow - Settling Bets Wager Rules" style="max-width: 500px; width: 100%;" />
-            </div>
-        }
+        @* Pinned bottom bar: Help | Submit, then Deal | End Session *@
+        <GameBar HelpTitle="Settling Bets Wager Rules" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_sbRoundScored)
+                {
+                    <button class="game-bar-main" @onclick="SbSubmitRound" disabled="@(!_sbSubmitEnabled)">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="SbDealAgain" disabled="@(!_sbDealEnabled)">Deal</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <img src="images/cards/SettlingBetsWagerRules.png" alt="Pai Gow - Settling Bets Wager Rules" class="help-image" />
+            </HelpContent>
+        </GameBar>
     </div>
 }
 
@@ -466,7 +471,6 @@ else
     private const int HsCardCount = 7;
 
     private int _hsJokerFrequencyLevel;
-    private bool _hsShowHouseWays;
 
     private PaiGowDeck _hsDeck = new();
     private readonly PaiGowSolver _hsSolver = new();
@@ -698,7 +702,6 @@ else
     private readonly List<(string Text, string Color)> _sbWinningWagerLines = new();
     private bool _sbIsCorrect;
     private string _sbScoreText = "Score: 0 / 0 (0.0%)";
-    private bool _sbShowWagerRules;
 
     private void SbStartGame()
     {

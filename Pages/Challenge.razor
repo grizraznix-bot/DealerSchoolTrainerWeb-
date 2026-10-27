@@ -56,7 +56,7 @@
 }
 else if (_screen == Screen.Playing)
 {
-    <div class="play-screen keypad-screen ch-screen">
+    <div class="play-screen keypad-screen ch-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -81,7 +81,7 @@ else if (_screen == Screen.Playing)
                 @for (int i = 0; i < _hand.Count; i++)
                 {
                     var card = _hand.CardAt(i);
-                    <img src="images/cards/@(card.Code).png" alt="@card.Code" class="card-image fc-card" />
+                    <img src="images/cards/@(card.Code).png" alt="@card.Name" class="card-image fc-card" />
                 }
             </div>
 
@@ -97,7 +97,6 @@ else if (_screen == Screen.Playing)
                        disabled="@(!_answering)"
                        placeholder="Total" />
                 <button class="bust-button" @onclick="AnswerBust" disabled="@(!_answering)">BUST</button>
-                <button class="answer-primary" @onclick="SubmitTyped" disabled="@(!_answering)">Submit</button>
                 <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
             </div>
 
@@ -137,7 +136,6 @@ else if (_screen == Screen.Playing)
                        @ref="_answerRef"
                        readonly="@(!_answering)"
                        placeholder="Amount" />
-                <button class="answer-primary" @onclick="SubmitTyped" disabled="@(!_answering)">Submit</button>
                 <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
             </div>
 
@@ -152,11 +150,29 @@ else if (_screen == Screen.Playing)
             </div>
         }
 
-        @* Pinned to the bottom of the screen: ends the run and keeps the
-           score so far (no wrong answer needed to stop) *@
-        <div class="ch-endbar">
-            <button type="button" class="ch-end" @onclick="EndByUser">End</button>
-        </div>
+        @* Pinned bottom bar: Help | Submit (same as the keypad's Enter) |
+           End Session, which ends the run and keeps the score so far (no
+           wrong answer needed to stop) *@
+        <GameBar HelpTitle="Challenge Rules" OnEnd="EndByUser">
+            <ChildContent>
+                <button class="game-bar-main" @onclick="SubmitTyped" disabled="@(!_answering)">Submit</button>
+            </ChildContent>
+            <HelpContent>
+                <ul>
+                    <li>One wrong answer, or the clock running out, ends the run.</li>
+                    <li>Each correct answer scores 10 points + 1 point for every second left on the clock.</li>
+                    @if (_game == ChallengeGame.FlashCards)
+                    {
+                        <li>Enter the total of the dealer's complete hand (dealer hits soft 17), or BUST. 20 seconds per hand.</li>
+                    }
+                    else
+                    {
+                        <li>Pay each blackjack at @(_ratio == PayoutRatio.ThreeToTwo ? "3 to 2" : "6 to 5"). 30 seconds per wager; wagers grow every 10 answers.</li>
+                    }
+                    <li>End Session stops the run and saves the score so far.</li>
+                </ul>
+            </HelpContent>
+        </GameBar>
     </div>
 }
 else
