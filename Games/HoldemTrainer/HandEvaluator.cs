@@ -163,8 +163,12 @@ public static class HandEvaluator
             while (kickerOrder.Count < 5) kickerOrder.Add(0);
         }
 
-        long score = (long)category * 100_000_000L;
-        long placeValue = 1_000_000L;
+        // Two digits per card, all five cards counted: category, then
+        // kickers at 10^8, 10^6, 10^4, 10^2, 10^0. (Previously the 5th
+        // card's place value rounded down to 0, so High Card and Flush
+        // hands differing only in the last card scored as equal.)
+        long score = (long)category * 10_000_000_000L;
+        long placeValue = 100_000_000L;
         foreach (int k in kickerOrder.Take(5))
         {
             score += (long)k * placeValue;

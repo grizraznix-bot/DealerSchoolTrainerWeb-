@@ -52,18 +52,23 @@ public sealed class PaiGowSolver
             return (low1, low2, high);
         }
 
-        if (HasFullHouse())
-        {
-            ApplyFullHouseRule(ref low1, ref low2, high);
-            return (low1, low2, high);
-        }
-
         int pairCount = ExactPairCount();
         int tripCountValue = TripCount();
 
+        // Two sets of trips must be checked BEFORE the full house: two
+        // trips also count as a full house (the second trips supply the
+        // "pair"), but the full house rule looks for an exact pair to
+        // move Low and finds none -- that used to crash the deal/submit
+        // (e.g. 9-9-9 3-3-3 6, or Joker-A-A 5-5-5 x).
         if (tripCountValue >= 2)
         {
             ApplyTwoTripsRule(ref low1, ref low2, high);
+            return (low1, low2, high);
+        }
+
+        if (HasFullHouse())
+        {
+            ApplyFullHouseRule(ref low1, ref low2, high);
             return (low1, low2, high);
         }
 
