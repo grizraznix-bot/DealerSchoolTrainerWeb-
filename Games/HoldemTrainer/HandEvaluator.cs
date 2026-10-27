@@ -178,63 +178,6 @@ public static class HandEvaluator
         return score;
     }
 
-    /// <summary>
-    /// Determines which of the dealer's 7 cards (2 hole + 5 community)
-    /// should be excluded to form their actual best 5-card hand,
-    /// preferring to exclude BOTH hole cards ("plays the board") when
-    /// the community cards alone already tie the best achievable
-    /// category, then preferring to exclude just ONE hole card over
-    /// using both when that ties the full 7-card best. Category-level
-    /// comparison only (matching BestHandRank's own established
-    /// simplification, no kicker tie-breaking here) -- a genuine tie
-    /// (e.g. a straight flush entirely on the board) is treated as
-    /// exactly one correct declaration, not several equally-valid ones.
-    /// </summary>
-    public static (bool ExcludeHole1, bool ExcludeHole2, bool[] ExcludeCommunity) BestDealerExclusion(
-        Card hole1, Card hole2, IReadOnlyList<Card> community)
-    {
-        HandRank communityOnlyRank = BestHandRank(community);
-        List<Card> fullPool = new List<Card> { hole1, hole2 }.Concat(community).ToList();
-        HandRank fullRank = BestHandRank(fullPool);
-
-        if (communityOnlyRank >= fullRank)
-        {
-            return (true, true, new bool[5]);
-        }
-
-        List<Card> pool1 = new List<Card> { hole1 }.Concat(community).ToList(); // index 0 = hole1, 1-5 = community
-        List<Card> pool2 = new List<Card> { hole2 }.Concat(community).ToList();
-        HandRank withHole1 = BestHandRank(pool1);
-        HandRank withHole2 = BestHandRank(pool2);
-
-        if (withHole1 >= fullRank || withHole2 >= fullRank)
-        {
-            bool useHole1 = withHole1 >= fullRank;
-            List<Card> chosenPool = useHole1 ? pool1 : pool2;
-            List<int> bestIndices = FindBestFiveIndices(chosenPool);
-
-            bool[] excludeCommunity = new bool[5];
-            for (int communityIdx = 0; communityIdx < 5; communityIdx++)
-            {
-                excludeCommunity[communityIdx] = !bestIndices.Contains(communityIdx + 1);
-            }
-
-            return useHole1 ? (false, true, excludeCommunity) : (true, false, excludeCommunity);
-        }
-
-        // Both hole cards genuinely needed -- find the true best-5-of-7.
-        List<int> bestFullIndices = FindBestFiveIndices(fullPool); // index 0=hole1, 1=hole2, 2-6=community
-
-        bool[] excludeCommunityFull = new bool[5];
-        for (int communityIdx = 0; communityIdx < 5; communityIdx++)
-        {
-            excludeCommunityFull[communityIdx] = !bestFullIndices.Contains(communityIdx + 2);
-        }
-
-        return (false, false, excludeCommunityFull);
-    }
-
-    /// <summary>Indices (within pool) of the 5 cards forming the best possible hand -- ties broken by whichever qualifying combination is enumerated first, since only the category is compared, matching this file's established no-kicker-tiebreak convention for anything other than direct HandScore comparisons.</summary>
     /// <summary>The actual 5 cards (not indices) forming the best possible hand from an arbitrary pool -- used to get a player's best 5-of-7 for HandScore comparison against the dealer in Advanced mode.</summary>
     public static List<Card> BestFiveCards(IReadOnlyList<Card> pool) =>
         FindBestFiveIndices(pool).Select(i => pool[i]).ToList();
