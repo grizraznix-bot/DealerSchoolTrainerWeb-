@@ -47,6 +47,9 @@
         </div>
 
         <p class="rl-pays-line"><strong>Pays:</strong> @PaysText</p>
+
+        @* Several ways to work out each payout in your head *@
+        <a class="rl-math-link" href="roulette-math">Math Tricks</a>
     </div>
 }
 else
@@ -160,6 +163,11 @@ else
                     <tr><td>Six-line</td><td>5 to 1</td></tr>
                 </table>
                 <p>Enter the winnings only. The chips on the layout stay with the player and aren't counted.</p>
+                @* The math tricks, right here so the game isn't left *@
+                <details class="rl-math-help">
+                    <summary>Math tricks</summary>
+                    <RouletteMathTricks />
+                </details>
             </HelpContent>
         </GameBar>
     </div>

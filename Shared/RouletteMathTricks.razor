@@ -1,0 +1,148 @@
+@using DealerSchoolTrainerWeb.Games.RouletteTrainer
+
+@* Roulette Math Tricks: a tab for each bet type with every way to work
+   out its payout. The user picks or types a chip count and each way's
+   steps fill in for that number, so there's always a fallback if one
+   way doesn't come to mind at the table. Last tab: adding up a whole
+   board. Used on the Math Tricks page and inside Roulette's Help. *@
+
+<div class="rm">
+    <div class="rm-tabs" role="tablist">
+        @for (int i = 0; i < RouletteMath.All.Count; i++)
+        {
+            int index = i;
+            RouletteMath.BetTricks t = RouletteMath.All[index];
+            <button type="button" role="tab" class="rm-tab @(_tab == index ? "rm-tab-on" : "")"
+                    aria-selected="@(_tab == index ? "true" : "false")"
+                    @onclick="() => _tab = index">
+                <span class="rm-tab-pay">&times;@t.Pays</span>
+                <span class="rm-tab-name">@t.ShortName</span>
+            </button>
+        }
+        <button type="button" role="tab" class="rm-tab @(_tab == AddUpTab ? "rm-tab-on" : "")"
+                aria-selected="@(_tab == AddUpTab ? "true" : "false")"
+                @onclick="() => _tab = AddUpTab">
+            <span class="rm-tab-pay">+</span>
+            <span class="rm-tab-name">Add up</span>
+        </button>
+    </div>
+
+    @if (_tab < RouletteMath.All.Count)
+    {
+        RouletteMath.BetTricks bet = RouletteMath.All[_tab];
+        int n = _chips[_tab];
+
+        <h3 class="rm-title">@bet.Bet &mdash; pays @bet.Pays to 1</h3>
+        <p class="rm-lead">There's more than one way to get there. Learn two or three: if one doesn't come to you at the table, switch to another.</p>
+
+        <div class="rm-try">
+            <span class="rm-try-label">Chips on the bet</span>
+            <div class="count-controls">
+                <button type="button" class="count-btn" aria-label="Fewer" disabled="@(n <= 1)" @onclick="() => SetChips(n - 1)">&#9660;</button>
+                <input type="number" class="rm-chips" inputmode="numeric" min="1" max="99" aria-label="Chips on the bet"
+                       value="@n" @oninput="e => TypeChips(e.Value?.ToString())" />
+                <button type="button" class="count-btn" aria-label="More" disabled="@(n >= 99)" @onclick="() => SetChips(n + 1)">&#9650;</button>
+            </div>
+        </div>
+        <div class="rm-examples">
+            <span>Examples:</span>
+            @foreach (int ex in bet.Examples)
+            {
+                int value = ex;
+                <button type="button" class="rm-example @(n == value ? "rm-example-on" : "")" @onclick="() => SetChips(value)">@value</button>
+            }
+        </div>
+
+        <p class="rm-answer">@n &times; @bet.Pays = <strong>@RouletteMath.N((long)n * bet.Pays)</strong></p>
+
+        @for (int w = 0; w < bet.Ways.Count; w++)
+        {
+            RouletteMath.Way way = bet.Ways[w];
+            List<string>? steps = way.Steps(n);
+            <div class="rm-way">
+                <p class="rm-way-name">Way @(w + 1): @way.Name</p>
+                <p class="rm-way-idea">@way.Idea</p>
+                @if (steps is null)
+                {
+                    <p class="rm-way-skip">@way.WhenNot</p>
+                }
+                else
+                {
+                    <ol class="rm-steps">
+                        @foreach (string step in steps)
+                        {
+                            <li>@step</li>
+                        }
+                    </ol>
+                }
+                <p class="rm-watch"><strong>Watch out:</strong> @way.WatchOut</p>
+            </div>
+        }
+
+        <div class="rm-way">
+            <p class="rm-way-name">Way @(bet.Ways.Count + 1): Learn the row</p>
+            <p class="rm-way-idea">Most dealers know these by heart. Say them in small groups until they come without thinking.</p>
+            <div class="rm-row">
+                @for (int c = 1; c <= 10; c++)
+                {
+                    <div class="rm-row-cell @(c == n ? "rm-row-on" : "")">
+                        <span class="rm-row-chips">@c @(c == 1 ? "chip" : "chips")</span>
+                        <span class="rm-row-pays">@(c * bet.Pays)</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <h3 class="rm-title">Adding up a whole board</h3>
+        <p class="rm-lead">Work out each bet with any way you like, then add them up, biggest first. Small numbers are easy to add at the end, and you're less likely to lose your place.</p>
+
+        <p class="rm-way-name">Example: winning number 17</p>
+        <table class="rm-board">
+            <tr><th>Bet</th><th>Chips</th><th>Quick way</th><th>Pays</th></tr>
+            <tr><td>Straight up 17</td><td>2</td><td>half of 2 = 1, 1 &times; 7 = 7, add a zero</td><td>70</td></tr>
+            <tr><td>Split 17/18</td><td>3</td><td>30 + (3 &times; 7 = 21)</td><td>51</td></tr>
+            <tr><td>Street 16-17-18</td><td>4</td><td>40 + 4</td><td>44</td></tr>
+            <tr><td>Corner 13/14/16/17</td><td>5</td><td>5 &rarr; 10 &rarr; 20 &rarr; 40</td><td>40</td></tr>
+            <tr><td>Six-line 13&ndash;18</td><td>2</td><td>20, cut in half</td><td>10</td></tr>
+        </table>
+
+        <ol class="rm-steps">
+            <li>Start with the biggest payout: 70.</li>
+            <li>Add the next biggest: 70 + 51 = 121.</li>
+            <li>Add the street: 121 + 44 = 165.</li>
+            <li>Add the corner: 165 + 40 = 205.</li>
+            <li>Add the six-line: 205 + 10 = 215.</li>
+        </ol>
+        <p class="rm-answer">Total payout: <strong>215 chips</strong></p>
+
+        <div class="rm-way">
+            <p class="rm-way-name">More ways to add up</p>
+            <ol class="rm-steps">
+                <li><strong>Move one across:</strong> 51 + 44 &rarr; take 1 from 51 and give it to 44: 50 + 45 = 95. Same total, easier numbers.</li>
+                <li><strong>Round numbers first:</strong> add the ones that end in 0 together first: 70 + 40 + 10 = 120, then 120 + 51 + 44 = 215.</li>
+                <li><strong>Hundreds, then the rest:</strong> 121 + 44: 121 + 40 = 161, then + 4 = 165.</li>
+                <li><strong>Check it:</strong> add the list again from the smallest up. Both ways should give the same total.</li>
+            </ol>
+        </div>
+    }
+</div>
+
+@code {
+    private const int AddUpTab = 5;
+
+    private int _tab;
+
+    // Chip count per bet type (each tab remembers its own), starting at
+    // that bet's middle example
+    private readonly int[] _chips = RouletteMath.All.Select(t => t.Examples[2]).ToArray();
+
+    private void SetChips(int value) => _chips[_tab] = Math.Clamp(value, 1, 99);
+
+    // Typing: ignore an empty or partial box until it's a number
+    private void TypeChips(string? text)
+    {
+        if (int.TryParse(text, out int value)) SetChips(value);
+    }
+}

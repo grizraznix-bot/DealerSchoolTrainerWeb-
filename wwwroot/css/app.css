@@ -4085,3 +4085,238 @@ body {
     background-color: white;
     color: var(--c-text);
 }
+
+/* ------------------------------------------------------------------
+   Roulette Math Tricks (Shared/RouletteMathTricks.razor): page from the
+   Roulette start screen, and inside Roulette's Help
+   ------------------------------------------------------------------ */
+.rm-page {
+    max-width: 520px;
+}
+
+.rm-back {
+    margin: 0 0 0.5rem 0;
+}
+
+.rm-back a,
+.content a.rl-math-link {
+    color: var(--c-primary);
+    font-weight: bold;
+}
+
+.content a.rl-math-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    padding: 0.55rem 1.25rem;
+    border: 1px solid var(--c-primary);
+    border-radius: 6px;
+    background-color: white;
+    text-decoration: none;
+}
+
+.rm-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-bottom: 0.75rem;
+}
+
+.content .rm-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 48px;
+    padding: 0.2rem 0;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background-color: white;
+    color: var(--c-text);
+    line-height: 1.1;
+}
+
+.content .rm-tab.rm-tab-on {
+    border-color: var(--c-primary-dark);
+    background-color: var(--c-primary);
+    color: white;
+}
+
+.rm-tab-pay {
+    font-size: 1.05rem;
+    font-weight: bold;
+}
+
+.rm-tab-name {
+    font-size: 0.7rem;
+}
+
+.rm-title {
+    margin: 0.25rem 0;
+}
+
+.rm-lead {
+    margin: 0 0 0.75rem 0;
+    color: var(--c-muted);
+    font-size: 0.92rem;
+}
+
+.rm-try {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.rm-try-label {
+    font-weight: bold;
+}
+
+.content .rm-chips {
+    width: 4.5rem;
+    height: 44px;
+    box-sizing: border-box;
+    border: 1px solid var(--c-info-line);
+    border-radius: 6px;
+    background-color: var(--c-info-bg);
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.rm-examples {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+}
+
+.content .rm-example {
+    min-width: 40px;
+    min-height: 36px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background-color: white;
+    font-weight: bold;
+}
+
+.content .rm-example.rm-example-on {
+    border-color: var(--c-primary-dark);
+    background-color: var(--c-info-bg);
+}
+
+.rm-answer {
+    margin: 0.5rem 0 0.75rem 0;
+    font-size: 1.2rem;
+}
+
+.rm-way {
+    margin: 0 0 0.6rem 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background-color: white;
+}
+
+.rm-way-name {
+    margin: 0;
+    font-weight: bold;
+}
+
+.rm-way-idea {
+    margin: 0.15rem 0 0.35rem 0;
+    color: var(--c-muted);
+    font-size: 0.9rem;
+}
+
+.rm-way-skip {
+    margin: 0.25rem 0;
+    font-style: italic;
+    color: var(--c-muted);
+}
+
+.rm-steps {
+    margin: 0.25rem 0;
+    padding-left: 1.4rem;
+}
+
+.rm-steps li {
+    margin: 0.2rem 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.rm-watch {
+    margin: 0.35rem 0 0 0;
+    font-size: 0.85rem;
+    color: var(--c-lose-dark);
+}
+
+.rm-board {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.rm-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+}
+
+.rm-row-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3px 0;
+    border: 1px solid var(--c-line);
+    border-radius: 4px;
+}
+
+.rm-row-cell.rm-row-on {
+    border-color: var(--c-gold-line);
+    background-color: var(--c-gold-bg);
+}
+
+.rm-row-chips {
+    color: var(--c-muted);
+    font-size: 0.72rem;
+}
+
+.rm-row-pays {
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.rm-board th,
+.rm-board td {
+    padding: 4px;
+    border-bottom: 1px solid var(--c-line);
+    text-align: left;
+    vertical-align: top;
+}
+
+.rm-board td:last-child,
+.rm-board th:last-child {
+    text-align: right;
+    font-weight: bold;
+}
+
+/* Inside Roulette's Help pop-up: collapsed until tapped */
+.rl-math-help {
+    margin-top: 0.75rem;
+    text-align: left;
+}
+
+.rl-math-help > summary {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--c-primary);
+    border-radius: 6px;
+    color: var(--c-primary);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.rl-math-help[open] > summary {
+    margin-bottom: 0.6rem;
+}
