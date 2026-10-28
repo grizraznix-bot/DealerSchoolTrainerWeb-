@@ -3507,14 +3507,24 @@ label,
     color: #5a4300;
 }
 
+/* Desktop: the bar follows right under the game instead of sitting at
+   the bottom of the window. It only sticks to the bottom edge when the
+   game is taller than the window (so it's always reachable). */
 @media (min-width: 769px) {
+    .has-game-bar {
+        padding-bottom: 0;
+    }
+
     .game-bar {
-        --gb-col: min(520px, 100% - 220px - 4rem);
-        left: calc(220px + (100% - 220px - var(--gb-col)) / 2);
+        position: sticky;
+        left: auto;
         right: auto;
-        width: var(--gb-col);
-        padding-left: 0;
-        padding-right: 0;
+        bottom: 0;
+        order: 99;
+        align-self: stretch;
+        width: auto;
+        margin-top: 1rem;
+        padding: 0.5rem 0 0.75rem 0;
         box-shadow: none;
     }
 }
@@ -3868,5 +3878,44 @@ label,
 
     .po-wager {
         margin: 0.25rem 0;
+    }
+}
+
+/* No default 8px page margin: the layout fills the window exactly, so
+   a short page doesn't scroll */
+html,
+body {
+    margin: 0;
+}
+
+/* Desktop (mouse): answer box and the buttons beside it at a readable
+   size instead of the browser's small default */
+@media (min-width: 769px) and (pointer: fine) {
+    .answer-row {
+        gap: 0.5rem;
+    }
+
+    .content .answer-row input {
+        width: 12rem;
+        min-height: 40px;
+        padding: 0.3rem 0.6rem;
+        box-sizing: border-box;
+        border: 1px solid var(--c-border);
+        border-radius: 6px;
+        font-size: 1.1rem;
+    }
+
+    .content .answer-row button {
+        min-height: 40px;
+        padding: 0 0.9rem;
+        border-radius: 6px;
+        font-size: 1rem;
+    }
+
+    /* Three Card Prime: the Win / Lose / Push choices sit in a compact
+       box right beside the wager buttons, not across the whole table */
+    .tcp-fly {
+        left: auto;
+        width: 252px;
     }
 }

@@ -105,7 +105,7 @@ else
                        inputmode="none"
                        value="@_answerText"
                        @oninput="HandleAnswerInput"
-                       @onkeydown="HandleAnswerKeyDown"
+                       @onkeyup="HandleAnswerKeyUp"
                        @ref="_answerRef"
                        placeholder="Total payout (chips)" />
                 <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
@@ -348,7 +348,11 @@ else
         _answerText = new string(raw.Where(char.IsDigit).Take(6).ToArray());
     }
 
-    private void HandleAnswerKeyDown(KeyboardEventArgs e)
+    // Enter is handled when the key comes back up, not when it goes down.
+    // On key-down the answer is scored and Next takes the focus before the
+    // browser finishes that same key press, so the press also "clicked"
+    // Next and the result was skipped straight to the next round.
+    private void HandleAnswerKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") Submit();
     }
