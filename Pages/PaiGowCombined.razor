@@ -264,17 +264,11 @@ else
                 <p class="first-hint sb-first-hint">Call each wager Win, Lose or Push, or mark the player's hand Foul, then Submit.</p>
             }
 
-            <div class="sb-status">
-                <p class="result-line @(_sbIsCorrect ? "txt-ok" : "txt-bad")">@_sbResultText</p>
-            </div>
-
-            @if (_sbRoundScored && _sbWinningWagerLines.Count > 0)
+            @* Before Submit: the "tap every wager" reminder, if needed *@
+            @if (!_sbRoundScored && _sbResultText.Length > 0)
             {
-                <div class="feedback-area sb-wins">
-                    @foreach ((string text, string color) in _sbWinningWagerLines)
-                    {
-                        <p class="result-line @color">@text</p>
-                    }
+                <div class="sb-status">
+                    <p class="result-line txt-bad">@_sbResultText</p>
                 </div>
             }
         </div>
@@ -310,6 +304,38 @@ else
             }
         </div>
         </div>
+
+        @* After Submit: the result, then each wager with the right answer
+           and why (same style as Roulette's payout breakdown) *@
+        @if (_sbRoundScored)
+        {
+            <div class="sb-feedback">
+                <p class="result-line @(_sbIsCorrect ? "txt-ok" : "txt-bad")">@_sbResultText</p>
+                <div class="rl-breakdown sb-breakdown">
+                    <table>
+                        @foreach (SbRow row in _sbRows)
+                        {
+                            <tr class="sb-row">
+                                <td>@row.Wager</td>
+                                <td class="@(row.Ok ? "txt-ok" : "txt-bad")">
+                                    @if (row.Ok)
+                                    {
+                                        <text>&#x2713; @row.Answer</text>
+                                    }
+                                    else
+                                    {
+                                        <text>&#x2717; You: @row.You &middot; Answer: @row.Answer</text>
+                                    }
+                                </td>
+                            </tr>
+                            <tr class="sb-why">
+                                <td colspan="2">@row.Why</td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        }
 
         @* Pinned bottom bar: Help | Submit, then Next | End Session *@
         <GameBar HelpTitle="Settling Bets Wager Rules" OnEnd="EndSession">
@@ -701,7 +727,9 @@ else
     private string _sbDealerLowLabel = string.Empty;
     private string _sbDealerHighLabel = string.Empty;
 
-    private readonly List<(string Text, string Color)> _sbWinningWagerLines = new();
+    // One line per wager in the feedback box after Submit
+    private sealed record SbRow(string Wager, string You, string Answer, bool Ok, string Why);
+    private readonly List<SbRow> _sbRows = new();
     private bool _sbIsCorrect;
     private string _sbScoreText = "Score: 0 / 0 (0.0%)";
 
@@ -754,7 +782,7 @@ else
         _sbPlayerHighLabel = string.Empty;
         _sbDealerLowLabel = string.Empty;
         _sbDealerHighLabel = string.Empty;
-        _sbWinningWagerLines.Clear();
+        _sbRows.Clear();
         _sbRoundScored = false;
         _sbSubmitEnabled = true;
     }
@@ -876,35 +904,26 @@ else
     {
         if (_sbRoundScored) return;
 
+        _sbRows.Clear();
+
+        // Foul marked: only the Foul call is graded (a fouled hand's
+        // wagers aren't settled one by one)
         if (_sbFoulFlagged)
         {
             bool foulCorrect = _sbIsPlayerFoul;
             _sbFoulWrong = !foulCorrect;
 
+            _sbRows.Add(SbFoulRow(true));
+
             _sbTotalRounds++;
             if (foulCorrect) _sbCorrectCount++;
 
             _sbIsCorrect = foulCorrect;
-            _sbResultText = foulCorrect ? "CORRECT" : "INCORRECT";
+            _sbResultText = foulCorrect
+                ? "CORRECT \u2014 the player's hand is fouled"
+                : "INCORRECT \u2014 the player's hand is not fouled";
 
-            if (!foulCorrect)
-            {
-                _sbWinningWagerLines.Add(("This hand was not actually Foul.", "txt-bad"));
-            }
-
-            string foulPct = _sbTotalRounds > 0
-                ? ((double)_sbCorrectCount / _sbTotalRounds).ToString("0.0%")
-                : "0.0%";
-            _sbScoreText = $"Score: {_sbCorrectCount} / {_sbTotalRounds} ({foulPct})";
-
-            _sbPlayerLowLabel = _sbPlayerSolver.LowHandLabel(_sbPlayerLow1, _sbPlayerLow2);
-            _sbPlayerHighLabel = _sbPlayerSolver.HighHandDescription(_sbPlayerHigh);
-            _sbDealerLowLabel = _sbDealerSolver.LowHandLabel(_sbDealerLow1, _sbDealerLow2);
-            _sbDealerHighLabel = _sbDealerSolver.HighHandDescription(_sbDealerHigh);
-
-            _sbRoundScored = true;
-            _sbSubmitEnabled = false;
-            _sbDealEnabled = true;
+            SbFinishRound();
             return;
         }
 
@@ -915,22 +934,32 @@ else
             return;
         }
 
-        bool allCorrect = true;
+        // Best hand that can be made from any 5 of the player's 7 cards --
+        // what both side wagers are settled on
+        string bestOfSeven = _sbPlayerSolver.BestSevenCardCategoryName();
 
-        bool insuranceActual = _sbPlayerSolver.QualifiesInsurance();
-        allCorrect &= SbGradeWager(_sbInsurance, insuranceActual ? WagerOutcome.Win : WagerOutcome.Lose);
-
+        // Emperor's Treasure: wins with Three of a Kind or better anywhere
+        // in the 7 cards
         bool emperorsActual = _sbPlayerSolver.QualifiesEmperorsTreasure();
-        allCorrect &= SbGradeWager(_sbEmperorsTreasure, emperorsActual ? WagerOutcome.Win : WagerOutcome.Lose);
+        WagerOutcome emperorsOutcome = emperorsActual ? WagerOutcome.Win : WagerOutcome.Lose;
+        bool emperorsOk = SbGradeWager(_sbEmperorsTreasure, emperorsOutcome);
+        _sbRows.Add(new SbRow("Emperor's Treasure", $"{_sbEmperorsTreasure.Selection}", $"{emperorsOutcome}", emperorsOk,
+            $"Best hand in the 7 cards: {bestOfSeven}. Wins on Three of a Kind or better."));
 
+        // Main Wager: foul loses; dealer Ace-High Pai Gow pushes; otherwise
+        // win both hands = Win, lose both = Lose, one each = Push. A tie
+        // (copy) goes to the dealer.
         WagerOutcome mainOutcome;
+        string mainWhy;
         if (_sbIsPlayerFoul)
         {
             mainOutcome = WagerOutcome.Lose;
+            mainWhy = "The player's hand is fouled, so the Main Wager loses.";
         }
         else if (_sbDealerSolver.IsAceHighPaiGow(_sbDealerHigh))
         {
             mainOutcome = WagerOutcome.Push;
+            mainWhy = "The dealer has Ace-High Pai Gow, so all hands push.";
         }
         else
         {
@@ -948,25 +977,45 @@ else
                 (false, false) => WagerOutcome.Lose,
                 _ => WagerOutcome.Push
             };
-        }
-        allCorrect &= SbGradeWager(_sbMainWager, mainOutcome);
 
-        if (_sbFoulFlagged == _sbIsPlayerFoul)
-        {
-            _sbFoulWrong = false;
+            mainWhy = $"High hand: {SbWhoWins(winsHigh, playerHighScore == dealerHighScore)}. "
+                    + $"Low hand: {SbWhoWins(winsLow, playerLowScore == dealerLowScore)}.";
         }
-        else
+        bool mainOk = SbGradeWager(_sbMainWager, mainOutcome);
+        _sbRows.Add(new SbRow("Main Wager", $"{_sbMainWager.Selection}", $"{mainOutcome}", mainOk, mainWhy));
+
+        // Pai Gow Insurance: wins only when nothing better than High Card
+        // can be made from the 7 cards
+        bool insuranceActual = _sbPlayerSolver.QualifiesInsurance();
+        WagerOutcome insuranceOutcome = insuranceActual ? WagerOutcome.Win : WagerOutcome.Lose;
+        bool insuranceOk = SbGradeWager(_sbInsurance, insuranceOutcome);
+        _sbRows.Add(new SbRow("Pai Gow Insurance", $"{_sbInsurance.Selection}", $"{insuranceOutcome}", insuranceOk,
+            $"Best hand in the 7 cards: {bestOfSeven}. Wins only on High Card (no pair, straight or flush)."));
+
+        // A fouled hand that wasn't marked Foul is also a miss
+        _sbFoulWrong = _sbIsPlayerFoul;
+        if (_sbIsPlayerFoul)
         {
-            _sbFoulWrong = true;
-            allCorrect = false;
+            _sbRows.Add(SbFoulRow(false));
         }
+
+        bool allCorrect = emperorsOk && mainOk && insuranceOk && !_sbFoulWrong;
 
         _sbTotalRounds++;
         if (allCorrect) _sbCorrectCount++;
 
         _sbIsCorrect = allCorrect;
-        _sbResultText = allCorrect ? "CORRECT" : "INCORRECT";
+        int wrong = _sbRows.Count(r => !r.Ok);
+        _sbResultText = allCorrect
+            ? "CORRECT \u2014 every wager settled right"
+            : $"INCORRECT \u2014 {wrong} of {_sbRows.Count} wrong";
 
+        SbFinishRound();
+    }
+
+    // Hand labels under the cards, and the buttons, once a round is scored
+    private void SbFinishRound()
+    {
         string pct = _sbTotalRounds > 0
             ? ((double)_sbCorrectCount / _sbTotalRounds).ToString("0.0%")
             : "0.0%";
@@ -977,29 +1026,25 @@ else
         _sbDealerLowLabel = _sbDealerSolver.LowHandLabel(_sbDealerLow1, _sbDealerLow2);
         _sbDealerHighLabel = _sbDealerSolver.HighHandDescription(_sbDealerHigh);
 
-        if (_sbMainWager.Wrong)
-        {
-            _sbWinningWagerLines.Add(($"Main Wager: INCORRECT — Correct answer: {mainOutcome}", "txt-bad"));
-        }
-        else if (mainOutcome == WagerOutcome.Win)
-        {
-            _sbWinningWagerLines.Add(("Main Wager: WIN", "txt-ok"));
-        }
-
-        if (insuranceActual)
-        {
-            _sbWinningWagerLines.Add(("Pai Gow Insurance: WIN — High Card", "txt-ok"));
-        }
-
-        if (emperorsActual)
-        {
-            _sbWinningWagerLines.Add(($"Emperor's Treasure: WIN — {_sbPlayerSolver.EmperorsTreasureCategoryName()}", "txt-ok"));
-        }
-
         _sbRoundScored = true;
         _sbSubmitEnabled = false;
         _sbDealEnabled = true;
     }
+
+    // The Foul line in the feedback. markedFoul: whether Foul was picked.
+    private SbRow SbFoulRow(bool markedFoul)
+    {
+        string answer = _sbIsPlayerFoul ? "Foul" : "Not foul";
+        string you = markedFoul ? "Foul" : "Not marked";
+        bool ok = markedFoul == _sbIsPlayerFoul;
+        string why = _sbIsPlayerFoul
+            ? "The Low hand outranks the High hand."
+            : "The High hand outranks the Low hand, so the hand is set legally.";
+        return new SbRow("Foul", you, answer, ok, why);
+    }
+
+    private static string SbWhoWins(bool playerWins, bool tie) =>
+        playerWins ? "player wins" : tie ? "tie (copy), dealer wins" : "dealer wins";
 
     private static bool SbGradeWager(SbWagerState w, WagerOutcome actual)
     {

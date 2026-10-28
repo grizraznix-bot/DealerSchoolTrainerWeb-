@@ -3919,3 +3919,38 @@ body {
         width: 252px;
     }
 }
+
+/* Pai Gow Settling Bets: result and per-wager breakdown under the
+   dealer's hand (same box as Roulette's payout breakdown) */
+.sb-feedback {
+    order: 6;
+    align-self: stretch;
+    margin-top: 0.75rem;
+}
+
+.sb-feedback > .result-line {
+    margin: 0 0 0.4rem 0;
+    font-size: 1.1rem;
+}
+
+.rl-breakdown.sb-breakdown td {
+    vertical-align: top;
+}
+
+.rl-breakdown tr.sb-row td:first-child {
+    font-weight: bold;
+}
+
+.rl-breakdown tr.sb-row + tr.sb-why td {
+    padding-bottom: 6px;
+    text-align: left;
+    font-weight: normal;
+    white-space: normal;
+    color: var(--c-muted);
+    font-size: 0.88rem;
+}
+
+.rl-breakdown tr.sb-why + tr.sb-row td {
+    padding-top: 6px;
+    border-top: 1px solid var(--c-line);
+}
