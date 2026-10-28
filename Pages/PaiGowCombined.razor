@@ -310,30 +310,7 @@ else
         @if (_sbRoundScored)
         {
             <div class="sb-feedback">
-                <p class="result-line @(_sbIsCorrect ? "txt-ok" : "txt-bad")">@_sbResultText</p>
-                <div class="rl-breakdown sb-breakdown">
-                    <table>
-                        @foreach (SbRow row in _sbRows)
-                        {
-                            <tr class="sb-row">
-                                <td>@row.Wager</td>
-                                <td class="@(row.Ok ? "txt-ok" : "txt-bad")">
-                                    @if (row.Ok)
-                                    {
-                                        <text>&#x2713; @row.Answer</text>
-                                    }
-                                    else
-                                    {
-                                        <text>&#x2717; You: @row.You &middot; Answer: @row.Answer</text>
-                                    }
-                                </td>
-                            </tr>
-                            <tr class="sb-why">
-                                <td colspan="2">@row.Why</td>
-                            </tr>
-                        }
-                    </table>
-                </div>
+                <ResultBreakdown ResultText="@_sbResultText" IsCorrect="_sbIsCorrect" Rows="_sbRows" />
             </div>
         }
 
@@ -747,8 +724,7 @@ else
     private string _sbDealerHighLabel = string.Empty;
 
     // One line per wager in the feedback box after Submit
-    private sealed record SbRow(string Wager, string You, string Answer, bool Ok, string Why);
-    private readonly List<SbRow> _sbRows = new();
+    private readonly List<BreakdownRow> _sbRows = new();
     private bool _sbIsCorrect;
     private string _sbScoreText = "Score: 0 / 0 (0.0%)";
 
@@ -962,7 +938,7 @@ else
         bool emperorsActual = _sbPlayerSolver.QualifiesEmperorsTreasure();
         WagerOutcome emperorsOutcome = emperorsActual ? WagerOutcome.Win : WagerOutcome.Lose;
         bool emperorsOk = SbGradeWager(_sbEmperorsTreasure, emperorsOutcome);
-        _sbRows.Add(new SbRow("Emperor's Treasure", $"{_sbEmperorsTreasure.Selection}", $"{emperorsOutcome}", emperorsOk,
+        _sbRows.Add(new BreakdownRow("Emperor's Treasure", $"{_sbEmperorsTreasure.Selection}", $"{emperorsOutcome}", emperorsOk,
             $"Best hand in the 7 cards: {_sbPlayerSolver.EmperorsTreasureCategoryName()}. Wins on Three of a Kind or better."));
 
         // Main Wager: foul loses; dealer Ace-High Pai Gow pushes; otherwise
@@ -1001,14 +977,14 @@ else
                     + $"Low hand: {SbWhoWins(winsLow, playerLowScore == dealerLowScore)}.";
         }
         bool mainOk = SbGradeWager(_sbMainWager, mainOutcome);
-        _sbRows.Add(new SbRow("Main Wager", $"{_sbMainWager.Selection}", $"{mainOutcome}", mainOk, mainWhy));
+        _sbRows.Add(new BreakdownRow("Main Wager", $"{_sbMainWager.Selection}", $"{mainOutcome}", mainOk, mainWhy));
 
         // Pai Gow Insurance: wins only when nothing better than High Card
         // can be made from the 7 cards
         bool insuranceActual = _sbPlayerSolver.QualifiesInsurance();
         WagerOutcome insuranceOutcome = insuranceActual ? WagerOutcome.Win : WagerOutcome.Lose;
         bool insuranceOk = SbGradeWager(_sbInsurance, insuranceOutcome);
-        _sbRows.Add(new SbRow("Pai Gow Insurance", $"{_sbInsurance.Selection}", $"{insuranceOutcome}", insuranceOk,
+        _sbRows.Add(new BreakdownRow("Pai Gow Insurance", $"{_sbInsurance.Selection}", $"{insuranceOutcome}", insuranceOk,
             $"Best hand in the 7 cards: {bestOfSeven}. Wins only on High Card (no pair, straight or flush)."));
 
         // A fouled hand that wasn't marked Foul is also a miss
@@ -1024,10 +1000,7 @@ else
         if (allCorrect) _sbCorrectCount++;
 
         _sbIsCorrect = allCorrect;
-        int wrong = _sbRows.Count(r => !r.Ok);
-        _sbResultText = allCorrect
-            ? "CORRECT \u2014 every wager settled right"
-            : $"INCORRECT \u2014 {wrong} of {_sbRows.Count} wrong";
+        _sbResultText = BreakdownRow.Summary(_sbRows);
 
         SbFinishRound();
     }
@@ -1052,7 +1025,7 @@ else
     }
 
     // The Foul line in the feedback. markedFoul: whether Foul was picked.
-    private SbRow SbFoulRow(bool markedFoul)
+    private BreakdownRow SbFoulRow(bool markedFoul)
     {
         string answer = _sbIsPlayerFoul ? "Foul" : "Not foul";
         string you = markedFoul ? "Foul" : "Not marked";
@@ -1060,7 +1033,7 @@ else
         string why = _sbIsPlayerFoul
             ? "The Low hand outranks the High hand."
             : "The High hand outranks the Low hand, so the hand is set legally.";
-        return new SbRow("Foul", you, answer, ok, why);
+        return new BreakdownRow("Foul", you, answer, ok, why);
     }
 
     private static string SbWhoWins(bool playerWins, bool tie) =>

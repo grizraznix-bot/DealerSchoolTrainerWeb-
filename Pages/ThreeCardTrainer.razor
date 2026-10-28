@@ -135,11 +135,14 @@ else
         }
 
         <div class="feedback-area">
-            <p class="result-line @(_isCorrect ? "txt-ok" : "txt-bad")">@_resultText</p>
-            @* After Submit: why each wager won, lost or pushed *@
-            @foreach (string line in _whyLines)
+            @if (_roundScored)
             {
-                <p class="why-line">@line</p>
+                @* After Submit: each wager with the right answer and why *@
+                <ResultBreakdown ResultText="@_resultText" IsCorrect="_isCorrect" Rows="_rows" />
+            }
+            else if (_resultText.Length > 0)
+            {
+                <p class="result-line txt-bad">@_resultText</p>
             }
         </div>
 
@@ -328,7 +331,7 @@ else
 
     private void DealNewRound()
     {
-        _whyLines.Clear();
+        _rows.Clear();
         _dealEnabled = false;
 
         // Training boost: All 6 (Three of a Kind or better from all six
@@ -463,10 +466,10 @@ else
         _totalRounds++;
         if (allCorrect) _correctCount++;
 
-        BuildWhyLines(anteOutcome, playOutcome, pairPlusOutcome, primeOutcome, allSixOutcome, anteBonusActual);
+        BuildRows(anteOutcome, playOutcome, pairPlusOutcome, primeOutcome, allSixOutcome, anteBonusActual);
 
         _isCorrect = allCorrect;
-        _resultText = allCorrect ? "CORRECT" : "INCORRECT";
+        _resultText = BreakdownRow.Summary(_rows);
 
         string pct = _totalRounds > 0
             ? ((double)_correctCount / _totalRounds).ToString("0.0%")
@@ -478,43 +481,56 @@ else
         _dealEnabled = true;
     }
 
-    // After Submit: one short line per wager saying why it won, lost or
-    // pushed, so a miss teaches the rule rather than just marking it wrong
-    private readonly List<string> _whyLines = new();
+    // After Submit: one line per wager (in settling order) with the right
+    // answer and why, so a miss teaches the rule rather than just marking
+    // it wrong
+    private readonly List<BreakdownRow> _rows = new();
 
-    private void BuildWhyLines(WagerOutcome ante, WagerOutcome play, WagerOutcome pairBonus,
-                               WagerOutcome prime, WagerOutcome allSix, bool anteBonus)
+    private void BuildRows(WagerOutcome ante, WagerOutcome play, WagerOutcome pairBonus,
+                           WagerOutcome prime, WagerOutcome allSix, bool anteBonus)
     {
-        _whyLines.Clear();
+        _rows.Clear();
 
         string player = DescribeThree(_playerCards);
         string dealer = DescribeThree(_dealerCards);
         bool qualifies = ThreeCardEvaluator.DealerQualifies(_dealerCards);
 
+        string versus;
         if (!qualifies)
         {
-            _whyLines.Add($"Dealer {dealer} does not qualify (needs Queen high or better): Ante wins, Play pushes.");
+            versus = $"Dealer {dealer} doesn't qualify (needs Queen high or better)";
         }
         else
         {
             int cmp = ThreeCardEvaluator.Compare(_playerCards, _dealerCards);
             string vs = cmp > 0 ? "beats" : cmp < 0 ? "loses to" : "ties";
-            _whyLines.Add($"Dealer qualifies with {dealer}. Player {player} {vs} the dealer: Ante and Play {Word(ante).ToLowerInvariant()}.");
+            versus = $"Dealer qualifies with {dealer}. Player {player} {vs} the dealer";
         }
 
-        _whyLines.Add(anteBonus
-            ? $"Ante Bonus pays: player has {player} (Straight or better)."
-            : "Ante Bonus: no (needs a Straight or better).");
-        _whyLines.Add($"Pair Bonus {Word(pairBonus).ToLowerInvariant()}: player has {player}{(pairBonus == WagerOutcome.Win ? "" : " (needs a Pair or better)")}.");
+        _rows.Add(Row(_play, play, qualifies ? $"{versus}." : $"{versus}: Play pushes."));
+        _rows.Add(Row(_ante, ante, qualifies ? $"{versus}." : $"{versus}: Ante wins."));
+
+        _rows.Add(new BreakdownRow("Ante Bonus",
+            _anteBonusChecked ? "Pays" : "No",
+            anteBonus ? "Pays" : "No",
+            !_anteBonusWrong,
+            anteBonus ? $"Player has {player}." : $"Player has {player} (needs a Straight or better)."));
+
+        _rows.Add(Row(_pairBonus, pairBonus,
+            $"Player has {player}{(pairBonus == WagerOutcome.Win ? "" : " (needs a Pair or better)")}."));
 
         bool playerOneColor = _playerCards.All(IsRed) || !_playerCards.Any(IsRed);
-        _whyLines.Add(prime == WagerOutcome.Win
-            ? (playerOneColor ? "Prime wins: the player's 3 cards are all one color." : "Prime wins: all 6 cards are one color.")
-            : "Prime loses: the player's cards are mixed colors.");
+        _rows.Add(Row(_prime, prime, prime == WagerOutcome.Win
+            ? (playerOneColor ? "The player's 3 cards are all one color." : "All 6 cards are one color.")
+            : "The player's cards are mixed colors."));
 
-        HandRank six = HandEvaluator.BestHandRank(_playerCards.Concat(_dealerCards).ToList());
-        _whyLines.Add($"All 6 {Word(allSix).ToLowerInvariant()}: best 5 of all 6 cards is {HandEvaluator.HandRankName(six)}{(allSix == WagerOutcome.Win ? "" : " (needs Three of a Kind or better)")}.");
+        List<Card> six = _playerCards.Concat(_dealerCards).ToList();
+        _rows.Add(Row(_allSix, allSix,
+            $"Best 5 of all 6 cards: {HandEvaluator.DescribeHand(six)}{(allSix == WagerOutcome.Win ? "" : " (needs Three of a Kind or better)")}."));
     }
+
+    private static BreakdownRow Row(WagerState w, WagerOutcome actual, string why) =>
+        new(w.Name, $"{w.Selection}", $"{actual}", w.Selection == actual, why);
 
     private static string Word(WagerOutcome o) => o.ToString();
 

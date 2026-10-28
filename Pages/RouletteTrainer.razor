@@ -118,7 +118,7 @@ else
         else
         {
             <p class="rl-result result-line @(_isCorrect ? "txt-ok" : "txt-bad")">
-                @(_isCorrect ? $"CORRECT - {_correctTotal} chips" : $"INCORRECT - you entered {_enteredTotal}, the payout is {_correctTotal} chips")
+                @(_isCorrect ? $"CORRECT \u2014 {_correctTotal} chips" : $"INCORRECT \u2014 you entered {_enteredTotal}, the payout is {_correctTotal} chips")
             </p>
 
             <div class="rl-breakdown">

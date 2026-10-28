@@ -142,4 +142,33 @@ public static class PayoutWager
 
     /// <summary>Always renders with a literal "$" regardless of OS locale, matching the original.</summary>
     public static string FormatCents(long cents) => "$" + (cents / 100.0).ToString("0.00");
+
+    /// <summary>Short money for explanations: "$25", "$37.50" (no .00 on whole dollars).</summary>
+    public static string FormatShort(long cents) =>
+        cents % 100 == 0 ? "$" + (cents / 100).ToString() : FormatCents(cents);
+
+    /// <summary>
+    /// How the payout is worked out, the way it's figured at the table:
+    /// 3:2 "$25 pays $37.50: $25 + half ($12.50)"; with an odd 50 cents
+    /// "$5.50 pays $8: $5 + half ($2.50), plus 50¢ even money"; 6:5
+    /// "$25 pays $30: $25 ÷ 5 = $5, × 6". Matches CalculatePayoutCents.
+    /// </summary>
+    public static string ExplainPayout(long wagerCents, PayoutRatio ratio)
+    {
+        long payout = CalculatePayoutCents(wagerCents, ratio);
+        string head = $"{FormatShort(wagerCents)} pays {FormatShort(payout)}";
+
+        if (ratio == PayoutRatio.SixToFive)
+        {
+            return $"{head}: {FormatShort(wagerCents)} \u00f7 5 = {FormatShort(wagerCents / 5)}, \u00d7 6";
+        }
+
+        long wholeDollarCents = (wagerCents / 100) * 100;
+        if (wagerCents % 100 == 50)
+        {
+            return $"{head}: {FormatShort(wholeDollarCents)} + half ({FormatShort(wholeDollarCents / 2)}), plus 50\u00a2 even money";
+        }
+
+        return $"{head}: {FormatShort(wagerCents)} + half ({FormatShort(wagerCents / 2)})";
+    }
 }

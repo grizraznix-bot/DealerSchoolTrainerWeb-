@@ -3928,29 +3928,58 @@ body {
     margin-top: 0.75rem;
 }
 
-.sb-feedback > .result-line {
+/* ------------------------------------------------------------------
+   After-Submit feedback box (Shared/ResultBreakdown), the same in every
+   game: result line, then one line per wager -- name on the left, a
+   check and the answer (or a cross, what was picked and the answer) on
+   the right -- with the reason in grey underneath.
+   ------------------------------------------------------------------ */
+.content .breakdown-result {
     margin: 0 0 0.4rem 0;
     font-size: 1.1rem;
+    text-align: left;
 }
 
-.rl-breakdown.sb-breakdown td {
+.breakdown {
+    align-self: stretch;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background-color: white;
+    color: var(--c-text);
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+}
+
+.breakdown table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.breakdown td {
+    padding: 2px 0;
     vertical-align: top;
 }
 
-.rl-breakdown tr.sb-row td:first-child {
+.breakdown tr.bd-row td:first-child {
+    font-weight: bold;
+    padding-right: 0.5rem;
+}
+
+.breakdown tr.bd-row td:last-child {
+    text-align: right;
     font-weight: bold;
 }
 
-.rl-breakdown tr.sb-row + tr.sb-why td {
+.breakdown tr.bd-why td {
     padding-bottom: 6px;
-    text-align: left;
-    font-weight: normal;
-    white-space: normal;
     color: var(--c-muted);
     font-size: 0.88rem;
 }
 
-.rl-breakdown tr.sb-why + tr.sb-row td {
+.breakdown tr.bd-why + tr.bd-row td,
+.breakdown tr.bd-row + tr.bd-row td {
     padding-top: 6px;
     border-top: 1px solid var(--c-line);
 }
@@ -3992,4 +4021,25 @@ body {
     .sidebar .install-link {
         display: none;
     }
+}
+
+/* Phones: Payouts result box -- result on one line, the worked-out
+   payout under it in smaller type, kept compact so the keypad stays
+   above the bottom bar */
+@media (max-width: 768px), (pointer: coarse) {
+    .po-display {
+        padding: 0.2rem 0.6rem;
+        line-height: 1.2;
+    }
+
+    .po-display-detail {
+        font-size: 0.85rem;
+    }
+}
+
+/* Hold'em Identify the Hands: the feedback box spans the column like
+   the other games instead of shrinking to its text */
+.content .hd-feedback.hd-feedback-inline {
+    box-sizing: border-box;
+    width: 100%;
 }

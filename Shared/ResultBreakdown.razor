@@ -1,0 +1,42 @@
+@using DealerSchoolTrainerWeb.Core
+
+@* After-Submit feedback, the same in every game: the result line, then
+   a box with one line per wager -- a check and the answer, or a cross
+   with what was picked and the right answer -- and the reason under it. *@
+
+<p class="result-line breakdown-result @(IsCorrect ? "txt-ok" : "txt-bad")">@ResultText</p>
+@if (Rows.Count > 0)
+{
+    <div class="breakdown">
+        <table>
+            @foreach (BreakdownRow row in Rows)
+            {
+                <tr class="bd-row">
+                    <td>@row.Name</td>
+                    <td class="@(row.Ok ? "txt-ok" : "txt-bad")">
+                        @if (row.Ok)
+                        {
+                            <text>&#x2713; @row.Answer</text>
+                        }
+                        else
+                        {
+                            <text>&#x2717; You: @row.You &middot; Answer: @row.Answer</text>
+                        }
+                    </td>
+                </tr>
+                @if (row.Why.Length > 0)
+                {
+                    <tr class="bd-why">
+                        <td colspan="2">@row.Why</td>
+                    </tr>
+                }
+            }
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public string ResultText { get; set; } = "";
+    [Parameter] public bool IsCorrect { get; set; }
+    [Parameter] public IReadOnlyList<BreakdownRow> Rows { get; set; } = Array.Empty<BreakdownRow>();
+}

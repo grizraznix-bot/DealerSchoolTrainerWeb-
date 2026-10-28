@@ -39,6 +39,64 @@ public static class HandEvaluator
         _ => "Unknown"
     };
 
+    /// <summary>
+    /// The best 5-card hand from a pool (5, 6 or 7 cards), described the
+    /// way a dealer calls it, with the kickers that can decide a tie:
+    /// "Two Pair, Kings and 7s, A kicker", "Pair of Jacks, A-K-9
+    /// kickers", "Full House, 8s full of 3s", "Straight, 5 high" (the
+    /// wheel), "Flush, A-Q-9-6-2", "Royal Flush".
+    /// </summary>
+    public static string DescribeHand(IReadOnlyList<Card> pool)
+    {
+        List<Card> five = pool.Count == 5 ? pool.ToList() : BestFiveCards(pool);
+        HandRank category = BestHandRank(five);
+        List<int> ranks = five.Select(c => (int)c.Rank).ToList();
+
+        Dictionary<int, int> counts = new();
+        foreach (int r in ranks) counts[r] = counts.GetValueOrDefault(r) + 1;
+        List<int> order = ranks.Distinct()
+            .OrderByDescending(r => counts[r])
+            .ThenByDescending(r => r)
+            .ToList();
+
+        string Kickers(IEnumerable<int> ks) => string.Join("-", ks.Select(ShortRank));
+        int straightHigh = ranks.Contains(14) && ranks.Contains(5) && ranks.Contains(2) ? 5 : ranks.Max();
+
+        return category switch
+        {
+            HandRank.RoyalFlush => "Royal Flush",
+            HandRank.StraightFlush => $"Straight Flush, {ShortRank(straightHigh)} high",
+            HandRank.FourOfAKind => $"Four {PluralRank(order[0])}, {ShortRank(order[1])} kicker",
+            HandRank.FullHouse => $"Full House, {PluralRank(order[0])} full of {PluralRank(order[1])}",
+            HandRank.Flush => $"Flush, {Kickers(ranks.OrderByDescending(r => r))}",
+            HandRank.Straight => $"Straight, {ShortRank(straightHigh)} high",
+            HandRank.ThreeOfAKind => $"Three {PluralRank(order[0])}, {Kickers(order.Skip(1))} kickers",
+            HandRank.TwoPair => $"Two Pair, {PluralRank(order[0])} and {PluralRank(order[1])}, {ShortRank(order[2])} kicker",
+            HandRank.Pair => $"Pair of {PluralRank(order[0])}, {Kickers(order.Skip(1))} kickers",
+            _ => $"{FullRank(order[0])} high, {Kickers(order.Skip(1))}"
+        };
+    }
+
+    private static string ShortRank(int r) => r switch
+    {
+        14 => "A",
+        13 => "K",
+        12 => "Q",
+        11 => "J",
+        _ => r.ToString()
+    };
+
+    private static string FullRank(int r) => r switch
+    {
+        14 => "Ace",
+        13 => "King",
+        12 => "Queen",
+        11 => "Jack",
+        _ => r.ToString()
+    };
+
+    private static string PluralRank(int r) => FullRank(r) + "s";
+
     /// <summary>Best 5-card hand category from a 7-card set (2 hole + 5 community).</summary>
     public static HandRank BestHandRank(IReadOnlyList<Card> cards)
     {

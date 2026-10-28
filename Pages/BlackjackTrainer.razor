@@ -331,11 +331,14 @@ else
             </div>
 
             <div class="feedback-area sw-footer-feedback">
-                <p class="result-line sw-result @(_swIsCorrect ? "txt-ok" : "txt-bad")">@_swResultText</p>
-                @* After Submit: why each wager won or lost *@
-                @foreach (string line in _swWhyLines)
+                @if (_swRoundScored)
                 {
-                    <p class="why-line">@line</p>
+                    @* After Submit: each wager with the right answer and why *@
+                    <ResultBreakdown ResultText="@_swResultText" IsCorrect="_swIsCorrect" Rows="_swRows" />
+                }
+                else
+                {
+                    <p class="result-line sw-result txt-bad">@_swResultText</p>
                 }
             </div>
         </div>
@@ -489,6 +492,7 @@ else
     // plain black for prompts like "Enter the dealer's total."
     private string _fcFeedbackColor = "txt-plain"; // CSS class: txt-ok / txt-bad / txt-plain
     private bool _fcShowHint;
+    private int _fcMissCount; // wrong answers on the current card -- a hint after the 2nd
     private bool _fcAnswerEnabled;
     private bool _fcSubmitEnabled;
     private bool _fcShowKeypad;
@@ -517,6 +521,7 @@ else
         _fcHand.AddCard(_fcShoe.Draw());
 
         _fcRoundHasMistake = false;
+        _fcMissCount = 0;
         _fcShowReveal = false;
         _fcFeedbackText = string.Empty;
         _fcNewRoundEnabled = false;
@@ -620,8 +625,16 @@ else
         if (!isCorrect)
         {
             _fcRoundHasMistake = true;
+            _fcMissCount++;
             _fcAnswerText = string.Empty;
-            _fcFeedbackText = "INCORRECT \u2014 try again.";
+            // Says what was entered (catches a typo). From the 2nd miss on
+            // the same card: a hint -- the Ace reminder when there's an Ace,
+            // otherwise a pointer to Reveal.
+            _fcFeedbackText = _fcMissCount < 2
+                ? $"INCORRECT \u2014 not {enteredValue}. Try again."
+                : _fcHand.HasAce
+                    ? $"Not {enteredValue}. An Ace counts as 1 or 11."
+                    : $"Not {enteredValue}. Recount, or tap Reveal.";
             _fcFeedbackColor = "txt-bad";
             return;
         }
@@ -679,6 +692,7 @@ else
 
         _fcFeedbackText = feedback;
         _fcFeedbackColor = color;
+        _fcMissCount = 0;
         _fcAnswerText = string.Empty;
         _fcAnswerEnabled = false;
         _fcSubmitEnabled = false;
@@ -839,13 +853,13 @@ else
             _poCorrectCount++;
             _poIsCorrect = true;
             _poPromptText = "CORRECT";
-            _poPromptDetailText = "Payout: " + PayoutWager.FormatCents(correctCents);
+            _poPromptDetailText = PayoutWager.ExplainPayout(_poWagerCents, _poRatio);
         }
         else
         {
             _poIsCorrect = false;
-            _poPromptText = "INCORRECT";
-            _poPromptDetailText = "Correct payout: " + PayoutWager.FormatCents(correctCents);
+            _poPromptText = $"INCORRECT \u2014 you entered {PayoutWager.FormatShort(userCents)}";
+            _poPromptDetailText = PayoutWager.ExplainPayout(_poWagerCents, _poRatio);
         }
 
         _poAnswerEnabled = false;
@@ -938,11 +952,13 @@ else
         if (_swCurrentHand < _swHands.Count - 1) _swCurrentHand++;
     }
 
-    private readonly List<string> _swWhyLines = new();
+    // After Submit: Lucky Ladies and 21 + 3 for each hand, with the right
+    // answer and why
+    private readonly List<BreakdownRow> _swRows = new();
 
     private void SwDealAgain()
     {
-        _swWhyLines.Clear();
+        _swRows.Clear();
         foreach (SwHandState hand in _swHands)
         {
             hand.LuckyLadiesSelection = null;
@@ -1003,8 +1019,8 @@ else
 
         _swTotalAnswered++;
 
-        // Why each wager won or lost, hand by hand
-        _swWhyLines.Clear();
+        // Each wager with the right answer and why, hand by hand
+        _swRows.Clear();
         for (int h = 0; h < _swHands.Count; h++)
         {
             SwHandState hand = _swHands[h];
@@ -1013,29 +1029,37 @@ else
             two.AddCard(hand.Card2);
             bool ll = SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2);
             bool tc = SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _swDealerCard!);
-            string tcName = !tc ? "no straight, flush or trips"
+            string tcName = !tc ? "no Flush, Straight or Three of a Kind"
                 : ThreeCardEvaluator.GetCategory(new[] { hand.Card1, hand.Card2, _swDealerCard! }) switch
                 {
-                    ThreeCardCategory.StraightFlush => "Straight Flush",
+                    ThreeCardCategory.StraightFlush => "a Straight Flush",
                     ThreeCardCategory.ThreeOfAKind => "Three of a Kind",
-                    ThreeCardCategory.Straight => "Straight",
-                    _ => "Flush"
+                    ThreeCardCategory.Straight => "a Straight",
+                    _ => "a Flush"
                 };
-            string prefix = _swHands.Count > 1 ? $"Hand {h + 1}: " : "";
-            _swWhyLines.Add($"{prefix}Lucky Ladies {two.Total}: {(ll ? "wins (20)" : "loses (needs 20)")}. 21 + 3 with the dealer card: {tcName}, {(tc ? "wins" : "loses")}.");
+            string prefix = _swHands.Count > 1 ? $"Hand {h + 1} " : "";
+            WagerOutcome llActual = ll ? WagerOutcome.Win : WagerOutcome.Lose;
+            WagerOutcome tcActual = tc ? WagerOutcome.Win : WagerOutcome.Lose;
+
+            _swRows.Add(new BreakdownRow($"{prefix}Lucky Ladies", $"{hand.LuckyLadiesSelection}", $"{llActual}",
+                hand.LuckyLadiesSelection == llActual,
+                ll ? "The first two cards total 20." : $"The first two cards total {two.Total} (needs 20)."));
+            _swRows.Add(new BreakdownRow($"{prefix}21 + 3", $"{hand.TwentyOnePlus3Selection}", $"{tcActual}",
+                hand.TwentyOnePlus3Selection == tcActual,
+                $"With the dealer's up card: {tcName}."));
         }
 
         if (roundCorrect == _swHandCount * 2)
         {
             _swTotalCorrect++;
             _swIsCorrect = true;
-            _swResultText = "CORRECT";
         }
         else
         {
             _swIsCorrect = false;
-            _swResultText = "INCORRECT";
         }
+
+        _swResultText = BreakdownRow.Summary(_swRows);
 
         double percentage = (double)_swTotalCorrect / _swTotalAnswered;
         _swScoreText = $"Score: {_swTotalCorrect} / {_swTotalAnswered} ({percentage:0.0%})";

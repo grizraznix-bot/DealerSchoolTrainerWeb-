@@ -452,8 +452,8 @@ else
     {
         StopRun();
         _overAnswer = _game == ChallengeGame.FlashCards
-            ? (_hand.IsBust ? $"The dealer's hand was {_hand.Total} - BUST." : $"The dealer's hand was {_hand.Total}.")
-            : $"{PayoutWager.FormatCents(_wagerCents)} pays {PayoutWager.FormatCents(PayoutWager.CalculatePayoutCents(_wagerCents, _ratio))}.";
+            ? (_hand.IsBust ? $"The dealer's hand was {_hand.Total} \u2014 BUST." : $"The dealer's hand was {_hand.Total}.")
+            : PayoutWager.ExplainPayout(_wagerCents, _ratio);
 
         _placed = -1;
         if (_correct > 0)

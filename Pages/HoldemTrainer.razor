@@ -121,7 +121,7 @@ else
                     @if (_roundScored && hand.ActualOutcome is not null)
                     {
                         <p class="hd-hand-result @(hand.WagerWrong ? "hd-result-bad" : "hd-result-ok")">
-                            @hand.RankName &middot; @(hand.WagerWrong ? $"\u2717 actually {hand.ActualOutcome}" : "\u2713 correct")
+                            @(hand.WagerWrong ? $"\u2717 actually {hand.ActualOutcome}" : "\u2713 correct")
                             <br /><span class="why-line">@hand.Reason</span>
                         </p>
                     }
@@ -207,19 +207,15 @@ else
              hands (Identify the Hands) it sits below the rank picker instead
              (hd-feedback-inline). Phones always show it below. -->
         <div class="feedback-area hd-feedback @(PlayersVisible ? "" : "hd-feedback-inline")" style="--hd-feedback-left: @(_hands.Count * 154)px;">
-            <div class="result-line @(_isCorrect ? "txt-ok" : "txt-bad")">@_resultText</div>
-            @if (_mistakesText.Length > 0)
+            @if (_roundScored)
             {
-                <div class="pre-line tight-top">@_mistakesText</div>
+                @* After Submit: the dealer's hand / each player hand with the
+                   right answer and why *@
+                <ResultBreakdown ResultText="@_resultText" IsCorrect="_isCorrect" Rows="_rows" />
             }
-            @if (_handRankLines.Count > 0)
+            else if (_resultText.Length > 0)
             {
-                <div class="tight-top">
-                    @foreach ((string text, string color) in _handRankLines)
-                    {
-                        <p class="result-line @color">@text</p>
-                    }
-                </div>
+                <div class="result-line txt-bad">@_resultText</div>
             }
         </div>
         </div>
@@ -397,6 +393,10 @@ else
     // wrong (including every hand when the dealer declaration itself
     // was invalid, since that marks every hand wrong).
     private readonly List<(string Text, string Color)> _handRankLines = new();
+
+    // After Submit: one line per question (Identify: the dealer's hand;
+    // Settle: each player hand) for the feedback box
+    private readonly List<BreakdownRow> _rows = new();
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
 
@@ -489,6 +489,7 @@ else
         _resultText = string.Empty;
         _mistakesText = string.Empty;
         _handRankLines.Clear();
+        _rows.Clear();
         _roundScored = false;
         _submitEnabled = true;
         _currentHand = 0;
@@ -599,7 +600,9 @@ else
         _resultText = "REVEALED";
         _mistakesText = string.Empty;
         _handRankLines.Clear();
-        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(_revealRank)}", "txt-bad"));
+        _rows.Clear();
+        _handRankLines.Add(($"Dealer: {HandEvaluator.DescribeHand(DealerPool())}", "txt-bad"));
+        _rows.Add(new BreakdownRow("Dealer's hand", "Revealed", HandEvaluator.HandRankName(_revealRank), false, DealerHandWhy()));
 
         string pct = ((double)_correctCount / _totalRounds).ToString("0.0%");
         _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
@@ -608,6 +611,16 @@ else
         _submitEnabled = false;
         _dealEnabled = true;
         _showReveal = true;
+    }
+
+    // Identify the Hands feedback: the dealer's hand spelled out, and the
+    // 5 cards that make it, e.g. "Two Pair, Kings and 7s, A kicker.
+    // Best 5: K♠ K♥ 7♦ 7♣ A♠"
+    private string DealerHandWhy()
+    {
+        List<Card> pool = DealerPool();
+        string cards = string.Join(" ", OrderForShow(HandEvaluator.BestFiveCards(pool)).Select(CardLabel));
+        return $"{HandEvaluator.DescribeHand(pool)}. Best 5: {cards}";
     }
 
     // Pairs/trips first, then high to low (e.g. Q Q 5 5 A)
@@ -681,8 +694,10 @@ else
         bool rankCorrect = _dealerRankIndex == (int)bestRank;
 
         _dealerRankWrong = !rankCorrect;
-        _mistakesText = rankCorrect ? string.Empty : $"Rank: actually {HandEvaluator.HandRankName(bestRank)}";
-        _handRankLines.Add(($"Dealer: {HandEvaluator.HandRankName(bestRank)}", rankCorrect ? "txt-ok" : "txt-bad"));
+        _mistakesText = string.Empty;
+        _handRankLines.Add(($"Dealer: {HandEvaluator.DescribeHand(DealerPool())}", rankCorrect ? "txt-ok" : "txt-bad"));
+        _rows.Clear();
+        _rows.Add(new BreakdownRow("Dealer's hand", RankComboItems[_dealerRankIndex], HandEvaluator.HandRankName(bestRank), rankCorrect, DealerHandWhy()));
 
         bool allCorrect = rankCorrect;
 
@@ -690,7 +705,7 @@ else
         if (allCorrect) _correctCount++;
 
         _isCorrect = allCorrect;
-        _resultText = allCorrect ? "CORRECT" : "INCORRECT";
+        _resultText = BreakdownRow.Summary(_rows);
 
         string pct = _totalRounds > 0
             ? ((double)_correctCount / _totalRounds).ToString("0.0%")
@@ -725,6 +740,8 @@ else
 
         bool allCorrect = true;
         System.Text.StringBuilder mistakes = new();
+        string dealerDesc = HandEvaluator.DescribeHand(DeclaredDealerHand());
+        _rows.Clear();
 
         for (int h = 0; h < _hands.Count; h++)
         {
@@ -755,20 +772,21 @@ else
             }
 
             HandRank handRank = HandEvaluator.BestHandRank(sevenCards);
-            hand.RankName = HandEvaluator.HandRankName(handRank);
+            hand.RankName = HandEvaluator.DescribeHand(sevenCards);
 
             // Why: a higher rank wins outright; the same rank is decided by
-            // the higher cards (kickers); identical 5-card hands push
-            string dealerName = HandEvaluator.HandRankName(dealerRank);
+            // the higher cards (pairs, then kickers); identical 5-card
+            // hands push
             hand.Reason = handRank != dealerRank
-                ? $"{hand.RankName} {(handRank > dealerRank ? "beats" : "loses to")} the dealer's {dealerName}"
+                ? $"{hand.RankName} {(handRank > dealerRank ? "beats" : "loses to")} the dealer's {dealerDesc}."
                 : actualOutcome == WagerOutcome.Push
-                    ? $"Same 5-card strength as the dealer's {dealerName}: push"
-                    : $"Both {dealerName}: the higher cards (kickers) {(actualOutcome == WagerOutcome.Win ? "are the player's" : "are the dealer's")}";
+                    ? $"{hand.RankName} is the same 5-card hand as the dealer's {dealerDesc}: push."
+                    : $"{hand.RankName} vs the dealer's {dealerDesc}: the {(actualOutcome == WagerOutcome.Win ? "player's" : "dealer's")} cards are higher.";
 
             _handRankLines.Add(($"Hand {h + 1}: {hand.Reason}", hand.WagerWrong ? "txt-bad" : "txt-ok"));
+            _rows.Add(new BreakdownRow($"Hand {h + 1}", $"{hand.WagerSelection}", $"{actualOutcome}", !hand.WagerWrong, hand.Reason));
         }
-        _handRankLines.Insert(0, ($"Dealer: {HandEvaluator.HandRankName(dealerRank)}", "txt-ok"));
+        _handRankLines.Insert(0, ($"Dealer: {dealerDesc}", "txt-ok"));
         // The per-hand lines below already say who won and why
         _mistakesText = string.Empty;
 
@@ -776,7 +794,7 @@ else
         if (allCorrect) _correctCount++;
 
         _isCorrect = allCorrect;
-        _resultText = allCorrect ? "CORRECT" : "INCORRECT";
+        _resultText = BreakdownRow.Summary(_rows);
 
         string pct = _totalRounds > 0
             ? ((double)_correctCount / _totalRounds).ToString("0.0%")
