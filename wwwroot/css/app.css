@@ -3969,3 +3969,18 @@ body {
         margin-bottom: 5rem;
     }
 }
+
+/* Home page: the five cards on the same green felt the games use,
+   sized to fit inside the panel on any screen */
+.home-cards.felt {
+    flex-wrap: nowrap;
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+}
+
+.home-cards.felt .home-card {
+    width: calc((100% - 32px) / 5);
+    max-width: 100px;
+    height: auto;
+    aspect-ratio: 100 / 140;
+}
