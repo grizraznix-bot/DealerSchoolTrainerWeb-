@@ -223,7 +223,10 @@ else
         @* Pinned bottom bar: Help | (Identify the Hands: Reveal) Submit, then
            Deal | End Session. Submit is enabled once every player hand is
            called (Settle the Bets) or the hand is set (Identify the Hands). *@
-        <GameBar HelpTitle="Hand Rankings" OnEnd="EndSession">
+        @* Identify the Hands has four buttons (with Reveal): "End" keeps
+           them all at full size on a phone *@
+        <GameBar HelpTitle="Hand Rankings" OnEnd="EndSession"
+                 EndLabel="@(_mode == TrainerMode.IdentifyHands ? "End" : "End Session")">
             <ChildContent>
                 @if (!_roundScored)
                 {

@@ -3481,11 +3481,10 @@ label,
     flex-grow: 1.25;
 }
 
-/* Four buttons (Hold'em Identify the Hands adds Reveal): a little
-   smaller text so End Session still fits on a phone */
+/* Four buttons (Hold'em Identify the Hands adds Reveal, and its End
+   Session button reads "End"): a little less padding so all four fit */
 .content .game-bar:has(> button:nth-child(4)) button {
     padding: 0 0.15rem;
-    font-size: 0.88rem;
 }
 
 .content .game-bar .game-bar-main {

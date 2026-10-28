@@ -295,7 +295,8 @@ else
         @if (_sbRoundScored)
         {
             <div class="sb-feedback">
-                <ResultBreakdown ResultText="@_sbResultText" IsCorrect="_sbIsCorrect" Rows="_sbRows" />
+                <ResultBreakdown ResultText="@_sbResultText" IsCorrect="_sbIsCorrect" Rows="_sbRows"
+                                 NoteLabel="Floor call:" Note="@_sbFloorNote" />
             </div>
         }
 
@@ -731,6 +732,10 @@ else
 
     // One line per wager in the feedback box after Submit
     private readonly List<BreakdownRow> _sbRows = new();
+    private string _sbFloorNote = string.Empty; // set on every fouled hand
+
+    private const string FloorCallNote =
+        "notify the supervisor. How a fouled hand is settled is at their discretion.";
     private bool _sbIsCorrect;
     private string _sbScoreText = "Score: 0 / 0 (0.0%)";
 
@@ -784,6 +789,7 @@ else
         _sbDealerLowLabel = string.Empty;
         _sbDealerHighLabel = string.Empty;
         _sbRows.Clear();
+        _sbFloorNote = string.Empty;
         _sbRoundScored = false;
         _sbSubmitEnabled = true;
     }
@@ -906,23 +912,32 @@ else
         if (_sbRoundScored) return;
 
         _sbRows.Clear();
+        _sbFloorNote = string.Empty;
 
-        // Foul marked: only the Foul call is graded (a fouled hand's
-        // wagers aren't settled one by one)
+        // A fouled hand is a floor call: marking it Foul is the right
+        // answer, and the wagers aren't settled by the dealer (supervisor's
+        // discretion). Every fouled hand shows the floor-call note.
         if (_sbFoulFlagged)
         {
             bool foulCorrect = _sbIsPlayerFoul;
             _sbFoulWrong = !foulCorrect;
-
             _sbRows.Add(SbFoulRow(true));
+
+            if (foulCorrect)
+            {
+                _sbFloorNote = FloorCallNote;
+                _sbResultText = "CORRECT \u2014 the player's hand is fouled";
+            }
+            else
+            {
+                // Not a foul: show how each wager should have been settled
+                SbAddWagerRows(graded: false);
+                _sbResultText = "INCORRECT \u2014 the player's hand is not fouled";
+            }
 
             _sbTotalRounds++;
             if (foulCorrect) _sbCorrectCount++;
-
             _sbIsCorrect = foulCorrect;
-            _sbResultText = foulCorrect
-                ? "CORRECT \u2014 the player's hand is fouled"
-                : "INCORRECT \u2014 the player's hand is not fouled";
 
             SbFinishRound();
             return;
@@ -935,29 +950,55 @@ else
             return;
         }
 
+        bool allCorrect;
+        if (_sbIsPlayerFoul)
+        {
+            // Fouled but settled instead of marked Foul: wrong, and the
+            // wagers aren't graded (the floor decides how they're settled)
+            _sbFoulWrong = true;
+            _sbEmperorsTreasure.Wrong = false;
+            _sbMainWager.Wrong = false;
+            _sbInsurance.Wrong = false;
+            _sbRows.Add(SbFoulRow(false));
+            _sbFloorNote = FloorCallNote;
+            _sbResultText = "INCORRECT \u2014 the player's hand is fouled";
+            allCorrect = false;
+        }
+        else
+        {
+            _sbFoulWrong = false;
+            allCorrect = SbAddWagerRows(graded: true);
+            _sbResultText = BreakdownRow.Summary(_sbRows);
+        }
+
+        _sbTotalRounds++;
+        if (allCorrect) _sbCorrectCount++;
+        _sbIsCorrect = allCorrect;
+
+        SbFinishRound();
+    }
+
+    // Emperor's Treasure, Main Wager and Pai Gow Insurance lines for the
+    // feedback box (for a hand that isn't fouled). graded: false when the
+    // hand was wrongly marked Foul -- the lines then just show the right
+    // answers (nothing was picked). Returns whether every pick was right.
+    private bool SbAddWagerRows(bool graded)
+    {
         // Best hand that can be made from any 5 of the player's 7 cards --
         // what both side wagers are settled on
         string bestOfSeven = _sbPlayerSolver.BestSevenCardCategoryName();
 
         // Emperor's Treasure: wins with Three of a Kind or better anywhere
         // in the 7 cards
-        bool emperorsActual = _sbPlayerSolver.QualifiesEmperorsTreasure();
-        WagerOutcome emperorsOutcome = emperorsActual ? WagerOutcome.Win : WagerOutcome.Lose;
-        bool emperorsOk = SbGradeWager(_sbEmperorsTreasure, emperorsOutcome);
-        _sbRows.Add(new BreakdownRow("Emperor's Treasure", $"{_sbEmperorsTreasure.Selection}", $"{emperorsOutcome}", emperorsOk,
-            $"Best hand in the 7 cards: {_sbPlayerSolver.EmperorsTreasureCategoryName()}. Wins on Three of a Kind or better."));
+        WagerOutcome emperorsOutcome = _sbPlayerSolver.QualifiesEmperorsTreasure() ? WagerOutcome.Win : WagerOutcome.Lose;
+        string emperorsWhy = $"Best hand in the 7 cards: {_sbPlayerSolver.EmperorsTreasureCategoryName()}. Wins on Three of a Kind or better.";
 
-        // Main Wager: foul loses; dealer Ace-High Pai Gow pushes; otherwise
-        // win both hands = Win, lose both = Lose, one each = Push. A tie
-        // (copy) goes to the dealer.
+        // Main Wager: dealer Ace-High Pai Gow pushes; otherwise win both
+        // hands = Win, lose both = Lose, one each = Push. A tie (copy) goes
+        // to the dealer.
         WagerOutcome mainOutcome;
         string mainWhy;
-        if (_sbIsPlayerFoul)
-        {
-            mainOutcome = WagerOutcome.Lose;
-            mainWhy = "The player's hand is fouled, so the Main Wager loses.";
-        }
-        else if (_sbDealerSolver.IsAceHighPaiGow(_sbDealerHigh))
+        if (_sbDealerSolver.IsAceHighPaiGow(_sbDealerHigh))
         {
             mainOutcome = WagerOutcome.Push;
             mainWhy = "The dealer has Ace-High Pai Gow, so all hands push.";
@@ -982,33 +1023,31 @@ else
             mainWhy = $"High hand: {SbWhoWins(winsHigh, playerHighScore == dealerHighScore)}. "
                     + $"Low hand: {SbWhoWins(winsLow, playerLowScore == dealerLowScore)}.";
         }
-        bool mainOk = SbGradeWager(_sbMainWager, mainOutcome);
-        _sbRows.Add(new BreakdownRow("Main Wager", $"{_sbMainWager.Selection}", $"{mainOutcome}", mainOk, mainWhy));
 
         // Pai Gow Insurance: wins only when nothing better than High Card
         // can be made from the 7 cards
-        bool insuranceActual = _sbPlayerSolver.QualifiesInsurance();
-        WagerOutcome insuranceOutcome = insuranceActual ? WagerOutcome.Win : WagerOutcome.Lose;
-        bool insuranceOk = SbGradeWager(_sbInsurance, insuranceOutcome);
-        _sbRows.Add(new BreakdownRow("Pai Gow Insurance", $"{_sbInsurance.Selection}", $"{insuranceOutcome}", insuranceOk,
-            $"Best hand in the 7 cards: {bestOfSeven}. Wins only on High Card (no pair, straight or flush)."));
+        WagerOutcome insuranceOutcome = _sbPlayerSolver.QualifiesInsurance() ? WagerOutcome.Win : WagerOutcome.Lose;
+        string insuranceWhy = $"Best hand in the 7 cards: {bestOfSeven}. Wins only on High Card (no pair, straight or flush).";
 
-        // A fouled hand that wasn't marked Foul is also a miss
-        _sbFoulWrong = _sbIsPlayerFoul;
-        if (_sbIsPlayerFoul)
+        bool allOk = true;
+        allOk &= SbAddWagerRow("Emperor's Treasure", _sbEmperorsTreasure, emperorsOutcome, emperorsWhy, graded);
+        allOk &= SbAddWagerRow("Main Wager", _sbMainWager, mainOutcome, mainWhy, graded);
+        allOk &= SbAddWagerRow("Pai Gow Insurance", _sbInsurance, insuranceOutcome, insuranceWhy, graded);
+        return allOk;
+    }
+
+    private bool SbAddWagerRow(string name, SbWagerState wager, WagerOutcome actual, string why, bool graded)
+    {
+        if (!graded)
         {
-            _sbRows.Add(SbFoulRow(false));
+            wager.Wrong = false;
+            _sbRows.Add(new BreakdownRow(name, "\u2014", $"{actual}", false, why));
+            return false;
         }
 
-        bool allCorrect = emperorsOk && mainOk && insuranceOk && !_sbFoulWrong;
-
-        _sbTotalRounds++;
-        if (allCorrect) _sbCorrectCount++;
-
-        _sbIsCorrect = allCorrect;
-        _sbResultText = BreakdownRow.Summary(_sbRows);
-
-        SbFinishRound();
+        bool ok = SbGradeWager(wager, actual);
+        _sbRows.Add(new BreakdownRow(name, $"{wager.Selection}", $"{actual}", ok, why));
+        return ok;
     }
 
     // Hand labels under the cards, and the buttons, once a round is scored

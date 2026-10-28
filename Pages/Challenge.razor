@@ -20,7 +20,8 @@
         <h1>CHALLENGE MODE</h1>
 
         <p class="ch-rules">One wrong answer or running out of time ends the run.
-            Each correct answer scores <strong>10 points + 1 point for every second left on the clock</strong>.</p>
+            Each correct answer scores <strong>10 points + 1 point for every second left on the clock</strong>.
+            Help isn't available during a run. <strong>End</strong> stops the run and keeps your score.</p>
 
         <div class="mode-list">
             <ModeCard Title="Blackjack Flash Cards"
@@ -152,28 +153,14 @@ else if (_screen == Screen.Playing)
             </div>
         }
 
-        @* Pinned bottom bar: Help | Submit (same as the keypad's Enter) |
-           End Session, which ends the run and keeps the score so far (no
-           wrong answer needed to stop) *@
-        <GameBar HelpTitle="Challenge Rules" OnEnd="EndByUser">
+        @* Pinned bottom bar: Submit (same as the keypad's Enter) | End,
+           which ends the run and keeps the score so far (no wrong answer
+           needed to stop). No Help during a timed run -- the rules are on
+           the Challenge start screen. *@
+        <GameBar ShowHelp="false" EndLabel="End" OnEnd="EndByUser">
             <ChildContent>
                 <button class="game-bar-main" @onclick="SubmitTyped" disabled="@(!_answering)">Submit</button>
             </ChildContent>
-            <HelpContent>
-                <ul>
-                    <li>One wrong answer, or the clock running out, ends the run.</li>
-                    <li>Each correct answer scores 10 points + 1 point for every second left on the clock.</li>
-                    @if (_game == ChallengeGame.FlashCards)
-                    {
-                        <li>Enter the total of the dealer's complete hand (dealer hits soft 17), or BUST. 20 seconds per hand.</li>
-                    }
-                    else
-                    {
-                        <li>Pay each blackjack at @(_ratio == PayoutRatio.ThreeToTwo ? "3 to 2" : "6 to 5"). 30 seconds per wager; wagers grow every 10 answers.</li>
-                    }
-                    <li>End Session stops the run and saves the score so far.</li>
-                </ul>
-            </HelpContent>
         </GameBar>
     </div>
 }

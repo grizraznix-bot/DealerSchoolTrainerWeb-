@@ -5,7 +5,10 @@
    in a pop-up; OK or tapping outside it closes it. *@
 
 <div class="game-bar">
-    <button type="button" class="game-bar-help" @onclick="() => _showHelp = true">Help</button>
+    @if (ShowHelp)
+    {
+        <button type="button" class="game-bar-help" @onclick="() => _showHelp = true">Help</button>
+    }
     @ChildContent
     <button type="button" class="game-bar-end" @onclick="OnEnd">@EndLabel</button>
 </div>
@@ -28,6 +31,9 @@
     [Parameter] public RenderFragment? HelpContent { get; set; }
     [Parameter] public EventCallback OnEnd { get; set; }
     [Parameter] public string EndLabel { get; set; } = "End Session";
+
+    // False hides the Help button (Challenge Mode: no help during a timed run)
+    [Parameter] public bool ShowHelp { get; set; } = true;
 
     private bool _showHelp;
 }
