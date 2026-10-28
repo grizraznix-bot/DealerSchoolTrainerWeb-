@@ -963,7 +963,7 @@ else
         WagerOutcome emperorsOutcome = emperorsActual ? WagerOutcome.Win : WagerOutcome.Lose;
         bool emperorsOk = SbGradeWager(_sbEmperorsTreasure, emperorsOutcome);
         _sbRows.Add(new SbRow("Emperor's Treasure", $"{_sbEmperorsTreasure.Selection}", $"{emperorsOutcome}", emperorsOk,
-            $"Best hand in the 7 cards: {bestOfSeven}. Wins on Three of a Kind or better."));
+            $"Best hand in the 7 cards: {_sbPlayerSolver.EmperorsTreasureCategoryName()}. Wins on Three of a Kind or better."));
 
         // Main Wager: foul loses; dealer Ace-High Pai Gow pushes; otherwise
         // win both hands = Win, lose both = Lose, one each = Push. A tie
