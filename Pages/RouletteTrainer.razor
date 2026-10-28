@@ -183,7 +183,11 @@ else
 
     private void EndSession()
     {
-        if (_played > 0) _showSessionSummary = true;
+        if (_played > 0)
+        {
+            _showSessionSummary = true;
+            _scrollToSummary = true;
+        }
         else BackToStart();
     }
 
@@ -357,8 +361,18 @@ else
         if (e.Key == "Enter") Submit();
     }
 
+    private bool _scrollToSummary;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // End Session: bring the Session Summary into view (it's at the
+        // bottom of the page, often below the screen on a phone)
+        if (_scrollToSummary && _showSessionSummary)
+        {
+            _scrollToSummary = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
+        }
+
         if (_started != _lastRenderedStarted)
         {
             _lastRenderedStarted = _started;

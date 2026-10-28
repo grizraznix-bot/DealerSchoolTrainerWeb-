@@ -402,8 +402,26 @@ else
     // scrolling down to reach Start, the game would open scrolled down.
     private bool _lastRenderedStarted;
 
+    private bool _scrollToSummary;
+    private bool _scrollToSbFeedback;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // End Session: bring the Session Summary into view (it's at the
+        // bottom of the page, often below the screen on a phone)
+        if (_scrollToSummary && _showSessionSummary)
+        {
+            _scrollToSummary = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
+        }
+
+        // Settling Bets Submit: bring the wager breakdown into view
+        if (_scrollToSbFeedback && _sbRoundScored)
+        {
+            _scrollToSbFeedback = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".sb-feedback"); } catch { }
+        }
+
         if (_started != _lastRenderedStarted)
         {
             _lastRenderedStarted = _started;
@@ -463,6 +481,7 @@ else
         if (anyRoundsPlayed)
         {
             _showSessionSummary = true;
+            _scrollToSummary = true;
         }
         else
         {
@@ -1029,6 +1048,7 @@ else
         _sbRoundScored = true;
         _sbSubmitEnabled = false;
         _sbDealEnabled = true;
+        _scrollToSbFeedback = true;
     }
 
     // The Foul line in the feedback. markedFoul: whether Foul was picked.

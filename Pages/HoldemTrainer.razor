@@ -306,8 +306,18 @@ else
     // scrolling down to reach Start, the game would open scrolled down.
     private bool _lastRenderedStarted;
 
+    private bool _scrollToSummary;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // End Session: bring the Session Summary into view (it's at the
+        // bottom of the page, often below the screen on a phone)
+        if (_scrollToSummary && _showSessionSummary)
+        {
+            _scrollToSummary = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
+        }
+
         if (_started != _lastRenderedStarted)
         {
             _lastRenderedStarted = _started;
@@ -783,6 +793,7 @@ else
         if (_totalRounds > 0)
         {
             _showSessionSummary = true;
+            _scrollToSummary = true;
         }
         else
         {

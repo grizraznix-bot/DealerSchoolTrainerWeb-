@@ -99,6 +99,15 @@
             if (r.bottom > h - pad) el.classList.add('wp-pop-up');
         };
     </script>
+    <!-- Scrolls a feedback block into view (Session Summary after End
+         Session, Pai Gow's wager breakdown after Submit). Its CSS
+         scroll-margin keeps it clear of the phone top bar. -->
+    <script>
+        window.dstScrollToEl = function (selector) {
+            var el = document.querySelector(selector);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+    </script>
     <!-- About page, "Reload Latest Version": GitHub Pages lets browsers
          reuse a saved copy of the page and stylesheet for 10 minutes.
          This fetches both fresh from GitHub (cache: 'reload' also replaces

@@ -3954,3 +3954,18 @@ body {
     padding-top: 6px;
     border-top: 1px solid var(--c-line);
 }
+
+/* Feedback blocks the page scrolls to (dstScrollToEl): stop below the
+   phone top bar instead of under it */
+.session-summary,
+.sb-feedback {
+    scroll-margin-top: 64px;
+}
+
+/* Phones: the Session Summary is the last thing on the page; leave room
+   under it so the pinned bottom bar doesn't cover its OK button */
+@media (max-width: 768px), (pointer: coarse) {
+    .session-summary {
+        margin-bottom: 5rem;
+    }
+}
