@@ -3984,3 +3984,12 @@ body {
     height: auto;
     aspect-ratio: 100 / 140;
 }
+
+/* Computers (wide screen with a mouse): no "Add to Home Screen" in the
+   menu -- it's a phone/tablet feature. The page itself still works if
+   opened from the Home page tip. */
+@media (min-width: 769px) and (pointer: fine) {
+    .sidebar .install-link {
+        display: none;
+    }
+}
