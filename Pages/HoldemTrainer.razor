@@ -48,16 +48,6 @@ else
            fixed 900px width and the side-positioned feedback apply on
            desktop only. *@
         <div class="hd-table hd-settle @(_mode == TrainerMode.IdentifyHands ? "hd-identify" : "")">
-            @* Phones only (hidden on desktop by CSS): after Submit, the
-               round result, dealer hand and score at the top of the screen,
-               so it shows without scrolling down to the feedback. *@
-            @if (_mode == TrainerMode.SettleBets && _roundScored)
-            {
-                <div class="hd-result-banner @(_isCorrect ? "hd-result-ok" : "hd-result-bad")">
-                    <div class="hd-result-main">@_resultText</div>
-                    <div>@(_handRankLines.Count > 0 ? _handRankLines[0].Text : "")</div>
-                </div>
-            }
 
             @* Phones only (hidden on desktop by CSS): one player hand is
                shown at a time. This banner names it; the Previous / Next
@@ -116,15 +106,6 @@ else
                     }
                     </div>
 
-                    @* Phones only: this player's result, right under the
-                       buttons, after Submit *@
-                    @if (_roundScored && hand.ActualOutcome is not null)
-                    {
-                        <p class="hd-hand-result @(hand.WagerWrong ? "hd-result-bad" : "hd-result-ok")">
-                            @(hand.WagerWrong ? $"\u2717 actually {hand.ActualOutcome}" : "\u2713 correct")
-                            <br /><span class="why-line">@hand.Reason</span>
-                        </p>
-                    }
                 </div>
             }
             </div>
@@ -250,12 +231,12 @@ else
                     {
                         <button class="reveal-button" @onclick="RevealIdentify">Reveal</button>
                     }
-                    <button class="game-bar-main" @onclick="SubmitRound"
+                    <button class="game-bar-main" @onclick="SubmitAndShow"
                             disabled="@(!(_submitEnabled && (_mode == TrainerMode.IdentifyHands ? _dealerHandSet : AllHandsAnswered)))">Submit</button>
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="DealAgain" disabled="@(!_dealEnabled)">Next</button>
+                    <button class="game-bar-main" @onclick="NextFromTop" disabled="@(!_dealEnabled)">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -304,8 +285,39 @@ else
 
     private bool _scrollToSummary;
 
+    // Bar buttons: Submit also scrolls to the feedback; Next also
+    // scrolls back to the top
+    private void SubmitAndShow()
+    {
+        SubmitRound();
+        if (_roundScored) _scrollToFeedback = true;
+    }
+
+    private void NextFromTop()
+    {
+        DealAgain();
+        _scrollToTopAfterNext = true;
+    }
+
+    private bool _scrollToFeedback;
+    private bool _scrollToTopAfterNext;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Submit: bring the feedback box into view (if it isn't already).
+        // Next: back to the top for the new hand.
+        if (_scrollToFeedback)
+        {
+            _scrollToFeedback = false;
+            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
+        }
+
+        if (_scrollToTopAfterNext)
+        {
+            _scrollToTopAfterNext = false;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+
         // End Session: bring the Session Summary into view (it's at the
         // bottom of the page, often below the screen on a phone)
         if (_scrollToSummary && _showSessionSummary)

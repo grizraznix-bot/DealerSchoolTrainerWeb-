@@ -151,11 +151,11 @@ else
             <ChildContent>
                 @if (!_roundScored)
                 {
-                    <button class="game-bar-main" @onclick="SubmitRound" disabled="@(!_submitEnabled)">Submit</button>
+                    <button class="game-bar-main" @onclick="SubmitAndShow" disabled="@(!_submitEnabled)">Submit</button>
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="DealAgain" disabled="@(!_dealEnabled)">Next</button>
+                    <button class="game-bar-main" @onclick="NextFromTop" disabled="@(!_dealEnabled)">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -204,8 +204,39 @@ else
 
     private bool _scrollToSummary;
 
+    // Bar buttons: Submit also scrolls to the feedback; Next also
+    // scrolls back to the top
+    private void SubmitAndShow()
+    {
+        SubmitRound();
+        if (_roundScored) _scrollToFeedback = true;
+    }
+
+    private void NextFromTop()
+    {
+        DealAgain();
+        _scrollToTopAfterNext = true;
+    }
+
+    private bool _scrollToFeedback;
+    private bool _scrollToTopAfterNext;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Submit: bring the feedback box into view (if it isn't already).
+        // Next: back to the top for the new hand.
+        if (_scrollToFeedback)
+        {
+            _scrollToFeedback = false;
+            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
+        }
+
+        if (_scrollToTopAfterNext)
+        {
+            _scrollToTopAfterNext = false;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+
         // End Session: bring the Session Summary into view (it's at the
         // bottom of the page, often below the screen on a phone)
         if (_scrollToSummary && _showSessionSummary)

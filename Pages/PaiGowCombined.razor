@@ -120,33 +120,12 @@ else if (_mode == PaiGowMode.HandSetting)
                     <p class="txt-bad">@_hsErrorText</p>
                 }
 
-                @if (_hsResultHeader.Length > 0)
+                @* After Submit: the result, your hand vs the House Way hand, and
+                   the House Way rule behind it *@
+                @if (_hsRoundScored)
                 {
-                    <p class="result-line hs-result-header @(_hsResultIsCorrect ? "txt-ok" : "txt-bad")">@_hsResultHeader</p>
-                }
-
-                @if (_hsShowComparison)
-                {
-                    <div class="pg-compare">
-                        <div class="txt-bold txt-bad">YOUR LOW HAND</div>
-                        <div class="txt-bold txt-ok">CORRECT LOW HAND</div>
-                        <div class="txt-bad">@_hsYourLowLabel</div>
-                        <div class="txt-ok">@_hsCorrectLowLabel</div>
-                        <div class="txt-bold txt-bad pg-gap">YOUR HIGH HAND</div>
-                        <div class="txt-bold txt-ok pg-gap">CORRECT HIGH HAND</div>
-                        <div class="txt-bad">@_hsYourHighDescription</div>
-                        <div class="txt-ok">@_hsCorrectHighDescription</div>
-                    </div>
-                }
-                else if (_hsSingleBody.Length > 0)
-                {
-                    <div class="pre-line txt-bold @(_hsResultIsCorrect ? "txt-ok" : "txt-bad")">@_hsSingleBody</div>
-                }
-
-                @* After Submit: the House Way rule behind the correct hand *@
-                @if (_hsHouseWayText.Length > 0)
-                {
-                    <p class="hs-houseway"><strong>House Way:</strong> @_hsHouseWayText</p>
+                    <ResultBreakdown ResultText="@_hsResultText" IsCorrect="_hsResultIsCorrect" Rows="_hsRows"
+                                     NoteLabel="House Way:" Note="@_hsHouseWayText" />
                 }
             </div>
         </div>
@@ -183,11 +162,11 @@ else if (_mode == PaiGowMode.HandSetting)
                 }
                 else if (_hsSubmitEnabled)
                 {
-                    <button class="game-bar-main" @onclick="HsSubmitHand">Submit</button>
+                    <button class="game-bar-main" @onclick="HsSubmitAndShow">Submit</button>
                 }
                 else if (_hsDealEnabled)
                 {
-                    <button class="game-bar-main" @onclick="HsDealAgain">Next</button>
+                    <button class="game-bar-main" @onclick="HsNextFromTop">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -325,11 +304,11 @@ else
             <ChildContent>
                 @if (!_sbRoundScored)
                 {
-                    <button class="game-bar-main" @onclick="SbSubmitRound" disabled="@(!_sbSubmitEnabled)">Submit</button>
+                    <button class="game-bar-main" @onclick="SbSubmitAndShow" disabled="@(!_sbSubmitEnabled)">Submit</button>
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="SbDealAgain" disabled="@(!_sbDealEnabled)">Next</button>
+                    <button class="game-bar-main" @onclick="SbNextFromTop" disabled="@(!_sbDealEnabled)">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -386,23 +365,58 @@ else
     private bool _lastRenderedStarted;
 
     private bool _scrollToSummary;
-    private bool _scrollToSbFeedback;
+
+    // Bar buttons: Submit also scrolls to the feedback; Next also
+    // scrolls back to the top
+    private void HsSubmitAndShow()
+    {
+        HsSubmitHand();
+        if (_hsRoundScored) _scrollToFeedback = true;
+    }
+
+    private void HsNextFromTop()
+    {
+        HsDealAgain();
+        _scrollToTopAfterNext = true;
+    }
+
+    private void SbSubmitAndShow()
+    {
+        SbSubmitRound();
+        if (_sbRoundScored) _scrollToFeedback = true;
+    }
+
+    private void SbNextFromTop()
+    {
+        SbDealAgain();
+        _scrollToTopAfterNext = true;
+    }
+
+    private bool _scrollToFeedback;
+    private bool _scrollToTopAfterNext;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Submit: bring the feedback box into view (if it isn't already).
+        // Next: back to the top for the new hand.
+        if (_scrollToFeedback)
+        {
+            _scrollToFeedback = false;
+            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
+        }
+
+        if (_scrollToTopAfterNext)
+        {
+            _scrollToTopAfterNext = false;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+
         // End Session: bring the Session Summary into view (it's at the
         // bottom of the page, often below the screen on a phone)
         if (_scrollToSummary && _showSessionSummary)
         {
             _scrollToSummary = false;
             try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
-        }
-
-        // Settling Bets Submit: bring the wager breakdown into view
-        if (_scrollToSbFeedback && _sbRoundScored)
-        {
-            _scrollToSbFeedback = false;
-            try { await JS.InvokeVoidAsync("dstScrollToEl", ".sb-feedback"); } catch { }
         }
 
         if (_started != _lastRenderedStarted)
@@ -516,14 +530,9 @@ else
     private bool _hsSubmitEnabled;
     private bool _hsDealEnabled;
     private string _hsErrorText = string.Empty;
-    private string _hsResultHeader = string.Empty;
+    private string _hsResultText = string.Empty;
     private string _hsHouseWayText = string.Empty; // after Submit: which House Way rule sets this hand, and how
-    private bool _hsShowComparison;
-    private string _hsSingleBody = string.Empty;
-    private string _hsYourLowLabel = string.Empty;
-    private string _hsCorrectLowLabel = string.Empty;
-    private string _hsYourHighDescription = string.Empty;
-    private string _hsCorrectHighDescription = string.Empty;
+    private readonly List<BreakdownRow> _hsRows = new(); // after Submit: Low and High hand, yours vs the House Way
     private bool _hsResultIsCorrect;
     private string _hsScoreText = "Score: 0 / 0 (0.0%)";
 
@@ -540,10 +549,9 @@ else
     {
         _hsDealEnabled = false;
         _hsErrorText = string.Empty;
-        _hsResultHeader = string.Empty;
+        _hsResultText = string.Empty;
         _hsHouseWayText = string.Empty;
-        _hsShowComparison = false;
-        _hsSingleBody = string.Empty;
+        _hsRows.Clear();
 
         _hsDeck = new PaiGowDeck();
 
@@ -654,31 +662,20 @@ else
         _hsScoreText = $"Score: {_hsCorrectCount} / {_hsTotalRounds} ({(double)_hsCorrectCount / _hsTotalRounds:0.0%})";
         _hsHouseWayText = _hsSolver.HouseWayReason();
 
-        if (result.IsFoul)
-        {
-            _hsResultIsCorrect = false;
-            _hsResultHeader = "INCORRECT HAND - FOUL";
-            _hsShowComparison = false;
-            _hsSingleBody = $"Your hand is FOUL.\nThe Low Hand is higher than the High Hand.\n\n" +
-                          $"LOW HAND: {result.UserLowLabel}\nHIGH HAND: {result.UserHighDescription}";
-        }
-        else if (result.IsCorrect)
-        {
-            _hsResultIsCorrect = true;
-            _hsResultHeader = "CORRECT";
-            _hsShowComparison = false;
-            _hsSingleBody = $"LOW HAND\n{result.CorrectLowLabel}\n\nHIGH HAND\n{result.CorrectHighDescription}";
-        }
-        else
-        {
-            _hsResultIsCorrect = false;
-            _hsResultHeader = "INCORRECT";
-            _hsShowComparison = true;
-            _hsYourLowLabel = result.UserLowLabel;
-            _hsCorrectLowLabel = result.CorrectLowLabel;
-            _hsYourHighDescription = result.UserHighDescription;
-            _hsCorrectHighDescription = result.CorrectHighDescription;
-        }
+        // Low and High hand: yours vs the House Way hand. A fouled hand
+        // (Low outranks High) is wrong on both lines.
+        bool lowOk = result.IsCorrect || (!result.IsFoul && result.UserLowLabel == result.CorrectLowLabel);
+        bool highOk = result.IsCorrect || (!result.IsFoul && result.UserHighDescription == result.CorrectHighDescription);
+        if (!result.IsCorrect && lowOk && highOk) highOk = false;
+
+        _hsRows.Clear();
+        _hsRows.Add(new BreakdownRow("Low hand", result.UserLowLabel, result.CorrectLowLabel, lowOk, ""));
+        _hsRows.Add(new BreakdownRow("High hand", result.UserHighDescription, result.CorrectHighDescription, highOk,
+            result.IsFoul ? "Your Low hand outranks your High hand: that's a foul." : ""));
+
+        _hsResultIsCorrect = result.IsCorrect;
+        _hsResultText = result.IsCorrect ? "CORRECT"
+            : result.IsFoul ? "INCORRECT \u2014 foul" : "INCORRECT";
     }
 
     // ============================================================
@@ -1030,7 +1027,6 @@ else
         _sbRoundScored = true;
         _sbSubmitEnabled = false;
         _sbDealEnabled = true;
-        _scrollToSbFeedback = true;
     }
 
     // The Foul line in the feedback. markedFoul: whether Foul was picked.

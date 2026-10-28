@@ -4056,3 +4056,33 @@ body {
     font-weight: normal;
     text-align: left;
 }
+
+/* Feedback box: the page scrolls to the result line after Submit; stop
+   below the phone top bar */
+.breakdown-result {
+    scroll-margin-top: 64px;
+}
+
+/* Note at the bottom of the feedback box (Pai Gow: the House Way rule) */
+.breakdown .bd-note {
+    margin: 0.4rem 0 0 0;
+    padding: 0.45rem 0.6rem;
+    border-left: 4px solid var(--c-info-line);
+    border-radius: 4px;
+    background-color: var(--c-info-bg);
+    color: var(--c-text);
+    font-size: 0.9rem;
+    font-weight: normal;
+}
+
+/* Pai Gow Hand Setting: the feedback box spans the column */
+.hs-feedback {
+    align-self: stretch;
+}
+
+/* Roulette's payout table: same box as the other games' feedback */
+.rl-breakdown {
+    border-color: var(--c-border);
+    background-color: white;
+    color: var(--c-text);
+}

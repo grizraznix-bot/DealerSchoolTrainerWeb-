@@ -32,6 +32,10 @@
                 }
             }
         </table>
+        @if (Note.Length > 0)
+        {
+            <p class="bd-note"><strong>@NoteLabel</strong> @Note</p>
+        }
     </div>
 }
 
@@ -39,4 +43,8 @@
     [Parameter] public string ResultText { get; set; } = "";
     [Parameter] public bool IsCorrect { get; set; }
     [Parameter] public IReadOnlyList<BreakdownRow> Rows { get; set; } = Array.Empty<BreakdownRow>();
+
+    // Optional line at the bottom of the box, e.g. "House Way:" + the rule
+    [Parameter] public string NoteLabel { get; set; } = "";
+    [Parameter] public string Note { get; set; } = "";
 }

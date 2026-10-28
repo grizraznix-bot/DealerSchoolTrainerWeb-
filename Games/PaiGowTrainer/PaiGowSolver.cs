@@ -279,8 +279,10 @@ public sealed class PaiGowSolver
             return new PaiGowSubmitResult
             {
                 IsFoul = true,
-                UserLowLabel = DescribeLowHand(userLow1, userLow2),
-                UserHighDescription = DescribeHighHand(userHigh)
+                UserLowLabel = TwoCardRankLabel(userLow1, userLow2),
+                UserHighDescription = DescribeHighHand(userHigh),
+                CorrectLowLabel = TwoCardRankLabel(correctLow1, correctLow2),
+                CorrectHighDescription = DescribeHighHand(correctHigh)
             };
         }
 

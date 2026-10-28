@@ -349,11 +349,11 @@ else
             <ChildContent>
                 @if (!_swRoundScored)
                 {
-                    <button class="game-bar-main" @onclick="SwSubmitRound" disabled="@(!(_swSubmitEnabled && SwAllAnswered))">Submit</button>
+                    <button class="game-bar-main" @onclick="SwSubmitAndShow" disabled="@(!(_swSubmitEnabled && SwAllAnswered))">Submit</button>
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="SwDealAgain" disabled="@(!_swDealEnabled)">Next</button>
+                    <button class="game-bar-main" @onclick="SwNextHandTop" disabled="@(!_swDealEnabled)">Next</button>
                 }
             </ChildContent>
             <HelpContent>
@@ -1077,8 +1077,39 @@ else
 
     private bool _scrollToSummary;
 
+    // Side Wagers bar buttons: Submit also scrolls to the feedback;
+    // Next also scrolls back to the top
+    private void SwSubmitAndShow()
+    {
+        SwSubmitRound();
+        if (_swRoundScored) _scrollToFeedback = true;
+    }
+
+    private void SwNextHandTop()
+    {
+        SwDealAgain();
+        _scrollToTopAfterNext = true;
+    }
+
+    private bool _scrollToFeedback;
+    private bool _scrollToTopAfterNext;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Submit: bring the feedback box into view (if it isn't already).
+        // Next: back to the top for the new hand.
+        if (_scrollToFeedback)
+        {
+            _scrollToFeedback = false;
+            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
+        }
+
+        if (_scrollToTopAfterNext)
+        {
+            _scrollToTopAfterNext = false;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+
         // End Session: bring the Session Summary into view (it's at the
         // bottom of the page, often below the screen on a phone)
         if (_scrollToSummary && _showSessionSummary)

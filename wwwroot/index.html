@@ -107,6 +107,18 @@
             var el = document.querySelector(selector);
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
+        // After Submit: scroll the feedback (result line + box) into view,
+        // unless it's already fully on screen (e.g. on a tall desktop
+        // window). 70px clears the phone top bar and the bottom bar.
+        window.dstRevealFeedback = function () {
+            var head = document.querySelector('.breakdown-result');
+            if (!head) return;
+            var box = head.nextElementSibling || head;
+            var top = head.getBoundingClientRect().top;
+            var bottom = box.getBoundingClientRect().bottom;
+            if (top >= 70 && bottom <= window.innerHeight - 70) return;
+            head.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
     </script>
     <!-- About page, "Reload Latest Version": GitHub Pages lets browsers
          reuse a saved copy of the page and stylesheet for 10 minutes.
