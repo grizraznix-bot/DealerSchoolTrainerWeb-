@@ -4043,3 +4043,16 @@ body {
     box-sizing: border-box;
     width: 100%;
 }
+
+/* Pai Gow Hand Setting: the House Way rule under the result */
+.hs-houseway {
+    margin: 0.6rem 0 0 0;
+    padding: 0.45rem 0.6rem;
+    border-left: 4px solid var(--c-info-line);
+    border-radius: 4px;
+    background-color: var(--c-info-bg);
+    color: var(--c-text);
+    font-size: 0.92rem;
+    font-weight: normal;
+    text-align: left;
+}

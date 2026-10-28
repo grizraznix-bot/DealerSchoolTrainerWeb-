@@ -80,9 +80,10 @@ public sealed class PaiGowSolver
 
         if (HasSpecialHighHand())
         {
-            // Two Pair may be split rather than playing the special hand,
-            // depending upon the House Way rule.
-            if (pairCount == 2 && ShouldSplitTwoPair())
+            // Two Pair is played instead of the straight/flush (using the
+            // Two Pair rule) unless both pairs are 6s or below (House Ways
+            // chart, Straights/Flushes 1c).
+            if (pairCount == 2 && HighestExactPair() >= 7)
             {
                 ApplyTwoPairRule(ref low1, ref low2, high);
                 return (low1, low2, high);
@@ -121,6 +122,133 @@ public sealed class PaiGowSolver
         ApplyNoPairRule(ref low1, ref low2, high);
         return (low1, low2, high);
     }
+
+    /// <summary>
+    /// One or two sentences saying which House Way rule sets these 7
+    /// cards and how -- shown after Submit in Hand Setting. Follows
+    /// exactly the same decisions, in the same order, as GetCorrectHand.
+    /// </summary>
+    public string HouseWayReason()
+    {
+        if (IsFiveAces())
+        {
+            return ExactPairRankExists(13)
+                ? "Five Aces with a pair of Kings: the Kings go in the Low hand; the five Aces stay in the High hand."
+                : "Five Aces: split them \u2014 a pair of Aces in the Low hand, three Aces in the High hand.";
+        }
+
+        int quad = FourKindRank();
+        if (quad > 0)
+        {
+            string quads = $"Four {RankPlural(quad)}";
+            if (quad == 14)
+            {
+                int otherPair = HighestExactPairExcluding(14);
+                if (otherPair > 0 && otherPair > 6)
+                    return $"Four Aces with a pair of 7s or higher: the {RankPlural(otherPair)} go in the Low hand; the four Aces stay High.";
+                if (otherPair > 0)
+                    return "Four Aces with a pair of 6s or lower: split the Aces \u2014 a pair of Aces in each hand.";
+                return "Four Aces: split them \u2014 a pair of Aces in each hand.";
+            }
+
+            if (quad <= 6)
+                return $"{quads} (2s through 6s): keep all four together in the High hand; the two highest other cards go Low.";
+
+            if (quad <= 10)
+            {
+                (int q1, int q2, int q3, int q4) = GetFourCardsOfRank(quad);
+                return HighestRemainingRankFromQuad(q1, q2, q3, q4) >= 14
+                    ? $"{quads} (7s through 10s) with an Ace to play Low: keep the four together; the Ace and the next-highest card go Low."
+                    : $"{quads} (7s through 10s) without an Ace: split them \u2014 a pair of {RankPlural(quad)} in each hand.";
+            }
+
+            return $"{quads} (Jacks through Kings): split them \u2014 a pair of {RankPlural(quad)} in each hand.";
+        }
+
+        int pairCount = ExactPairCount();
+        int tripCount = TripCount();
+
+        if (tripCount >= 2)
+        {
+            int highTrip = HighestTripRank();
+            return $"Two Three of a Kinds: split the higher one \u2014 a pair of {RankPlural(highTrip)} goes in the Low hand; the other Three of a Kind stays High.";
+        }
+
+        if (HasFullHouse())
+        {
+            int trip = FullHouseTripRank();
+            int pair1 = HighestExactPairExcluding(trip);
+            int pair2 = SecondExactPairExcluding(trip, pair1);
+
+            if (pair2 > 0)
+                return $"Full House plus another pair: the higher pair ({RankPlural(Math.Max(pair1, pair2))}) goes in the Low hand; the Full House stays High.";
+            if (pair1 == 2 && HasRank(14) && HasRank(13))
+                return "Full House with a pair of 2s, plus an Ace and a King: keep the Full House together; Ace-King goes in the Low hand.";
+            return $"Full House: split it \u2014 the pair of {RankPlural(pair1)} goes in the Low hand; the Three {RankPlural(trip)} stay High.";
+        }
+
+        if (pairCount >= 3)
+            return $"Three pairs: the highest pair ({RankPlural(HighestExactPair())}) goes in the Low hand; the other two pairs stay High.";
+
+        if (HasSpecialHighHand())
+        {
+            if (pairCount == 2 && HighestExactPair() >= 7)
+                return TwoPairReason() + " (With a straight or flush, Two Pair is played this way unless both pairs are 6s or below.)";
+
+            if (tripCount == 1 && TripRank() != 14)
+                return TripsReason() + " (Three of a Kind is played instead of the straight or flush.)";
+
+            return pairCount == 2
+                ? "Straight or flush with Two Pair, both 6s or below: play the straight or flush in the High hand, leaving the best two cards for the Low hand."
+                : "Straight or flush: play it in the High hand, choosing the five cards that leave the best two cards for the Low hand.";
+        }
+
+        if (pairCount == 2) return TwoPairReason();
+        if (tripCount == 1) return TripsReason();
+
+        if (pairCount == 1)
+            return $"One pair: the {RankPlural(HighestExactPair())} stay in the High hand; the two highest other cards go Low.";
+
+        return "No pair (Pai Gow): the highest card stays in the High hand; the 2nd and 3rd highest cards go Low.";
+    }
+
+    private string TwoPairReason()
+    {
+        int high = HighestExactPair();
+        int low = LowestExactPair();
+        string pairs = $"Two Pair, {RankPlural(high)} and {RankPlural(low)}";
+
+        if (high == 14 || low == 14)
+            return $"{pairs}: a pair of Aces with another pair always splits \u2014 the {RankPlural(low)} go in the Low hand.";
+
+        if (HasAceNotPartOfPair(high, low))
+        {
+            return ShouldSplitTwoPair()
+                ? $"{pairs}, with a single Ace: split (Jacks or better with 7s or better) \u2014 the {RankPlural(low)} go in the Low hand."
+                : $"{pairs}, with a single Ace: keep both pairs High (split only Jacks or better with 7s or better); the Ace and the next-highest card go Low.";
+        }
+
+        return ShouldSplitTwoPair()
+            ? $"{pairs}, no single Ace: split when a pair is 7s or better \u2014 the {RankPlural(low)} go in the Low hand."
+            : $"{pairs}, no single Ace: both pairs are below 7s, so keep them together High; the two highest other cards go Low.";
+    }
+
+    private string TripsReason()
+    {
+        int trip = TripRank();
+        return trip == 14
+            ? "Three Aces: keep a pair of Aces in the High hand; the third Ace goes in the Low hand with the next-highest card."
+            : $"Three {RankPlural(trip)}: keep them together in the High hand; the two highest other cards go Low.";
+    }
+
+    private static string RankPlural(int rank) => rank switch
+    {
+        14 => "Aces",
+        13 => "Kings",
+        12 => "Queens",
+        11 => "Jacks",
+        _ => $"{rank}s"
+    };
 
     /// <summary>
     /// Grades a user's submitted Low/High split against the House Way.
@@ -485,10 +613,12 @@ public sealed class PaiGowSolver
             return;
         }
 
-        // SEVEN THROUGH TEN
+        // SEVEN THROUGH TEN - split, unless an Ace (or the Joker) is
+        // left to play in the Low hand (House Ways chart: "unless the
+        // hand contains an Ace or better to play in front")
         if (quadRank <= 10)
         {
-            if (HighestRemainingRankFromQuad(q1, q2, q3, q4) >= 11)
+            if (HighestRemainingRankFromQuad(q1, q2, q3, q4) >= 14)
             {
                 SetHighestTwoRemaining(q1, q2, q3, q4, out low1, out low2);
             }

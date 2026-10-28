@@ -256,7 +256,6 @@ else
     private int _correct;
     private int _played;
     private bool _showKeypad;
-    private bool _showHelp;
 
     private ElementReference _answerRef;
     private ElementReference _nextRef;
@@ -273,7 +272,6 @@ else
     {
         _showSessionSummary = false;
         _started = false;
-        _showHelp = false;
         InvokeAsync(StateHasChanged);
     }
 
@@ -287,7 +285,6 @@ else
         _correct = 0;
         _played = 0;
         _showKeypad = false;
-        _showHelp = false;
         _started = true;
         DealRound();
     }
@@ -295,7 +292,6 @@ else
     private void BackToStart()
     {
         _started = false;
-        _showHelp = false;
     }
 
     // Exactly _wagerCount different spots, chosen at random; stack size
@@ -326,7 +322,6 @@ else
 
     private void NextRound()
     {
-        _showHelp = false;
         DealRound();
     }
 

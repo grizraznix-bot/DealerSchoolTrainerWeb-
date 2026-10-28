@@ -142,6 +142,12 @@ else if (_mode == PaiGowMode.HandSetting)
                 {
                     <div class="pre-line txt-bold @(_hsResultIsCorrect ? "txt-ok" : "txt-bad")">@_hsSingleBody</div>
                 }
+
+                @* After Submit: the House Way rule behind the correct hand *@
+                @if (_hsHouseWayText.Length > 0)
+                {
+                    <p class="hs-houseway"><strong>House Way:</strong> @_hsHouseWayText</p>
+                }
             </div>
         </div>
 
@@ -511,6 +517,7 @@ else
     private bool _hsDealEnabled;
     private string _hsErrorText = string.Empty;
     private string _hsResultHeader = string.Empty;
+    private string _hsHouseWayText = string.Empty; // after Submit: which House Way rule sets this hand, and how
     private bool _hsShowComparison;
     private string _hsSingleBody = string.Empty;
     private string _hsYourLowLabel = string.Empty;
@@ -534,6 +541,7 @@ else
         _hsDealEnabled = false;
         _hsErrorText = string.Empty;
         _hsResultHeader = string.Empty;
+        _hsHouseWayText = string.Empty;
         _hsShowComparison = false;
         _hsSingleBody = string.Empty;
 
@@ -644,6 +652,7 @@ else
         _hsDealEnabled = true;
 
         _hsScoreText = $"Score: {_hsCorrectCount} / {_hsTotalRounds} ({(double)_hsCorrectCount / _hsTotalRounds:0.0%})";
+        _hsHouseWayText = _hsSolver.HouseWayReason();
 
         if (result.IsFoul)
         {
