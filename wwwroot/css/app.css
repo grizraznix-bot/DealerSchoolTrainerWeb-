@@ -4343,3 +4343,35 @@ body {
         width: 200px;
     }
 }
+
+/* Roulette in Challenge Mode: winning number line and board under the
+   clock, then the answer box and keypad */
+.ch-rl-winner {
+    margin: 0.5rem 0 0.35rem 0;
+}
+
+.ch-rl-board {
+    align-self: stretch;
+}
+
+.ch-rl-breakdown {
+    margin: 0.5rem 0;
+    text-align: left;
+}
+
+/* Phones: the board, answer box and whole keypad fit above the bottom
+   bar -- the winning number is already marked gold on the board, so
+   its separate line is left out here */
+@media (max-width: 768px), (pointer: coarse) {
+    .ch-rl .ch-rl-winner {
+        display: none;
+    }
+
+    .ch-rl .rl-felt {
+        padding: 0.25rem 0;
+    }
+
+    .ch-rl .ch-bar {
+        margin-bottom: 0.4rem;
+    }
+}

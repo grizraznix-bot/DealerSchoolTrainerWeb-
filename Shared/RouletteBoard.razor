@@ -1,0 +1,34 @@
+@using DealerSchoolTrainerWeb.Games.RouletteTrainer
+@using static DealerSchoolTrainerWeb.Games.RouletteTrainer.RouletteLayout
+
+@* The layout close-up (shared by Roulette and Roulette in Challenge
+   Mode). Rows 10-12 and 22-24 are only partly shown and faded, so the
+   eye goes to the rows around 17. Chips sit on the lines/centers of the
+   spots they bet on; the number on each is how many chips. *@
+
+<div class="rl-felt">
+    <div class="rl-board">
+        <div class="rl-grid">
+            @for (int row = 0; row < 5; row++)
+            {
+                for (int col = 0; col < 3; col++)
+                {
+                    int n = FirstNumber + row * 3 + col;
+                    <div class="rl-cell @(row == 0 ? "rl-fade rl-edge-top" : row == 4 ? "rl-fade rl-edge-bottom" : "") @(n == WinningNumber ? "rl-win" : "")">
+                        <span class="rl-num @(RedNumbers.Contains(n) ? "rl-red" : "rl-black")">@n</span>
+                    </div>
+                }
+            }
+        </div>
+        @foreach (PlacedWager w in Wagers)
+        {
+            <div class="rl-chip" style="left: @Px(2 + w.Spot.X * CellW); top: @Px(2 + EdgeRowH + (w.Spot.Y - 1) * CellH);">@w.Chips</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<PlacedWager> Wagers { get; set; } = Array.Empty<PlacedWager>();
+
+    private static string Px(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "px";
+}

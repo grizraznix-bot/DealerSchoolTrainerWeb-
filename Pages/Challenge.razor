@@ -3,6 +3,7 @@
 @using DealerSchoolTrainerWeb.Core
 @using DealerSchoolTrainerWeb.Games.FlashCardTrainer
 @using DealerSchoolTrainerWeb.Games.PayoutTrainer
+@using DealerSchoolTrainerWeb.Games.RouletteTrainer
 @implements IDisposable
 @inject GameResetService GameReset
 @inject IJSRuntime JS
@@ -52,12 +53,20 @@
                 </div>
                 @RenderTopFive(_ratio == PayoutRatio.ThreeToTwo ? _po32Top : _po65Top, _ratio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5", -1, _ratio == PayoutRatio.ThreeToTwo ? Po32Key : Po65Key)
             </ModeCard>
+
+            <ModeCard Title="Roulette Payouts"
+                      Description="Pay the winning chips around 17. Starts with a few single chips and builds to up to 12 wagers with stacks of up to 5. 30 seconds per board."
+                      Expanded="@(_openCard == ChallengeGame.Roulette)"
+                      OnToggle="() => ToggleCard(ChallengeGame.Roulette)"
+                      OnStart="() => StartRun(ChallengeGame.Roulette)">
+                @RenderTopFive(_rlTop, null, -1, RlKey)
+            </ModeCard>
         </div>
     </div>
 }
 else if (_screen == Screen.Playing)
 {
-    <div class="play-screen keypad-screen ch-screen has-game-bar">
+    <div class="play-screen keypad-screen ch-screen has-game-bar @(_game == ChallengeGame.Roulette ? "rl-screen ch-rl" : "")">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -107,6 +116,51 @@ else if (_screen == Screen.Playing)
 
             <div class="keypad-wrap @(_showKeypad ? "keypad-open" : "")">
                 <NumericKeypad AllowDecimal="false" @bind-Value="_answerText" OnEnter="SubmitTyped" EnterLabel="Enter" />
+            </div>
+        }
+        else if (_game == ChallengeGame.Roulette)
+        {
+            <p class="ch-rl-winner rl-winner">Winning number <span class="rl-num rl-black rl-winner-num">17</span></p>
+
+            @* @key: each board is drawn fresh, all chips at once *@
+            <div class="ch-rl-board" @key="_roundId">
+                <RouletteBoard Wagers="_rlWagers" />
+            </div>
+
+            <div class="button-row answer-row keypad-answer">
+                <div class="po-display">
+                    @if (_flashText.Length > 0)
+                    {
+                        <div class="po-display-result ch-plus">@_flashText</div>
+                    }
+                    else if (_answerText.Length > 0)
+                    {
+                        <div class="po-display-amount">@_answerText</div>
+                    }
+                    else
+                    {
+                        <div class="po-display-placeholder">Total payout (chips)</div>
+                    }
+                </div>
+
+                <input type="text"
+                       inputmode="none"
+                       value="@_answerText"
+                       @oninput="HandleChipsInput"
+                       @onkeydown="HandleKeyDown"
+                       @ref="_answerRef"
+                       readonly="@(!_answering)"
+                       placeholder="Total payout (chips)" />
+                <button class="keypad-toggle" @onclick="() => _showKeypad = !_showKeypad">123</button>
+            </div>
+
+            <div class="keypad-wrap @(_showKeypad ? "keypad-open" : "")">
+                <NumericKeypad AllowDecimal="false" @bind-Value="_answerText" OnEnter="SubmitTyped" EnterLabel="Enter" />
+            </div>
+
+            @* Desktop only: the result line under the text box *@
+            <div class="feedback-area">
+                <p class="ch-plus">@_flashText</p>
             </div>
         }
         else
@@ -175,6 +229,24 @@ else
         @if (!_endedByUser)
         {
             <p class="ch-answer">@_overAnswer</p>
+            @if (_game == ChallengeGame.Roulette && _rlWagers.Count > 0)
+            {
+                <div class="rl-breakdown ch-rl-breakdown">
+                    <table>
+                        @foreach (RouletteLayout.PlacedWager w in _rlWagers.OrderByDescending(w => w.Spot.Pays).ThenBy(w => w.Spot.Order))
+                        {
+                            <tr>
+                                <td>@w.Spot.Name - @w.Chips @(w.Chips == 1 ? "chip" : "chips") × @w.Spot.Pays</td>
+                                <td>@(w.Chips * w.Spot.Pays)</td>
+                            </tr>
+                        }
+                        <tr class="rl-total">
+                            <td>Total payout</td>
+                            <td>@RouletteLayout.Total(_rlWagers)</td>
+                        </tr>
+                    </table>
+                </div>
+            }
         }
 
         @if (_placed >= 0)
@@ -199,7 +271,7 @@ else
 
 @code {
     private enum Screen { Start, Playing, Over }
-    private enum ChallengeGame { FlashCards, Payouts }
+    private enum ChallengeGame { FlashCards, Payouts, Roulette }
 
     // One finished run, as kept in the Top 5
     private sealed class ChallengeScore
@@ -212,6 +284,7 @@ else
 
     private const int FlashCardSeconds = 20;
     private const int PayoutSeconds = 30;
+    private const int RouletteSeconds = 30;
     private const int TopCount = 5;
     private const bool HitSoft17 = true;
 
@@ -220,6 +293,7 @@ else
     private const string FcKey = "dst-challenge-fc-v2";
     private const string Po32Key = "dst-challenge-po-32-v2";
     private const string Po65Key = "dst-challenge-po-65-v2";
+    private const string RlKey = "dst-challenge-rl-v1";
 
     private static readonly Random Rng = new();
 
@@ -231,6 +305,7 @@ else
     private List<ChallengeScore> _fcTop = new();
     private List<ChallengeScore> _po32Top = new();
     private List<ChallengeScore> _po65Top = new();
+    private List<ChallengeScore> _rlTop = new();
 
     // Current run
     private int _score;
@@ -251,7 +326,8 @@ else
     private BlackjackShoe _shoe = new();
     private BlackjackHand _hand = new();
     private long _wagerCents;
-    private int _wagerNumber;          // wagers dealt so far this run (for the tiers)
+    private int _wagerNumber;          // wagers / boards dealt so far this run (for the tiers)
+    private List<RouletteLayout.PlacedWager> _rlWagers = new();
 
     // Run over
     private bool _timedOut;
@@ -266,6 +342,7 @@ else
 
     private List<ChallengeScore> CurrentTop =>
         _game == ChallengeGame.FlashCards ? _fcTop
+        : _game == ChallengeGame.Roulette ? _rlTop
         : _ratio == PayoutRatio.ThreeToTwo ? _po32Top : _po65Top;
 
     protected override void OnInitialized()
@@ -278,6 +355,7 @@ else
         _fcTop = await LoadTop(FcKey);
         _po32Top = await LoadTop(Po32Key);
         _po65Top = await LoadTop(Po65Key);
+        _rlTop = await LoadTop(RlKey);
     }
 
     private void OnResetRequested()
@@ -318,7 +396,12 @@ else
         _placed = -1;
         _timedOut = false;
         _showKeypad = false;
-        _limitSeconds = game == ChallengeGame.FlashCards ? FlashCardSeconds : PayoutSeconds;
+        _limitSeconds = game switch
+        {
+            ChallengeGame.FlashCards => FlashCardSeconds,
+            ChallengeGame.Roulette => RouletteSeconds,
+            _ => PayoutSeconds
+        };
 
         if (game == ChallengeGame.FlashCards)
             _shoe = new BlackjackShoe();
@@ -345,6 +428,8 @@ else
     {
         if (_game == ChallengeGame.FlashCards)
             DealDealerHand();
+        else if (_game == ChallengeGame.Roulette)
+            DealRouletteBoard();
         else
             _wagerCents = NextWagerCents();
 
@@ -440,9 +525,12 @@ else
     private void EndRun()
     {
         StopRun();
-        _overAnswer = _game == ChallengeGame.FlashCards
-            ? (_hand.IsBust ? $"The dealer's hand was {_hand.Total} \u2014 BUST." : $"The dealer's hand was {_hand.Total}.")
-            : PayoutWager.ExplainPayout(_wagerCents, _ratio);
+        _overAnswer = _game switch
+        {
+            ChallengeGame.FlashCards => _hand.IsBust ? $"The dealer's hand was {_hand.Total} \u2014 BUST." : $"The dealer's hand was {_hand.Total}.",
+            ChallengeGame.Roulette => $"The payout was {RouletteLayout.Total(_rlWagers)} chips.",
+            _ => PayoutWager.ExplainPayout(_wagerCents, _ratio)
+        };
 
         _placed = -1;
         if (_correct > 0)
@@ -472,6 +560,7 @@ else
 
     private string CurrentKey =>
         _game == ChallengeGame.FlashCards ? FcKey
+        : _game == ChallengeGame.Roulette ? RlKey
         : _ratio == PayoutRatio.ThreeToTwo ? Po32Key : Po65Key;
 
     // ============================================================
@@ -499,7 +588,14 @@ else
         string raw = _answerText.Trim();
         if (raw.Length == 0) return; // nothing entered yet: not a miss
 
-        if (_game == ChallengeGame.FlashCards)
+        if (_game == ChallengeGame.Roulette)
+        {
+            if (int.TryParse(raw, out int chips) && chips == RouletteLayout.Total(_rlWagers))
+                await Correct();
+            else
+                Wrong($"{raw} chips");
+        }
+        else if (_game == ChallengeGame.FlashCards)
         {
             // Over 21: BUST or the exact total both count as right
             if (int.TryParse(raw, out int total) && total == _hand.Total)
@@ -528,6 +624,13 @@ else
             await Correct();
         else
             Wrong("BUST");
+    }
+
+    // Roulette answer box: whole numbers only
+    private void HandleChipsInput(ChangeEventArgs e)
+    {
+        string raw = e.Value?.ToString() ?? string.Empty;
+        _answerText = new string(raw.Where(char.IsDigit).Take(5).ToArray());
     }
 
     // Payout box: digits and one decimal point, at most 2 decimal digits
@@ -569,6 +672,24 @@ else
 
         while (!_hand.IsBust && _hand.MustHit(HitSoft17))
             _hand.AddCard(_shoe.Draw());
+    }
+
+    // Roulette boards get harder as the run goes on (board number: wagers
+    // on the board, chips per wager):
+    //   1-5: 2-4 wagers, 1 chip      6-10: 3-6, 1 chip    11-15: 3-6, 1-2
+    //   16-20: 4-8, 1-3              21-30: 4-10, 1-5     31 on: 4-12, 1-5
+    private void DealRouletteBoard()
+    {
+        int n = _wagerNumber++;
+        int minW, maxW, maxChips;
+        if (n < 5) { minW = 2; maxW = 4; maxChips = 1; }
+        else if (n < 10) { minW = 3; maxW = 6; maxChips = 1; }
+        else if (n < 15) { minW = 3; maxW = 6; maxChips = 2; }
+        else if (n < 20) { minW = 4; maxW = 8; maxChips = 3; }
+        else if (n < 30) { minW = 4; maxW = 10; maxChips = 5; }
+        else { minW = 4; maxW = 12; maxChips = 5; }
+
+        _rlWagers = RouletteLayout.Deal(Rng.Next(minW, maxW + 1), 1, maxChips, Rng);
     }
 
     // Wager tiers: 1-10 $15-$100, 11-20 $25-$200, 21-30 $50-$300, then
@@ -644,7 +765,7 @@ else
     {
         _confirmClearKey = null;
 
-        List<ChallengeScore> top = key == FcKey ? _fcTop : key == Po32Key ? _po32Top : _po65Top;
+        List<ChallengeScore> top = key == FcKey ? _fcTop : key == Po32Key ? _po32Top : key == RlKey ? _rlTop : _po65Top;
         top.Clear();
 
         try { await JS.InvokeVoidAsync("localStorage.removeItem", key); }

@@ -1,5 +1,7 @@
 @page "/roulette"
 @using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.RouletteTrainer
+@using static DealerSchoolTrainerWeb.Games.RouletteTrainer.RouletteLayout
 @implements IDisposable
 @inject GameResetService GameReset
 @inject IJSRuntime JS
@@ -63,30 +65,8 @@ else
             <span class="rl-winner">Winning number <span class="rl-num @(RedNumbers.Contains(WinningNumber) ? "rl-red" : "rl-black") rl-winner-num">@WinningNumber</span></span>
         </GameStatus>
 
-        @* The layout close-up. Rows 10-12 and 22-24 are only partly shown
-           and faded, so the eye goes to the rows around 17. Chips sit on
-           the lines/centers of the spots they bet on; the number on each
-           is how many chips. *@
-        <div class="rl-felt">
-            <div class="rl-board">
-                <div class="rl-grid">
-                    @for (int row = 0; row < 5; row++)
-                    {
-                        for (int col = 0; col < 3; col++)
-                        {
-                            int n = FirstNumber + row * 3 + col;
-                            <div class="rl-cell @(row == 0 ? "rl-fade rl-edge-top" : row == 4 ? "rl-fade rl-edge-bottom" : "") @(n == WinningNumber ? "rl-win" : "")">
-                                <span class="rl-num @(RedNumbers.Contains(n) ? "rl-red" : "rl-black")">@n</span>
-                            </div>
-                        }
-                    }
-                </div>
-                @foreach (PlacedWager w in _wagers)
-                {
-                    <div class="rl-chip" style="left: @Px(2 + w.Spot.X * CellW); top: @Px(2 + EdgeRowH + (w.Spot.Y - 1) * CellH);">@w.Chips</div>
-                }
-            </div>
-        </div>
+        @* The layout close-up with the winning chips (Shared/RouletteBoard) *@
+        <RouletteBoard Wagers="_wagers" />
 
         @if (!_answered)
         {
@@ -207,49 +187,12 @@ else
 
     private enum RouletteLevel { Beginner, Intermediate, Advanced }
 
-    // One betting spot that wins on 17. X/Y are where its chip sits, in
-    // cells from the top-left of the grid (17 is the middle of row 2,
-    // col 1; whole numbers are lines, .5 is the middle of a cell). The
-    // street and six-lines sit on the outside line at the 16 end of the
-    // rows (dozens side). Order keeps the breakdown in a steady order.
-    private sealed record Spot(string Name, int Pays, double X, double Y, int Order);
-
-    private sealed record PlacedWager(Spot Spot, int Chips);
-
-    private static readonly Spot[] Spots =
-    {
-        new("Straight up 17", 35, 1.5, 2.5, 0),
-        new("Split 14/17", 17, 1.5, 2.0, 1),
-        new("Split 16/17", 17, 1.0, 2.5, 2),
-        new("Split 17/18", 17, 2.0, 2.5, 3),
-        new("Split 17/20", 17, 1.5, 3.0, 4),
-        new("Street 16/17/18", 11, 0.0, 2.5, 5),
-        new("Corner 13/14/16/17", 8, 1.0, 2.0, 6),
-        new("Corner 14/15/17/18", 8, 2.0, 2.0, 7),
-        new("Corner 16/17/19/20", 8, 1.0, 3.0, 8),
-        new("Corner 17/18/20/21", 8, 2.0, 3.0, 9),
-        new("Six-line 13-18", 5, 0.0, 2.0, 10),
-        new("Six-line 16-21", 5, 0.0, 3.0, 11)
-    };
+    // The betting spots, board constants and dealing are shared with
+    // Roulette in Challenge Mode: Games/RouletteTrainer/RouletteLayout.cs
 
     private const string PaysText = "Straight up 35 · Split 17 · Street 11 · Corner 8 · Six-line 5";
 
-    // Winning number, and the first number in the close-up (top-left):
-    // rows 10-12 (partly shown), 13-15, 16-18, 19-21, 22-24 (partly shown)
-    private const int WinningNumber = 17;
-    private const int FirstNumber = 10;
-
-    // Cell size in px, lines included -- must match .rl-grid in app.css.
-    // EdgeRowH: the partly shown top and bottom rows (10-12, 22-24).
-    private const double CellW = 94;
-    private const double CellH = 54;
-    private const double EdgeRowH = 24;
-
-    private static readonly HashSet<int> RedNumbers = new() { 1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36 };
-
     private static readonly Random Rng = new();
-
-    private static string Px(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "px";
 
     private bool _started;
     private RouletteLevel _level = RouletteLevel.Beginner;
@@ -313,16 +256,8 @@ else
             _ => 5
         };
 
-        int count = Math.Clamp(_wagerCount, 1, Spots.Length);
-
-        _wagers = Spots
-            .OrderBy(_ => Rng.Next())
-            .Take(count)
-            .OrderBy(s => s.Order)
-            .Select(s => new PlacedWager(s, Rng.Next(1, maxChips + 1)))
-            .ToList();
-
-        _correctTotal = _wagers.Sum(w => w.Chips * w.Spot.Pays);
+        _wagers = RouletteLayout.Deal(_wagerCount, 1, maxChips, Rng);
+        _correctTotal = RouletteLayout.Total(_wagers);
         _answerText = string.Empty;
         _answered = false;
         _focusAnswer = true;
