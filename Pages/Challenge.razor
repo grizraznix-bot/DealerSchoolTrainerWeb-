@@ -79,7 +79,9 @@ else if (_screen == Screen.Playing)
         @if (_game == ChallengeGame.FlashCards)
         {
             <div class="felt fc-felt">
-                <div class="card-row fc-fan" style="--n: @_hand.Count;">
+                @* @key: each new hand gets a fresh row, so all its cards are
+                   drawn together (card images are pre-loaded, see index.html) *@
+                <div class="card-row fc-fan" style="--n: @_hand.Count;" @key="_hand">
                     @for (int i = 0; i < _hand.Count; i++)
                     {
                         var card = _hand.CardAt(i);

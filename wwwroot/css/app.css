@@ -4320,3 +4320,26 @@ body {
 .rl-math-help[open] > summary {
     margin-bottom: 0.6rem;
 }
+
+/* Desktop (mouse): bigger on-screen keypad (shown after 123), so the
+   keys are easy to click and "Enter" / "Next" fits inside its key */
+@media (min-width: 769px) and (pointer: fine) {
+    .content .numeric-keypad-row button,
+    .numeric-keypad-row span {
+        width: 64px;
+        height: 52px;
+        min-height: 52px;
+        padding: 0;
+        font-size: 1.25rem;
+    }
+
+    .content .numeric-keypad-row .numeric-keypad-enter {
+        font-size: 1rem;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .content .numeric-keypad-row .numeric-keypad-wide {
+        width: 200px;
+    }
+}

@@ -99,6 +99,46 @@
             if (r.bottom > h - pad) el.classList.add('wp-pop-up');
         };
     </script>
+    <!-- Card images: load all 53 once, as soon as the page has loaded, so
+         a new hand's cards all appear at the same moment instead of one
+         by one as each image downloads (noticeable in Challenge Mode).
+         And if a card image ever fails to load, try it once more instead
+         of leaving a blank card. -->
+    <script>
+        (function () {
+            var codes = ['JOKER'];
+            'A23456789TJQK'.split('').forEach(function (r) {
+                'SHDC'.split('').forEach(function (s) { codes.push(r + s); });
+            });
+
+            window.dstCardImages = [];
+            function preload() {
+                codes.forEach(function (c) {
+                    var img = new Image();
+                    img.src = 'images/cards/' + c + '.png';
+                    if (img.decode) img.decode().catch(function () { });
+                    window.dstCardImages.push(img);
+                });
+            }
+            if (document.readyState === 'complete') preload();
+            else window.addEventListener('load', preload);
+
+            document.addEventListener('error', function (e) {
+                var img = e.target;
+                if (!img || img.tagName !== 'IMG') return;
+                var src = img.getAttribute('src') || '';
+                if (src.indexOf('images/cards/') < 0 || img.dataset.dstRetried) return;
+                img.dataset.dstRetried = '1';
+                setTimeout(function () {
+                    img.src = src.split('?')[0] + '?retry=' + Date.now();
+                }, 300);
+            }, true);
+            document.addEventListener('load', function (e) {
+                var img = e.target;
+                if (img && img.tagName === 'IMG' && img.dataset.dstRetried) delete img.dataset.dstRetried;
+            }, true);
+        })();
+    </script>
     <!-- Scrolls a feedback block into view (Session Summary after End
          Session, Pai Gow's wager breakdown after Submit). Its CSS
          scroll-margin keeps it clear of the phone top bar. -->
