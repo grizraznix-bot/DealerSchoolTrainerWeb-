@@ -139,6 +139,19 @@
             }, true);
         })();
     </script>
+    <!-- Desktop number pad: true when this is a computer (mouse, wide
+         window) and the window is tall enough to open the pad below the
+         answer box without pushing the Submit / End bar off screen. The
+         pad is about 250px tall (305 with Payouts' extra Enter row); the
+         bar sits just under the game. -->
+    <script>
+        window.dstKeypadFits = function (padHeight) {
+            if (!window.matchMedia('(min-width: 769px) and (pointer: fine)').matches) return false;
+            var bar = document.querySelector('.game-bar');
+            if (!bar) return false;
+            return bar.getBoundingClientRect().bottom + (padHeight || 260) <= window.innerHeight;
+        };
+    </script>
     <!-- Scrolls a feedback block into view (Session Summary after End
          Session, Pai Gow's wager breakdown after Submit). Its CSS
          scroll-margin keeps it clear of the phone top bar. -->

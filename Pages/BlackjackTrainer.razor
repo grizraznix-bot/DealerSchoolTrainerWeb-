@@ -1122,6 +1122,17 @@ else
         {
             _lastRenderedStarted = _started;
             try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+
+            // Desktop: open the number pad straight away when the window
+            // is tall enough for it (123 still hides / shows it)
+            if (_started && _mode != BlackjackMode.SideWagers)
+            {
+                bool fits = false;
+                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", _mode == BlackjackMode.Payouts ? 315 : 260); } catch { }
+                if (_mode == BlackjackMode.FlashCards) _fcShowKeypad = fits;
+                else _poShowKeypad = fits;
+                if (fits) StateHasChanged();
+            }
         }
 
         // preventScroll: true -- moving the cursor into the answer box (or

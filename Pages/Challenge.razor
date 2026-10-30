@@ -830,6 +830,16 @@ else
         {
             _lastRenderedPlaying = playing;
             try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+
+            // Desktop: open the number pad straight away when the window
+            // is tall enough for it (123 still hides / shows it)
+            if (playing)
+            {
+                bool fits = false;
+                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", _game == ChallengeGame.Payouts ? 315 : 260); } catch { }
+                _showKeypad = fits;
+                if (fits) StateHasChanged();
+            }
         }
 
         if (_focusAnswer)
