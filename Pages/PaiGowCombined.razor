@@ -24,6 +24,17 @@
                       OnStart="StartGame">
                 <div class="mode-options">
                     <div class="mode-option-group">
+                        <p class="mode-option-label">Difficulty</p>
+                        <label class="mode-choice">
+                            <input type="radio" name="hsLevel" checked="@(!_hsAdvanced)" @onchange="() => _hsAdvanced = false" />
+                            <span class="rl-level"><strong>Normal</strong><span class="rl-level-desc">random hands</span></span>
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="hsLevel" checked="@_hsAdvanced" @onchange="() => _hsAdvanced = true" />
+                            <span class="rl-level"><strong>Advanced</strong><span class="rl-level-desc">more special-rule hands</span></span>
+                        </label>
+                    </div>
+                    <div class="mode-option-group">
                         <p class="mode-option-label">Joker Frequency</p>
                         <label class="mode-choice">
                             <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 0)" @onchange="() => _hsJokerFrequencyLevel = 0" />
@@ -517,6 +528,10 @@ else
 
     private int _hsJokerFrequencyLevel;
 
+    // Advanced difficulty: about 1 hand in 3 is built to need one of the
+    // House Way's special rules (Games/PaiGowTrainer/PaiGowTrickyHands.cs)
+    private bool _hsAdvanced;
+
     private PaiGowDeck _hsDeck = new();
     private readonly PaiGowSolver _hsSolver = new();
     private List<PaiGowCard> _hsCards = new();
@@ -558,7 +573,9 @@ else
 
         double jokerProbability = ComputeJokerProbability(_hsJokerFrequencyLevel);
 
-        _hsCards = _hsDeck.DealSevenCardsWithJokerBias(jokerProbability);
+        _hsCards = _hsAdvanced && Random.Shared.Next(3) == 0
+            ? PaiGowTrickyHands.Deal(Random.Shared, out _)
+            : _hsDeck.DealSevenCardsWithJokerBias(jokerProbability);
         Array.Clear(_hsCardPosition);
 
         _hsSolver.SetCards(_hsCards);

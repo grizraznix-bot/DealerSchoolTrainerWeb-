@@ -124,6 +124,33 @@ public sealed class PaiGowSolver
     }
 
     /// <summary>
+    /// What the 7 cards hold, for building practice hands (Hand Setting's
+    /// Advanced difficulty): exact pairs, three of a kinds, the four of a
+    /// kind's rank (0 = none), full house, Joker, and whether any 5 of the
+    /// 7 make a straight (Straight) or a flush (Flush) -- a straight flush
+    /// counts as both.
+    /// </summary>
+    public (int Pairs, int Trips, int QuadRank, bool FullHouse, bool Joker, bool Straight, bool Flush, bool FiveAces) Traits()
+    {
+        bool straight = false, flush = false;
+        int[] idx = new int[6];
+        for (int a = 1; a <= 3; a++)
+        for (int b = a + 1; b <= 4; b++)
+        for (int c = b + 1; c <= 5; c++)
+        for (int d = c + 1; d <= 6; d++)
+        for (int e = d + 1; e <= 7; e++)
+        {
+            idx[1] = a; idx[2] = b; idx[3] = c; idx[4] = d; idx[5] = e;
+            int cat = FiveCardCategoryFromIndexes(idx);
+            if (cat == 4) straight = true;
+            if (cat == 5) flush = true;
+            if (cat == 8 || cat == 9) { straight = true; flush = true; }
+        }
+
+        return (ExactPairCount(), TripCount(), FourKindRank(), HasFullHouse(), HasJoker(), straight, flush, IsFiveAces());
+    }
+
+    /// <summary>
     /// One or two sentences saying which House Way rule sets these 7
     /// cards and how -- shown after Submit in Hand Setting. Follows
     /// exactly the same decisions, in the same order, as GetCorrectHand.
