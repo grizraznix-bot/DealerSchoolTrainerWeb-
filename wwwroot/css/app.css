@@ -4701,14 +4701,22 @@ body {
     }
 }
 
-/* Wide windows: the pay tables sit beside the game instead */
-@media (min-width: 1260px) {
+/* Wide windows: the pay tables sit beside the game instead. The game
+   column moves left by half the table's width (220px + 1.5rem gap) so
+   the game and the table are centered together and the table's right
+   edge stays on screen (e.g. a 1280px-wide laptop). */
+@media (min-width: 1120px) {
+    .play-screen.sp-screen {
+        left: calc(-1 * (220px + 1.5rem) / 2);
+    }
+
     .sp-paytable {
         position: absolute;
         top: 3.75rem;
         left: 100%;
         display: block;
         width: 220px;
+        box-sizing: border-box;
         margin: 0 0 0 1.5rem;
     }
 
