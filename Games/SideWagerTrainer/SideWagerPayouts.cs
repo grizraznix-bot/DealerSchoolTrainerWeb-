@@ -106,7 +106,7 @@ public static class SideWagerPayouts
     {
         string cards = $"{Short(r.Player1)} {Short(r.Player2)} {Short(r.DealerUp)}";
         if (r.TwentyOnePlus3Pays == 0)
-            return $"{cards} has {r.TwentyOnePlus3Hand}: the wager loses, pay $0.";
+            return $"{cards} has {r.TwentyOnePlus3Hand}: the wager loses.";
         return $"{cards} is {r.TwentyOnePlus3Hand}: {r.TwentyOnePlus3Pays} to 1. "
              + $"${r.TwentyOnePlus3Wager} × {r.TwentyOnePlus3Pays} = {Money(r.TwentyOnePlus3Payout)}.";
     }
@@ -115,7 +115,7 @@ public static class SideWagerPayouts
     {
         string cards = $"{Short(r.Player1)} {Short(r.Player2)}";
         if (r.LuckyLadiesPays == 0)
-            return $"{cards} totals {TwoCardTotal(r.Player1, r.Player2)} (needs 20): the wager loses, pay $0.";
+            return $"{cards} totals {TwoCardTotal(r.Player1, r.Player2)} (needs 20): the wager loses.";
         return $"{cards} is {r.LuckyLadiesHand}: {r.LuckyLadiesPays} to 1. "
              + $"${r.LuckyLadiesWager} × {r.LuckyLadiesPays:N0} = {Money(r.LuckyLadiesPayout)}.";
     }

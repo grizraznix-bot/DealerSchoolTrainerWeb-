@@ -318,11 +318,11 @@ else if (_mode == BlackjackMode.SidePayouts)
                         <div class="sp-ans @(ok ? "sp-ans-ok" : "sp-ans-bad")">
                             @if (ok)
                             {
-                                <text>&#x2713; @answer.ToString("N0")</text>
+                                <text>&#x2713; @SpEnteredText(wi)</text>
                             }
                             else
                             {
-                                <text>&#x2717; @(SpShowEntered(_spAnswer[wi]).TrimStart('$')) &middot; Answer: @answer.ToString("N0")</text>
+                                <text>&#x2717; @SpEnteredText(wi) &middot; Answer: @(answer == 0 ? "LOSE" : answer.ToString("N0"))</text>
                             }
                         </div>
                     }
@@ -330,17 +330,26 @@ else if (_mode == BlackjackMode.SidePayouts)
                     {
                         @* inputmode="none": phones use the keypad below instead
                            of their own keyboard; a PC keyboard types normally *@
+                        @* A wager marked Lose shows LOSE in its box; typing a
+                           number (or Backspace) clears it *@
                         <input type="text"
-                               class="sp-input"
+                               class="sp-input @(_spLose[wi] ? "sp-input-lose" : "")"
                                inputmode="none"
                                autocomplete="off"
-                               value="@_spAnswer[wi]"
+                               value="@(_spLose[wi] ? "LOSE" : _spAnswer[wi])"
                                @oninput="e => SpInput(wi, e)"
                                @onkeydown="e => SpKeyDown(wi, e)"
                                @onfocus="() => _spActive = wi"
                                @ref="_spInputRefs[wi]"
                                placeholder="Payout" />
                     }
+                    @* Lose: one tap instead of entering 0 (0 still counts).
+                       Tap again to undo. Greyed out once the round is scored. *@
+                    <button type="button"
+                            class="sp-lose @(_spLose[wi] ? "sp-lose-on" : "")"
+                            disabled="@_spScored"
+                            @onclick="() => SpToggleLose(wi)"
+                            @onclick:stopPropagation="true">Lose</button>
                 </div>
             }
         </div>
@@ -414,7 +423,7 @@ else if (_mode == BlackjackMode.SidePayouts)
                     <tr><td>Suited 20</td><td>9 to 1</td></tr>
                     <tr><td>Any 20</td><td>4 to 1</td></tr>
                 </table>
-                <p>Enter the winnings only. The wager stays on the layout. A losing wager pays 0.</p>
+                <p>Enter the winnings only. The wager stays on the layout. For a losing wager, tap Lose (or enter 0).</p>
             </HelpContent>
         </GameBar>
     </div>
@@ -1048,6 +1057,7 @@ else
     private SideWagerPayoutRound _spRound = SideWagerPayouts.Deal(Random.Shared);
     private readonly string[] _spAnswer = { "", "" };   // [0] = 21 + 3, [1] = Lucky Ladies
     private readonly bool[] _spOk = new bool[2];
+    private readonly bool[] _spLose = new bool[2];      // Lose tapped for that wager
     private int _spActive;
     private bool _spScored;
     private bool _spShowKeypad;
@@ -1070,6 +1080,7 @@ else
         set
         {
             _spAnswer[_spActive] = SpDigitsOnly(value);
+            _spLose[_spActive] = false;
             _spMessage = string.Empty;
         }
     }
@@ -1087,6 +1098,7 @@ else
         _spAnswer[0] = string.Empty;
         _spAnswer[1] = string.Empty;
         _spOk[0] = _spOk[1] = false;
+        _spLose[0] = _spLose[1] = false;
         _spActive = 0;
         _spScored = false;
         _spMessage = string.Empty;
@@ -1116,6 +1128,7 @@ else
     private void SpInput(int index, Microsoft.AspNetCore.Components.ChangeEventArgs e)
     {
         _spAnswer[index] = SpDigitsOnly(e.Value?.ToString());
+        _spLose[index] = false;
         _spActive = index;
         _spMessage = string.Empty;
     }
@@ -1167,11 +1180,11 @@ else
         // Both boxes need an amount (0 for a losing wager)
         for (int i = 0; i < 2; i++)
         {
-            if (_spAnswer[i].Length == 0)
+            if (_spAnswer[i].Length == 0 && !_spLose[i])
             {
                 _spMessage = i == 0
-                    ? "Enter the 21 + 3 payout (0 if it loses)."
-                    : "Enter the Lucky Ladies payout (0 if it loses).";
+                    ? "Enter the 21 + 3 payout, or tap Lose."
+                    : "Enter the Lucky Ladies payout, or tap Lose.";
                 _spActive = i;
                 _spFocusInput = i;
                 return;
@@ -1181,15 +1194,17 @@ else
         int[] correct = { _spRound.TwentyOnePlus3Payout, _spRound.LuckyLadiesPayout };
         for (int i = 0; i < 2; i++)
         {
-            _spOk[i] = long.TryParse(_spAnswer[i], out long v) && v == correct[i];
+            _spOk[i] = _spLose[i]
+                ? correct[i] == 0
+                : long.TryParse(_spAnswer[i], out long v) && v == correct[i];
         }
 
         _spRows.Clear();
         _spRows.Add(new BreakdownRow("21 + 3",
-            SpShowEntered(_spAnswer[0]), SideWagerPayouts.Money(correct[0]), _spOk[0],
+            SpEnteredMoney(0), SpAnswerMoney(correct[0]), _spOk[0],
             SideWagerPayouts.Why21Plus3(_spRound)));
         _spRows.Add(new BreakdownRow("Lucky Ladies",
-            SpShowEntered(_spAnswer[1]), SideWagerPayouts.Money(correct[1]), _spOk[1],
+            SpEnteredMoney(1), SpAnswerMoney(correct[1]), _spOk[1],
             SideWagerPayouts.WhyLuckyLadies(_spRound)));
 
         _spPlayed++;
@@ -1199,6 +1214,39 @@ else
         _spMessage = string.Empty;
         _spScored = true;
     }
+
+    // Lose button: marks the wager as losing (clears any amount typed) and
+    // moves on to the next wager; tapped again it's undone.
+    private void SpToggleLose(int index)
+    {
+        if (_spScored) return;
+        _spMessage = string.Empty;
+
+        if (_spLose[index])
+        {
+            _spLose[index] = false;
+            _spActive = index;
+            _spFocusInput = index;
+            return;
+        }
+
+        _spLose[index] = true;
+        _spAnswer[index] = string.Empty;
+        int next = index == 0 ? 1 : index;
+        _spActive = next;
+        _spFocusInput = next;
+    }
+
+    // What was entered, for the payout box after Submit: "LOSE" or "1,000"
+    private string SpEnteredText(int index) =>
+        _spLose[index] ? "LOSE" : SpShowEntered(_spAnswer[index]).TrimStart('$');
+
+    // ...and for the breakdown: "Lose" or "$1,000"
+    private string SpEnteredMoney(int index) =>
+        _spLose[index] ? "Lose" : SpShowEntered(_spAnswer[index]);
+
+    private static string SpAnswerMoney(int dollars) =>
+        dollars == 0 ? "Lose" : SideWagerPayouts.Money(dollars);
 
     private static string SpShowEntered(string raw) =>
         long.TryParse(raw, out long v) ? $"${v:N0}" : raw;

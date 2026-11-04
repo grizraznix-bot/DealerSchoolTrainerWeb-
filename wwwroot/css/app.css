@@ -4791,3 +4791,77 @@ body {
         height: 40px;
     }
 }
+
+/* Side Wager Payouts: Lose button at the end of each wager row */
+.content .sp-wrow .sp-lose {
+    flex: none;
+    width: 3.4rem;
+    height: 44px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--c-lose);
+    border-radius: 6px;
+    background-color: white;
+    color: var(--c-lose);
+    font-size: 0.85rem;
+    font-weight: 800;
+}
+
+.content .sp-wrow .sp-lose.sp-lose-on {
+    background-color: var(--c-lose);
+    color: white;
+}
+
+.content .sp-wrow .sp-lose:disabled {
+    border-color: #ccc;
+    background-color: #f4f4f4;
+    color: #aaa;
+}
+
+/* The payout box of a wager marked Lose */
+.content .sp-wrow .sp-input.sp-input-lose {
+    border-color: var(--c-lose);
+    background-color: #fff5f5;
+    color: var(--c-lose);
+    letter-spacing: 0.05em;
+}
+
+/* After Submit the box grows to fit (a wrong answer can run to two or
+   three lines in the narrower box); the keypad is gone by then */
+.content .sp-wrow .sp-ans {
+    height: auto;
+    min-height: 40px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+}
+
+.sp-ans-bad {
+    white-space: normal;
+}
+
+@media (max-width: 768px) and (max-height: 620px) {
+    .content .sp-wrow .sp-lose {
+        height: 34px;
+    }
+
+    .content .sp-wrow .sp-ans {
+        min-height: 34px;
+    }
+}
+
+/* Narrow phones (iPhone SE width): a little less room for the name */
+@media (max-width: 360px) {
+    .sp-wname {
+        width: 5.2rem;
+        font-size: 0.82rem;
+    }
+
+    .content .sp-wrow .sp-lose {
+        width: 3rem;
+    }
+
+    .sp-wrow {
+        gap: 6px;
+    }
+}
