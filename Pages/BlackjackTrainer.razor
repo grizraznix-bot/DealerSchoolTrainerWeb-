@@ -72,6 +72,12 @@
                       OnStart="StartGame">
                 <CountStepper Label="Number of Hands" Min="1" Max="6" @bind-Value="_swHandCount" />
             </ModeCard>
+
+            <ModeCard Title="Side Wager Payouts"
+                      Description="Pay the 21 + 3 and Lucky Ladies wagers. Enter the winnings for each, then Submit."
+                      Expanded="@IsModeOpen(BlackjackMode.SidePayouts)"
+                      OnToggle="() => ToggleMode(BlackjackMode.SidePayouts)"
+                      OnStart="StartGame" />
         </div>
     </div>
 }
@@ -257,6 +263,162 @@ else if (_mode == BlackjackMode.Payouts)
         </GameBar>
     </div>
 }
+else if (_mode == BlackjackMode.SidePayouts)
+{
+    <div class="play-screen sp-screen has-game-bar">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        <GameStatus Title="Side Wager Payouts" Correct="_spCorrect" Played="_spPlayed" />
+
+        @* On the felt: the dealer's up-card (on an Ace, the hole card is
+           shown too -- tucked behind, tilted, darker, with a dashed gold
+           outline and a HOLE CARD tag) and the player's two cards *@
+        <div class="felt sp-felt">
+            <div class="sp-col">
+                <div class="sp-cap">DEALER</div>
+                @if (_spRound.DealerHole is not null)
+                {
+                    <div class="sp-dealer">
+                        <img src="images/cards/@(_spRound.DealerHole.Code).png" alt="Hole card: @_spRound.DealerHole.Name" class="sp-card sp-hole" />
+                        <img src="images/cards/@(_spRound.DealerUp.Code).png" alt="Up-card: @_spRound.DealerUp.Name" class="sp-card sp-up" />
+                        <span class="sp-tag sp-uptag">UP</span>
+                        <span class="sp-tag sp-holetag">HOLE CARD</span>
+                    </div>
+                }
+                else
+                {
+                    <img src="images/cards/@(_spRound.DealerUp.Code).png" alt="Up-card: @_spRound.DealerUp.Name" class="sp-card" />
+                }
+            </div>
+            <div class="sp-col">
+                <div class="sp-cap">PLAYER</div>
+                <div class="sp-cards">
+                    <img src="images/cards/@(_spRound.Player1.Code).png" alt="@_spRound.Player1.Name" class="sp-card" />
+                    <img src="images/cards/@(_spRound.Player2.Code).png" alt="@_spRound.Player2.Name" class="sp-card" />
+                </div>
+            </div>
+        </div>
+
+        @* The two wagers: chip, name and a payout box each. Tap a row (or
+           its box) to key into it; the active box has a blue outline. *@
+        <div class="sp-wagers">
+            @for (int w = 0; w < 2; w++)
+            {
+                int wi = w;
+                int wager = wi == 0 ? _spRound.TwentyOnePlus3Wager : _spRound.LuckyLadiesWager;
+                int answer = wi == 0 ? _spRound.TwentyOnePlus3Payout : _spRound.LuckyLadiesPayout;
+                <div class="sp-wrow @(!_spScored && _spActive == wi ? "sp-wrow-on" : "")" @onclick="() => SpSelect(wi)">
+                    <div class="sp-chip sp-chip-@wager">$@wager</div>
+                    <div class="sp-wname">@(wi == 0 ? "21 + 3" : "Lucky Ladies")<small>wager $@wager</small></div>
+                    @if (_spScored)
+                    {
+                        bool ok = _spOk[wi];
+                        <div class="sp-ans @(ok ? "sp-ans-ok" : "sp-ans-bad")">
+                            @if (ok)
+                            {
+                                <text>&#x2713; @answer.ToString("N0")</text>
+                            }
+                            else
+                            {
+                                <text>&#x2717; @(SpShowEntered(_spAnswer[wi]).TrimStart('$')) &middot; Answer: @answer.ToString("N0")</text>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @* inputmode="none": phones use the keypad below instead
+                           of their own keyboard; a PC keyboard types normally *@
+                        <input type="text"
+                               class="sp-input"
+                               inputmode="none"
+                               autocomplete="off"
+                               value="@_spAnswer[wi]"
+                               @oninput="e => SpInput(wi, e)"
+                               @onkeydown="e => SpKeyDown(wi, e)"
+                               @onfocus="() => _spActive = wi"
+                               @ref="_spInputRefs[wi]"
+                               placeholder="Payout" />
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="sp-hint-row">
+            <span class="sp-desk-hint">Type each payout; Tab or Enter moves to the next box.</span>
+            <button class="keypad-toggle" @onclick="() => _spShowKeypad = !_spShowKeypad">123</button>
+        </div>
+
+        @if (!_spScored)
+        {
+            <div class="keypad-wrap sp-keypad @(_spShowKeypad ? "keypad-open" : "")">
+                <NumericKeypad AllowDecimal="false" @bind-Value="SpActiveText" OnEnter="SpKeypadEnter" EnterLabel="@(_spActive == 0 ? "Next ↓" : "Enter")" />
+            </div>
+        }
+
+        <div class="feedback-area sp-feedback">
+            @if (_spScored)
+            {
+                <ResultBreakdown ResultText="@_spResultText" IsCorrect="_spOk[0] && _spOk[1]" Rows="_spRows" />
+            }
+            else if (_spMessage.Length > 0)
+            {
+                <p class="result-line txt-bad">@_spMessage</p>
+            }
+        </div>
+
+        @* Desktop: both pay tables stay in view (beside the game on a wide
+           window, under it otherwise). Phones: in Help. *@
+        <aside class="sp-paytable">
+            <table class="sp-pt">
+                <tr class="sp-pt-hd"><td>21 + 3</td><td></td></tr>
+                <tr><td>Straight Flush</td><td>30 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>20 to 1</td></tr>
+                <tr><td>Straight</td><td>10 to 1</td></tr>
+                <tr><td>Flush</td><td>5 to 1</td></tr>
+            </table>
+            <table class="sp-pt">
+                <tr class="sp-pt-hd"><td>Lucky Ladies</td><td></td></tr>
+                <tr><td>Q&hearts; pair + dealer BJ</td><td>1000 to 1</td></tr>
+                <tr><td>Q&hearts; pair</td><td>125 to 1</td></tr>
+                <tr><td>Matched 20</td><td>19 to 1</td></tr>
+                <tr><td>Suited 20</td><td>9 to 1</td></tr>
+                <tr><td>Any 20</td><td>4 to 1</td></tr>
+            </table>
+            <p class="sp-pt-note">Winnings only.</p>
+        </aside>
+
+        <GameBar HelpTitle="Side Wager Pay Tables" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_spScored)
+                {
+                    <button class="game-bar-main" @onclick="SpSubmitAndShow">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="SpNextTop" @ref="_spNextButtonRef">Next</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <table class="help-table sp-help-table">
+                    <tr class="sp-pt-hd"><td>21 + 3 (your 2 cards + dealer up-card)</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>30 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>20 to 1</td></tr>
+                    <tr><td>Straight</td><td>10 to 1</td></tr>
+                    <tr><td>Flush</td><td>5 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Lucky Ladies (your 2 cards total 20)</td><td></td></tr>
+                    <tr><td>Q&hearts; pair + dealer Blackjack</td><td>1000 to 1</td></tr>
+                    <tr><td>Queen of Hearts pair</td><td>125 to 1</td></tr>
+                    <tr><td>Matched 20 (identical cards)</td><td>19 to 1</td></tr>
+                    <tr><td>Suited 20</td><td>9 to 1</td></tr>
+                    <tr><td>Any 20</td><td>4 to 1</td></tr>
+                </table>
+                <p>Enter the winnings only. The wager stays on the layout. A losing wager pays 0.</p>
+            </HelpContent>
+        </GameBar>
+    </div>
+}
 else
 {
     <div class="play-screen sw-screen has-game-bar">
@@ -379,6 +541,12 @@ else
             <p>Correct: @_poCorrectCount</p>
             <p>Incorrect: @(_poTotalRounds - _poCorrectCount)</p>
         }
+        else if (_mode == BlackjackMode.SidePayouts)
+        {
+            <p>Rounds Played: @_spPlayed</p>
+            <p>Correct: @_spCorrect</p>
+            <p>Incorrect: @(_spPlayed - _spCorrect)</p>
+        }
         else
         {
             <p>Rounds Played: @_swTotalAnswered</p>
@@ -409,7 +577,7 @@ else
         GameReset.ResetRequested -= OnResetRequested;
     }
 
-    private enum BlackjackMode { FlashCards, Payouts, SideWagers }
+    private enum BlackjackMode { FlashCards, Payouts, SideWagers, SidePayouts }
 
     // Shared across all three modes -- which start screen/play screen
     // to show, and the session-summary overlay.
@@ -447,6 +615,7 @@ else
         {
             case BlackjackMode.FlashCards: FcStartGame(); break;
             case BlackjackMode.Payouts: PoStartGame(); break;
+            case BlackjackMode.SidePayouts: SpStartGame(); break;
             default: SwStartGame(); break;
         }
     }
@@ -457,6 +626,7 @@ else
         {
             BlackjackMode.FlashCards => _fcRoundsPlayed > 0,
             BlackjackMode.Payouts => _poTotalRounds > 0,
+            BlackjackMode.SidePayouts => _spPlayed > 0,
             _ => _swTotalAnswered > 0
         };
 
@@ -872,6 +1042,168 @@ else
     }
 
     // ============================================================
+    // SIDE WAGER PAYOUTS (Sp prefix)
+    // ============================================================
+
+    private SideWagerPayoutRound _spRound = SideWagerPayouts.Deal(Random.Shared);
+    private readonly string[] _spAnswer = { "", "" };   // [0] = 21 + 3, [1] = Lucky Ladies
+    private readonly bool[] _spOk = new bool[2];
+    private int _spActive;
+    private bool _spScored;
+    private bool _spShowKeypad;
+    private string _spMessage = string.Empty;
+    private string _spResultText = string.Empty;
+    private readonly List<BreakdownRow> _spRows = new();
+
+    private int _spCorrect;
+    private int _spPlayed;
+
+    private readonly Microsoft.AspNetCore.Components.ElementReference[] _spInputRefs = new Microsoft.AspNetCore.Components.ElementReference[2];
+    private Microsoft.AspNetCore.Components.ElementReference _spNextButtonRef;
+    private int _spFocusInput = -1;
+    private bool _spFocusNext;
+
+    // The keypad types into whichever box is active
+    private string SpActiveText
+    {
+        get => _spAnswer[_spActive];
+        set
+        {
+            _spAnswer[_spActive] = SpDigitsOnly(value);
+            _spMessage = string.Empty;
+        }
+    }
+
+    private void SpStartGame()
+    {
+        _spCorrect = 0;
+        _spPlayed = 0;
+        SpNewRound();
+    }
+
+    private void SpNewRound()
+    {
+        _spRound = SideWagerPayouts.Deal(Random.Shared);
+        _spAnswer[0] = string.Empty;
+        _spAnswer[1] = string.Empty;
+        _spOk[0] = _spOk[1] = false;
+        _spActive = 0;
+        _spScored = false;
+        _spMessage = string.Empty;
+        _spResultText = string.Empty;
+        _spRows.Clear();
+        _spFocusInput = 0;
+    }
+
+    private void SpSelect(int index)
+    {
+        if (_spScored || _spActive == index) return;
+        _spActive = index;
+        _spFocusInput = index;
+    }
+
+    // Whole dollars only, at most 5 digits (the top pay is $25,000)
+    private static string SpDigitsOnly(string? raw)
+    {
+        System.Text.StringBuilder sb = new();
+        foreach (char c in raw ?? string.Empty)
+        {
+            if (char.IsDigit(c) && sb.Length < 5) sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
+    private void SpInput(int index, Microsoft.AspNetCore.Components.ChangeEventArgs e)
+    {
+        _spAnswer[index] = SpDigitsOnly(e.Value?.ToString());
+        _spActive = index;
+        _spMessage = string.Empty;
+    }
+
+    // Keyboard Enter: first box -> next box; second box -> Submit
+    private void SpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter" || _spScored) return;
+        _spActive = index;
+        SpKeypadEnter();
+    }
+
+    // Keypad Enter ("Next ↓" on the first box)
+    private void SpKeypadEnter()
+    {
+        if (_spScored) return;
+
+        if (_spActive == 0)
+        {
+            _spActive = 1;
+            _spFocusInput = 1;
+        }
+        else
+        {
+            SpSubmitAndShow();
+        }
+    }
+
+    private void SpSubmitAndShow()
+    {
+        SpSubmit();
+        if (_spScored)
+        {
+            _scrollToFeedback = true;
+            _spFocusNext = true;
+        }
+    }
+
+    private void SpSubmit()
+    {
+        if (_spScored) return;
+
+        // Both boxes need an amount (0 for a losing wager)
+        for (int i = 0; i < 2; i++)
+        {
+            if (_spAnswer[i].Length == 0)
+            {
+                _spMessage = i == 0
+                    ? "Enter the 21 + 3 payout (0 if it loses)."
+                    : "Enter the Lucky Ladies payout (0 if it loses).";
+                _spActive = i;
+                _spFocusInput = i;
+                return;
+            }
+        }
+
+        int[] correct = { _spRound.TwentyOnePlus3Payout, _spRound.LuckyLadiesPayout };
+        for (int i = 0; i < 2; i++)
+        {
+            _spOk[i] = long.TryParse(_spAnswer[i], out long v) && v == correct[i];
+        }
+
+        _spRows.Clear();
+        _spRows.Add(new BreakdownRow("21 + 3",
+            SpShowEntered(_spAnswer[0]), SideWagerPayouts.Money(correct[0]), _spOk[0],
+            SideWagerPayouts.Why21Plus3(_spRound)));
+        _spRows.Add(new BreakdownRow("Lucky Ladies",
+            SpShowEntered(_spAnswer[1]), SideWagerPayouts.Money(correct[1]), _spOk[1],
+            SideWagerPayouts.WhyLuckyLadies(_spRound)));
+
+        _spPlayed++;
+        if (_spOk[0] && _spOk[1]) _spCorrect++;
+
+        _spResultText = BreakdownRow.Summary(_spRows);
+        _spMessage = string.Empty;
+        _spScored = true;
+    }
+
+    private static string SpShowEntered(string raw) =>
+        long.TryParse(raw, out long v) ? $"${v:N0}" : raw;
+
+    private void SpNextTop()
+    {
+        SpNewRound();
+        _scrollToTopAfterNext = true;
+    }
+
+    // ============================================================
     // SIDE WAGERS (Sw prefix)
     // ============================================================
 
@@ -1128,8 +1460,9 @@ else
             if (_started && _mode != BlackjackMode.SideWagers)
             {
                 bool fits = false;
-                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", _mode == BlackjackMode.Payouts ? 315 : 260); } catch { }
+                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", _mode == BlackjackMode.FlashCards ? 260 : 315); } catch { }
                 if (_mode == BlackjackMode.FlashCards) _fcShowKeypad = fits;
+                else if (_mode == BlackjackMode.SidePayouts) _spShowKeypad = fits;
                 else _poShowKeypad = fits;
                 if (fits) StateHasChanged();
             }
@@ -1159,6 +1492,21 @@ else
         {
             _poShouldFocusNewRound = false;
             try { await _poNewRoundButtonRef.FocusAsync(preventScroll: true); } catch { }
+        }
+
+        // Side Wager Payouts: cursor into the active payout box, or onto
+        // Next once the round is scored (so Enter deals the next round)
+        if (_spFocusInput >= 0)
+        {
+            int i = _spFocusInput;
+            _spFocusInput = -1;
+            try { await _spInputRefs[i].FocusAsync(preventScroll: true); } catch { }
+        }
+
+        if (_spFocusNext)
+        {
+            _spFocusNext = false;
+            try { await _spNextButtonRef.FocusAsync(preventScroll: true); } catch { }
         }
     }
 }

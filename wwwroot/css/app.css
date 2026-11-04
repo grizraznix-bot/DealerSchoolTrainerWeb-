@@ -4387,3 +4387,399 @@ body {
         margin-bottom: -46px;
     }
 }
+
+/* ------------------------------------------------------------------
+   Blackjack - Side Wager Payouts (sp-): dealer up-card (and hole card
+   on an Ace) beside the player's two cards, then a 21 + 3 and a Lucky
+   Ladies row, each with its chip and payout box.
+   ------------------------------------------------------------------ */
+.sp-screen {
+    position: relative;
+}
+
+.sp-felt {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 0.5rem 0.75rem 1.1rem 0.75rem;
+}
+
+.sp-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sp-cap {
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    opacity: 0.9;
+}
+
+.sp-cards {
+    display: flex;
+    gap: 5px;
+}
+
+.sp-card {
+    width: 62px;
+    height: 87px;
+    border-radius: 4px;
+    background-color: white;
+}
+
+/* Ace up: the hole card sits behind it, tilted and darker, with a
+   dashed gold outline, so it can't be mistaken for the up-card */
+.sp-dealer {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.sp-dealer .sp-up {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 2;
+}
+
+.sp-dealer .sp-hole {
+    position: absolute;
+    left: 34px;
+    top: 10px;
+    filter: brightness(0.82);
+    transform: rotate(8deg);
+    outline: 3px dashed #ffd24d;
+    outline-offset: -1px;
+}
+
+.sp-tag {
+    position: absolute;
+    bottom: -0.9rem;
+    z-index: 3;
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #222;
+    font-size: 0.65rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.sp-uptag {
+    left: 2px;
+    background-color: white;
+}
+
+.sp-holetag {
+    left: 44px;
+    background-color: #ffd24d;
+}
+
+.sp-wagers {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 6px;
+    margin: 0.6rem 0 0.25rem 0;
+}
+
+.sp-wrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.sp-wrow.sp-wrow-on {
+    padding: 5px 7px;
+    border: 2px solid var(--c-primary);
+    background-color: #f3f8ff;
+}
+
+.sp-chip {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 4px dashed white;
+    border-radius: 50%;
+    box-sizing: border-box;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.4);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 900;
+}
+
+.sp-chip-1 { background-color: #888; }
+.sp-chip-5 { background-color: #c8102e; }
+.sp-chip-10 { background-color: #1f4fd1; }
+.sp-chip-25 { background-color: #11873d; }
+
+.sp-wname {
+    width: 6rem;
+    flex: none;
+    font-size: 0.9rem;
+    font-weight: bold;
+    line-height: 1.1;
+}
+
+.sp-wname small {
+    display: block;
+    color: var(--c-muted);
+    font-size: 0.7rem;
+    font-weight: normal;
+}
+
+.content .sp-input,
+.sp-ans {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 6rem;
+    height: 40px;
+    margin: 0;
+    padding: 0 0.6rem;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    background-color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.sp-wrow-on .sp-input {
+    border-color: var(--c-primary);
+}
+
+.sp-ans {
+    display: flex;
+    align-items: center;
+    line-height: 1.15;
+}
+
+.sp-ans-ok {
+    border-color: var(--c-primary);
+    background-color: #e6f0ff;
+    color: var(--c-ok);
+}
+
+.sp-ans-bad {
+    border-color: var(--c-lose);
+    background-color: #fde8e8;
+    color: var(--c-lose);
+    font-size: 0.85rem;
+}
+
+.sp-hint-row {
+    display: flex;
+    align-self: stretch;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 0.15rem 0 0.4rem 0;
+}
+
+.sp-desk-hint {
+    color: var(--c-muted);
+    font-size: 0.8rem;
+}
+
+.sp-keypad {
+    align-self: stretch;
+}
+
+.sp-feedback {
+    align-self: stretch;
+}
+
+/* Pay tables: in Help on phones; always shown on desktop */
+.sp-paytable {
+    display: none;
+}
+
+.sp-pt {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+}
+
+.sp-pt td {
+    padding: 3px 0;
+    border-bottom: 1px solid #c3d4ec;
+}
+
+.sp-pt td:last-child {
+    text-align: right;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.sp-pt-hd td,
+.sp-help-table .sp-pt-hd td {
+    padding-top: 0.5rem;
+    border-bottom: 2px solid var(--c-info-line);
+    color: var(--c-primary-dark);
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-align: left;
+}
+
+.sp-pt-note {
+    margin: 0.3rem 0 0 0;
+    color: var(--c-muted);
+    font-size: 0.8rem;
+}
+
+/* Phones / touch: no typing hint (the keypad is always there) and the
+   hint row collapses; 44px keys so everything fits above the bar */
+@media (max-width: 768px), (pointer: coarse) {
+    .sp-desk-hint {
+        display: none;
+    }
+
+    .sp-hint-row {
+        margin: 0;
+    }
+
+    .sp-screen .numeric-keypad-row button,
+    .sp-screen .numeric-keypad-row span {
+        height: 44px;
+    }
+}
+
+@media (min-width: 769px) {
+    .sp-card {
+        width: 75px;
+        height: 105px;
+    }
+
+    .sp-dealer {
+        width: 120px;
+        height: 120px;
+    }
+
+    .sp-dealer .sp-hole {
+        left: 42px;
+        top: 12px;
+    }
+
+    .sp-holetag {
+        left: 54px;
+    }
+
+    /* Under the game: the two tables side by side */
+    .sp-paytable {
+        display: flex;
+        align-self: stretch;
+        flex-wrap: wrap;
+        column-gap: 1.25rem;
+        margin-top: 0.75rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--c-info-line);
+        border-radius: 8px;
+        background-color: var(--c-info-bg);
+    }
+
+    .sp-paytable {
+        align-items: flex-start;
+    }
+
+    .sp-paytable .sp-pt {
+        flex: 1 1 12rem;
+        width: auto;
+    }
+
+    .sp-paytable .sp-pt-note {
+        flex-basis: 100%;
+    }
+}
+
+/* Wide windows: the pay tables sit beside the game instead */
+@media (min-width: 1260px) {
+    .sp-paytable {
+        position: absolute;
+        top: 3.75rem;
+        left: 100%;
+        display: block;
+        width: 220px;
+        margin: 0 0 0 1.5rem;
+    }
+
+    .sp-paytable .sp-pt {
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* Short phones (iPhone SE and similar): smaller cards, wager rows and
+   keys so the whole keypad stays above the bottom bar */
+@media (max-width: 768px) and (max-height: 620px) {
+    .sp-card {
+        width: 48px;
+        height: 67px;
+    }
+
+    .sp-dealer {
+        width: 80px;
+        height: 78px;
+    }
+
+    .sp-dealer .sp-hole {
+        left: 26px;
+        top: 7px;
+    }
+
+    .sp-holetag {
+        left: 30px;
+    }
+
+    .sp-felt {
+        padding: 0.35rem 0.6rem 0.95rem 0.6rem;
+    }
+
+    .sp-cap {
+        margin-bottom: 0.15rem;
+    }
+
+    .sp-wagers {
+        gap: 4px;
+        margin: 0.4rem 0 0.15rem 0;
+    }
+
+    .sp-wrow {
+        padding: 4px 8px;
+    }
+
+    .sp-wrow.sp-wrow-on {
+        padding: 3px 7px;
+    }
+
+    .sp-chip {
+        width: 34px;
+        height: 34px;
+        font-size: 0.72rem;
+    }
+
+    .content .sp-wrow .sp-input,
+    .sp-ans {
+        height: 34px;
+        min-height: 0;
+    }
+
+    /* the chip already shows the amount */
+    .sp-wname small {
+        display: none;
+    }
+
+    .sp-screen .numeric-keypad-row button,
+    .sp-screen .numeric-keypad-row span {
+        height: 40px;
+    }
+}
