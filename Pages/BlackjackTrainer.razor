@@ -1121,15 +1121,15 @@ else
     }
 
     // Keyboard Enter: first box -> next box; second box -> Submit
-    private void SpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    private async Task SpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
         if (e.Key != "Enter" || _spScored) return;
         _spActive = index;
-        SpKeypadEnter();
+        await SpKeypadEnter();
     }
 
     // Keypad Enter ("Next ↓" on the first box)
-    private void SpKeypadEnter()
+    private async Task SpKeypadEnter()
     {
         if (_spScored) return;
 
@@ -1140,18 +1140,24 @@ else
         }
         else
         {
-            SpSubmitAndShow();
+            await SpSubmitAndShow();
         }
     }
 
-    private void SpSubmitAndShow()
+    // Submit also scrolls to the feedback. The cursor moves onto Next only
+    // after a short wait (same as Flash Cards and Payouts): moved at once,
+    // the same Enter press that submitted would also press Next, dealing
+    // the next round before the feedback could be seen.
+    private async Task SpSubmitAndShow()
     {
         SpSubmit();
-        if (_spScored)
-        {
-            _scrollToFeedback = true;
-            _spFocusNext = true;
-        }
+        if (!_spScored) return;
+
+        _scrollToFeedback = true;
+        StateHasChanged();
+
+        await Task.Delay(200);
+        _spFocusNext = true;
     }
 
     private void SpSubmit()
