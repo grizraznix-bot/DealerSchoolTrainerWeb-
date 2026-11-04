@@ -10,7 +10,18 @@
         <button type="button" class="game-bar-help" @onclick="() => _showHelp = true">Help</button>
     }
     @ChildContent
-    <button type="button" class="game-bar-end" @onclick="OnEnd">@EndLabel</button>
+    @* Phones: "End Session" reads just "End" so the text stays on the
+       button (both labels are rendered; app.css shows one) *@
+    <button type="button" class="game-bar-end" @onclick="OnEnd" aria-label="@EndLabel">
+        @if (EndLabel == "End Session")
+        {
+            <span class="game-bar-end-long">End Session</span><span class="game-bar-end-short">End</span>
+        }
+        else
+        {
+            @EndLabel
+        }
+    </button>
 </div>
 
 @if (_showHelp)

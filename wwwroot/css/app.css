@@ -4865,3 +4865,19 @@ body {
         gap: 6px;
     }
 }
+
+/* Bottom bar: "End Session" shortens to "End" on phones so the text
+   fits on the button (Shared/GameBar.razor renders both) */
+.game-bar-end-short {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .game-bar-end-long {
+        display: none;
+    }
+
+    .game-bar-end-short {
+        display: inline;
+    }
+}
