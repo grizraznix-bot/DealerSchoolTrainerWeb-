@@ -89,14 +89,10 @@ public sealed class PaiGowSolver
                 return (low1, low2, high);
             }
 
-            // Non-Ace trips remain together.
-            if (tripCountValue == 1 && TripRank() != 14)
-            {
-                ApplyTripsRule(ref low1, ref low2, high);
-                return (low1, low2, high);
-            }
-
-            // Three Aces + special hand: special hand takes precedence.
+            // Three of a kind (Aces or not) + straight/flush: the rules go by
+            // the highest 5-card hand in the 7 cards, so the straight or
+            // flush is played (chosen to leave the best Low hand -- often a
+            // pair from the three of a kind).
             ApplySpecialHandRule(ref low1, ref low2, high);
             return (low1, low2, high);
         }
@@ -222,8 +218,8 @@ public sealed class PaiGowSolver
             if (pairCount == 2 && HighestExactPair() >= 7)
                 return TwoPairReason() + " (With a straight or flush, Two Pair is played this way unless both pairs are 6s or below.)";
 
-            if (tripCount == 1 && TripRank() != 14)
-                return TripsReason() + " (Three of a Kind is played instead of the straight or flush.)";
+            if (tripCount == 1)
+                return $"Straight or flush with Three {RankPlural(TripRank())}: the straight or flush outranks the Three of a Kind, so play it in the High hand, choosing the five cards that leave the best two cards (often a pair of {RankPlural(TripRank())}) for the Low hand.";
 
             return pairCount == 2
                 ? "Straight or flush with Two Pair, both 6s or below: play the straight or flush in the High hand, leaving the best two cards for the Low hand."
