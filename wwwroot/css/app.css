@@ -5106,3 +5106,116 @@ body {
         font-size: 0.52rem;
     }
 }
+
+/* ------------------------------------------------------------------
+   Pai Gow - Payouts (pp-): dealer and player rows, each set into Low
+   (2 cards) and High (5 cards, overlapped) with the hand names; the
+   wager rows reuse Side Wager Payouts (sp-*).
+   ------------------------------------------------------------------ */
+.pp-felt {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem 0.5rem 0.6rem;
+}
+
+.pp-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+}
+
+.pp-name {
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    gap: 0.2rem;
+    width: 3.6rem;
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.pp-name .tp-qtag {
+    margin: 0;
+    font-size: 0.5rem;
+    letter-spacing: 0;
+    white-space: normal;
+    line-height: 1.15;
+    padding: 1px 3px;
+}
+
+.pp-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* Hand name over each group; wraps to a second line if long */
+.pp-cap {
+    margin-bottom: 2px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.15;
+    opacity: 0.9;
+    max-width: 100%;
+}
+
+.pp-cards {
+    display: flex;
+}
+
+.pp-card {
+    width: 40px;
+    height: 56px;
+    border-radius: 3px;
+    background-color: white;
+    box-shadow: -1px 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.pp-card + .pp-card {
+    margin-left: -14px;
+}
+
+/* The caption may not widen the group past its cards */
+.pp-group .pp-cap {
+    width: 0;
+    min-width: 100%;
+}
+
+@media (max-width: 360px) {
+    .pp-card {
+        width: 38px;
+        height: 53px;
+    }
+
+    .pp-card + .pp-card {
+        margin-left: -12px;
+    }
+
+    .pp-name {
+        width: 3rem;
+        font-size: 0.65rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .pp-card {
+        width: 62px;
+        height: 87px;
+    }
+
+    .pp-card + .pp-card {
+        margin-left: -18px;
+    }
+
+    .pp-cap {
+        font-size: 0.72rem;
+    }
+
+    .pp-name {
+        width: 4.5rem;
+        font-size: 0.8rem;
+    }
+}
