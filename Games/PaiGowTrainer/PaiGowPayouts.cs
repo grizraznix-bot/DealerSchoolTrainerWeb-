@@ -13,14 +13,14 @@ public readonly record struct PgPay(int Amount, bool IsPush)
 /// <summary>
 /// One Pai Gow payout round: both hands already set per the House Way
 /// (no fouls), the three wagers, and what each one pays with the reason.
-/// Wagers in settling order: Main Wager, Pai Gow Insurance, Emperor's
+/// Wagers in settling order: Pai Gow Insurance, Main Wager, Emperor's
 /// Treasure.
 /// </summary>
 public sealed class PgPayoutRound
 {
-    public const int Main = 0, Insurance = 1, Emperors = 2;
-    public static readonly string[] Names = { "Main Wager", "Pai Gow Insurance", "Emperor's Treasure" };
-    public static readonly string[] ShortNames = { "Main Wager", "Insurance", "Emperor's" };
+    public const int Insurance = 0, Main = 1, Emperors = 2;
+    public static readonly string[] Names = { "Pai Gow Insurance", "Main Wager", "Emperor's Treasure" };
+    public static readonly string[] ShortNames = { "Insurance", "Main Wager", "Emperor's" };
 
     public required List<PaiGowCard> DealerLow { get; init; }
     public required List<PaiGowCard> DealerHigh { get; init; }
@@ -69,7 +69,7 @@ public static class PaiGowPayouts
 
         dealer.SetCards(dealerCards);
 
-        int[] wagers = { MainWager(rng), SideWager(rng), SideWager(rng) };
+        int[] wagers = { SideWager(rng), MainWager(rng), SideWager(rng) };
         return Settle(player, playerCards, dealer, dealerCards, wagers);
     }
 

@@ -238,8 +238,9 @@ else if (_mode == PaiGowMode.Payouts)
             }
         </div>
 
-        @* The three wagers in settling order: chip, name, payout box, then
-           Push (Main Wager only) and Lose. Tap a row to key into it. *@
+        @* The three wagers in settling order (Insurance, Main Wager,
+           Emperor's Treasure): chip, name, payout box, then Push (Main
+           Wager only) and Lose. Tap a row to key into it. *@
         <div class="sp-wagers">
             @for (int w = 0; w < 3; w++)
             {
@@ -322,10 +323,6 @@ else if (_mode == PaiGowMode.Payouts)
         @* Desktop: pay tables always in view (phones: in Help) *@
         <aside class="sp-paytable tp-paytable">
             <table class="sp-pt">
-                <tr class="sp-pt-hd"><td>Main Wager</td><td></td></tr>
-                <tr><td>Win both hands</td><td>1 to 1</td></tr>
-                <tr><td>Win one hand</td><td>Push</td></tr>
-                <tr><td colspan="2" class="tp-pt-wide">No commission. Dealer Ace-high Pai Gow: all hands push.</td></tr>
                 <tr class="sp-pt-hd"><td>Pai Gow Insurance</td><td></td></tr>
                 <tr><td>9 high</td><td>100 to 1</td></tr>
                 <tr><td>10 high</td><td>25 to 1</td></tr>
@@ -333,6 +330,10 @@ else if (_mode == PaiGowMode.Payouts)
                 <tr><td>Queen high</td><td>6 to 1</td></tr>
                 <tr><td>King high</td><td>5 to 1</td></tr>
                 <tr><td>Ace high (Joker = Ace)</td><td>3 to 1</td></tr>
+                <tr class="sp-pt-hd"><td>Main Wager</td><td></td></tr>
+                <tr><td>Win both hands</td><td>1 to 1</td></tr>
+                <tr><td>Win one hand</td><td>Push</td></tr>
+                <tr><td colspan="2" class="tp-pt-wide">No commission. Dealer Ace-high Pai Gow: all hands push.</td></tr>
             </table>
             <table class="sp-pt">
                 <tr class="sp-pt-hd"><td>Emperor's Treasure</td><td></td></tr>
@@ -364,11 +365,6 @@ else if (_mode == PaiGowMode.Payouts)
             </ChildContent>
             <HelpContent>
                 <table class="help-table sp-help-table">
-                    <tr class="sp-pt-hd"><td>Main Wager (no commission)</td><td></td></tr>
-                    <tr><td>Player wins both hands</td><td>1 to 1</td></tr>
-                    <tr><td>Wins one hand</td><td>Push</td></tr>
-                    <tr><td>Dealer wins both, or a copy</td><td>Lose</td></tr>
-                    <tr><td>Dealer has an Ace-high Pai Gow</td><td>Push</td></tr>
                     <tr class="sp-pt-hd"><td>Pai Gow Insurance (player's 7 cards are a Pai Gow; Joker = Ace)</td><td></td></tr>
                     <tr><td>9 high</td><td>100 to 1</td></tr>
                     <tr><td>10 high</td><td>25 to 1</td></tr>
@@ -376,6 +372,11 @@ else if (_mode == PaiGowMode.Payouts)
                     <tr><td>Queen high</td><td>6 to 1</td></tr>
                     <tr><td>King high</td><td>5 to 1</td></tr>
                     <tr><td>Ace high</td><td>3 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Main Wager (no commission)</td><td></td></tr>
+                    <tr><td>Player wins both hands</td><td>1 to 1</td></tr>
+                    <tr><td>Wins one hand</td><td>Push</td></tr>
+                    <tr><td>Dealer wins both, or a copy</td><td>Lose</td></tr>
+                    <tr><td>Dealer has an Ace-high Pai Gow</td><td>Push</td></tr>
                     <tr class="sp-pt-hd"><td>Emperor's Treasure (player's 7 cards) &middot; Envy</td><td></td></tr>
                     <tr><td>7-Card Straight Flush, no Joker</td><td>2500 to 1 &middot; $1000</td></tr>
                     <tr><td>Royal Flush + A-K suited</td><td>1000 to 1 &middot; $750</td></tr>
