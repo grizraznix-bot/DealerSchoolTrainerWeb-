@@ -29,7 +29,228 @@
                       OnStart="StartGame">
                 <CountStepper Label="Number of Hands" Min="1" Max="6" @bind-Value="_handCountSettleBets" />
             </ModeCard>
+
+            <ModeCard Title="Hold'em Payouts"
+                      Description="The hand is dealt and settled out. Pay each wager (Raise, Ante, Odds, Trips Plus, Pocket Bonus): enter the winnings, or tap Push / Lose, then Submit."
+                      Expanded="@IsModeOpen(TrainerMode.Payouts)"
+                      OnToggle="() => ToggleMode(TrainerMode.Payouts)"
+                      OnStart="StartGame" />
         </div>
+    </div>
+}
+else if (_mode == TrainerMode.Payouts)
+{
+    <div class="play-screen sp-screen hp-screen has-game-bar">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        <GameStatus Title="Hold'em Payouts" Correct="_hpCorrect" Played="_hpPlayed" />
+
+        @* Dealer's and player's hole cards (with hand names; the dealer
+           tagged OPENS / DOESN'T OPEN), then the board *@
+        <div class="felt hp-felt">
+            <div class="hp-top">
+                <div class="hp-hand">
+                    <div class="pp-cap">DEALER &middot; @_hpRound.DealerHand <span class="tp-qtag @(_hpRound.DealerOpens ? "" : "tp-qtag-no")">@(_hpRound.DealerOpens ? "OPENS" : "DOESN'T OPEN")</span></div>
+                    <div class="hp-cards">
+                        @foreach (Card c in _hpRound.DealerCards)
+                        {
+                            <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card" />
+                        }
+                    </div>
+                </div>
+                <div class="hp-hand hp-hand-player">
+                    <div class="pp-cap">PLAYER &middot; @_hpRound.PlayerHand</div>
+                    <div class="hp-cards">
+                        @foreach (Card c in _hpRound.PlayerCards)
+                        {
+                            <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card" />
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="hp-board">
+                <div class="pp-cap">BOARD</div>
+                <div class="hp-cards">
+                    @foreach (Card c in _hpRound.Board)
+                    {
+                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* The five wagers in settling order, in the shared wager box (on
+           phones it scrolls when the rows don't all fit above the keypad) *@
+        <div class="pw-wrap">
+            <div class="pw-box @(!_hpScored ? "pw-scroll" : "")">
+                <div class="sp-wagers">
+                    @for (int w = 0; w < 5; w++)
+                    {
+                        int wi = w;
+                        int wager = _hpRound.Wagers[wi];
+                        bool canPush = wi <= HdPayoutRound.Odds;
+                        <div class="sp-wrow @(!_hpScored && _hpActive == wi ? "sp-wrow-on" : "")" @onclick="() => HpSelect(wi)">
+                            <div class="sp-chip @HpChipClass(wager)">$@wager</div>
+                            <div class="sp-wname">@HdPayoutRound.Names[wi]<small>@(wi == HdPayoutRound.Raise ? $"${wager} · {_hpRound.RaiseTiming}" : $"wager ${wager}")</small></div>
+                            @if (_hpScored)
+                            {
+                                <div class="sp-ans @(_hpOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
+                                    @if (_hpOk[wi])
+                                    {
+                                        <text>&#x2713; @HpEnteredText(wi)</text>
+                                    }
+                                    else
+                                    {
+                                        <text>&#x2717; @HpEnteredText(wi) &middot; Ans: @HpPayText(_hpRound.Pays[wi])</text>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <input type="text"
+                                       class="sp-input @(_hpMark[wi] == HpMark.Lose ? "sp-input-lose" : _hpMark[wi] == HpMark.Push ? "tp-input-push" : "")"
+                                       inputmode="none"
+                                       autocomplete="off"
+                                       value="@HpBoxValue(wi)"
+                                       @oninput="e => HpInput(wi, e)"
+                                       @onkeydown="e => HpKeyDown(wi, e)"
+                                       @onfocus="() => _hpActive = wi"
+                                       @ref="_hpInputRefs[wi]"
+                                       placeholder="Payout" />
+                            }
+                            @if (canPush)
+                            {
+                                <button type="button"
+                                        class="sp-lose tp-push @(_hpMark[wi] == HpMark.Push ? "tp-push-on" : "")"
+                                        disabled="@_hpScored"
+                                        @onclick="() => HpToggleMark(wi, HpMark.Push)"
+                                        @onclick:stopPropagation="true">Push</button>
+                            }
+                            <button type="button"
+                                    class="sp-lose @(_hpMark[wi] == HpMark.Lose ? "sp-lose-on" : "")"
+                                    disabled="@_hpScored"
+                                    @onclick="() => HpToggleMark(wi, HpMark.Lose)"
+                                    @onclick:stopPropagation="true">Lose</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="sp-hint-row">
+            <span class="sp-desk-hint">Type each payout (cents allowed); Tab or Enter moves to the next box.</span>
+            <button class="keypad-toggle" @onclick="() => _hpShowKeypad = !_hpShowKeypad">123</button>
+        </div>
+
+        @if (!_hpScored)
+        {
+            <div class="keypad-wrap sp-keypad @(_hpShowKeypad ? "keypad-open" : "")">
+                <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="HpActiveText" OnEnter="HpKeypadEnter" EnterLabel="@(_hpActive < 4 ? "Next ↓" : "Enter")" />
+            </div>
+        }
+
+        <div class="feedback-area sp-feedback">
+            @if (_hpScored)
+            {
+                <ResultBreakdown ResultText="@_hpResultText" IsCorrect="_hpOk.All(o => o)" Rows="_hpRows" />
+            }
+            else if (_hpMessage.Length > 0)
+            {
+                <p class="result-line txt-bad">@_hpMessage</p>
+            }
+        </div>
+
+        @* Desktop: pay tables always in view (phones: in Help) *@
+        <aside class="sp-paytable tp-paytable">
+            <table class="sp-pt">
+                <tr class="sp-pt-hd"><td>Raise &amp; Ante</td><td></td></tr>
+                <tr><td>Player wins</td><td>1 to 1</td></tr>
+                <tr><td>Tie</td><td>Push</td></tr>
+                <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't open (needs a pair): Ante pushes. Raise: 3x pre-flop, 2x after the flop, 1x after the river.</td></tr>
+                <tr class="sp-pt-hd"><td>Odds (player wins)</td><td></td></tr>
+                <tr><td>Royal Flush</td><td>500 to 1</td></tr>
+                <tr><td>Straight Flush</td><td>50 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>10 to 1</td></tr>
+                <tr><td>Full House</td><td>3 to 1</td></tr>
+                <tr><td>Flush</td><td>3 to 2</td></tr>
+                <tr><td>Straight</td><td>1 to 1</td></tr>
+                <tr><td>Less than a Straight</td><td>Push</td></tr>
+                <tr class="sp-pt-hd"><td>Odds Bad Beat (player loses)</td><td></td></tr>
+                <tr><td>Straight Flush</td><td>500 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
+                <tr><td>Full House</td><td>6 to 1</td></tr>
+                <tr><td>Flush</td><td>5 to 1</td></tr>
+                <tr><td>Straight</td><td>4 to 1</td></tr>
+            </table>
+            <table class="sp-pt">
+                <tr class="sp-pt-hd"><td>Trips Plus</td><td></td></tr>
+                <tr><td>Royal Flush</td><td>100 to 1</td></tr>
+                <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>30 to 1</td></tr>
+                <tr><td>Full House</td><td>8 to 1</td></tr>
+                <tr><td>Flush</td><td>7 to 1</td></tr>
+                <tr><td>Straight</td><td>4 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
+                <tr class="sp-pt-hd"><td>Pocket Bonus</td><td></td></tr>
+                <tr><td>Pocket Aces</td><td>25 to 1</td></tr>
+                <tr><td>Ace-Face suited</td><td>20 to 1</td></tr>
+                <tr><td>Ace-Face</td><td>10 to 1</td></tr>
+                <tr><td>Pair</td><td>5 to 1</td></tr>
+            </table>
+            <p class="sp-pt-note">Winnings only. Ace-Face = A-K, A-Q or A-J.</p>
+        </aside>
+
+        <GameBar HelpTitle="Hold'em Pay Tables" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_hpScored)
+                {
+                    <button class="game-bar-main" @onclick="HpSubmitAndShow">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="HpNextTop" @ref="_hpNextButtonRef">Next</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <table class="help-table sp-help-table">
+                    <tr class="sp-pt-hd"><td>Raise &amp; Ante</td><td></td></tr>
+                    <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
+                    <tr><td>Dealer doesn't open (needs a pair)</td><td>Ante push</td></tr>
+                    <tr><td>Tie</td><td>Push</td></tr>
+                    <tr><td>Raise size</td><td>3x / 2x / 1x</td></tr>
+                    <tr class="sp-pt-hd"><td>Odds (player wins; equals the Ante)</td><td></td></tr>
+                    <tr><td>Royal Flush</td><td>500 to 1</td></tr>
+                    <tr><td>Straight Flush</td><td>50 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>10 to 1</td></tr>
+                    <tr><td>Full House</td><td>3 to 1</td></tr>
+                    <tr><td>Flush</td><td>3 to 2</td></tr>
+                    <tr><td>Straight</td><td>1 to 1</td></tr>
+                    <tr><td>Less than a Straight</td><td>Push</td></tr>
+                    <tr class="sp-pt-hd"><td>Odds Bad Beat (player loses with)</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>500 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
+                    <tr><td>Full House</td><td>6 to 1</td></tr>
+                    <tr><td>Flush</td><td>5 to 1</td></tr>
+                    <tr><td>Straight</td><td>4 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Trips Plus (player's best 5 of 7)</td><td></td></tr>
+                    <tr><td>Royal Flush</td><td>100 to 1</td></tr>
+                    <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>30 to 1</td></tr>
+                    <tr><td>Full House</td><td>8 to 1</td></tr>
+                    <tr><td>Flush</td><td>7 to 1</td></tr>
+                    <tr><td>Straight</td><td>4 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Pocket Bonus (player's 2 cards)</td><td></td></tr>
+                    <tr><td>Pocket Aces</td><td>25 to 1</td></tr>
+                    <tr><td>Ace-Face suited (A-K, A-Q, A-J)</td><td>20 to 1</td></tr>
+                    <tr><td>Ace-Face</td><td>10 to 1</td></tr>
+                    <tr><td>Pair</td><td>5 to 1</td></tr>
+                </table>
+                <p>Enter the winnings only (cents allowed). For a losing or pushed wager, tap Lose or Push (0 also counts as Lose).</p>
+            </HelpContent>
+        </GameBar>
     </div>
 }
 else
@@ -253,9 +474,18 @@ else
 {
     <div class="session-summary">
         <h3>Session Summary</h3>
-        <p>Rounds Played: @_totalRounds</p>
-        <p>Correct: @_correctCount</p>
-        <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        @if (_mode == TrainerMode.Payouts)
+        {
+            <p>Rounds Played: @_hpPlayed</p>
+            <p>Correct: @_hpCorrect</p>
+            <p>Incorrect: @(_hpPlayed - _hpCorrect)</p>
+        }
+        else
+        {
+            <p>Rounds Played: @_totalRounds</p>
+            <p>Correct: @_correctCount</p>
+            <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        }
         <button @onclick="CloseSummary">OK</button>
     </div>
 }
@@ -333,6 +563,38 @@ else
         {
             _lastRenderedStarted = _started;
             try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+
+            // Payouts on desktop: open the number pad straight away when
+            // the window is tall enough for it (123 still hides / shows it)
+            if (_started && _mode == TrainerMode.Payouts)
+            {
+                bool fits = false;
+                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", 315); } catch { }
+                _hpShowKeypad = fits;
+                if (fits) StateHasChanged();
+            }
+        }
+
+        if (_started && _mode == TrainerMode.Payouts)
+        {
+            // Phones: size the wager box to the space above the keypad
+            try { await JS.InvokeVoidAsync("dstFitWagerBox"); } catch { }
+
+            // Cursor into the active payout box (scrolling the wager box
+            // to it), or onto Next once the round is scored
+            if (_hpFocusInput >= 0)
+            {
+                int i = _hpFocusInput;
+                _hpFocusInput = -1;
+                try { await _hpInputRefs[i].FocusAsync(preventScroll: true); } catch { }
+                try { await JS.InvokeVoidAsync("dstWagerRowIntoView", i); } catch { }
+            }
+
+            if (_hpFocusNext)
+            {
+                _hpFocusNext = false;
+                try { await _hpNextButtonRef.FocusAsync(preventScroll: true); } catch { }
+            }
         }
     }
 
@@ -340,7 +602,7 @@ else
 
     private static readonly WagerOutcome[] OutcomeChoices = { WagerOutcome.Win, WagerOutcome.Lose, WagerOutcome.Push };
 
-    private enum TrainerMode { IdentifyHands, SettleBets }
+    private enum TrainerMode { IdentifyHands, SettleBets, Payouts }
 
     private static readonly string[] RankComboItems =
     {
@@ -446,6 +708,13 @@ else
 
     private void StartGame()
     {
+        if (_mode == TrainerMode.Payouts)
+        {
+            _started = true;
+            HpStartGame();
+            return;
+        }
+
         _handCount = _mode == TrainerMode.SettleBets
             ? Math.Clamp(_handCountSettleBets, 1, 6)
             : 0; // Identify the Hands: dealer hand only
@@ -823,7 +1092,7 @@ else
 
     private void EndSession()
     {
-        if (_totalRounds > 0)
+        if (_mode == TrainerMode.Payouts ? _hpPlayed > 0 : _totalRounds > 0)
         {
             _showSessionSummary = true;
             _scrollToSummary = true;
@@ -839,4 +1108,248 @@ else
         _showSessionSummary = false;
         _started = false;
     }
+
+    // ============================================================
+    // HOLD'EM PAYOUTS (Hp prefix)
+    // ============================================================
+
+    private enum HpMark { None, Lose, Push }
+
+    private HdPayoutRound _hpRound = null!; // dealt by HpStartGame
+    private readonly string[] _hpAnswer = new string[5];
+    private readonly HpMark[] _hpMark = new HpMark[5];
+    private readonly bool[] _hpOk = new bool[5];
+    private int _hpActive;
+    private bool _hpScored;
+    private bool _hpShowKeypad;
+    private string _hpMessage = string.Empty;
+    private string _hpResultText = string.Empty;
+    private readonly List<BreakdownRow> _hpRows = new();
+    private int _hpCorrect;
+    private int _hpPlayed;
+
+    private readonly ElementReference[] _hpInputRefs = new ElementReference[5];
+    private ElementReference _hpNextButtonRef;
+    private int _hpFocusInput = -1;
+    private bool _hpFocusNext;
+
+    // The keypad types into whichever box is active
+    private string HpActiveText
+    {
+        get => _hpAnswer[_hpActive] ?? string.Empty;
+        set
+        {
+            _hpAnswer[_hpActive] = HpAmountOnly(value);
+            _hpMark[_hpActive] = HpMark.None;
+            _hpMessage = string.Empty;
+        }
+    }
+
+    private void HpStartGame()
+    {
+        _hpCorrect = 0;
+        _hpPlayed = 0;
+        HpNewRound();
+    }
+
+    private void HpNewRound()
+    {
+        _hpRound = HoldemPayouts.Deal(Random.Shared);
+        for (int i = 0; i < 5; i++)
+        {
+            _hpAnswer[i] = string.Empty;
+            _hpMark[i] = HpMark.None;
+            _hpOk[i] = false;
+        }
+        _hpActive = 0;
+        _hpScored = false;
+        _hpMessage = string.Empty;
+        _hpResultText = string.Empty;
+        _hpRows.Clear();
+        _hpFocusInput = 0;
+    }
+
+    private void HpSelect(int index)
+    {
+        if (_hpScored || _hpActive == index) return;
+        _hpActive = index;
+        _hpFocusInput = index;
+    }
+
+    // Dollars and cents (Odds pays 3 to 2 on a Flush): digits, one
+    // decimal point, at most 2 decimal digits
+    private static string HpAmountOnly(string? raw)
+    {
+        System.Text.StringBuilder sb = new();
+        bool dot = false;
+        int decimals = 0;
+        foreach (char c in raw ?? string.Empty)
+        {
+            if (char.IsDigit(c))
+            {
+                if (dot) { if (decimals < 2) { sb.Append(c); decimals++; } }
+                else if (sb.Length < 6) sb.Append(c);
+            }
+            else if (c == '.' && !dot)
+            {
+                sb.Append(c);
+                dot = true;
+            }
+        }
+        return sb.ToString();
+    }
+
+    // "7.5" -> 750 cents; null if not a number
+    private static int? HpCents(string raw) =>
+        decimal.TryParse(raw, System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture, out decimal d)
+            ? (int)Math.Round(d * 100m)
+            : null;
+
+    private string HpBoxValue(int i) => _hpMark[i] switch
+    {
+        HpMark.Lose => "LOSE",
+        HpMark.Push => "PUSH",
+        _ => _hpAnswer[i] ?? string.Empty
+    };
+
+    private void HpInput(int index, ChangeEventArgs e)
+    {
+        _hpAnswer[index] = HpAmountOnly(e.Value?.ToString());
+        _hpMark[index] = HpMark.None;
+        _hpActive = index;
+        _hpMessage = string.Empty;
+    }
+
+    // Keyboard Enter: on to the next box; on the last box, Submit
+    private async Task HpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter" || _hpScored) return;
+        _hpActive = index;
+        await HpKeypadEnter();
+    }
+
+    private async Task HpKeypadEnter()
+    {
+        if (_hpScored) return;
+
+        if (_hpActive < 4)
+        {
+            _hpActive++;
+            _hpFocusInput = _hpActive;
+        }
+        else
+        {
+            await HpSubmitAndShow();
+        }
+    }
+
+    // Lose / Push: marks the wager (clearing any amount typed) and moves
+    // on to the next wager; tapped again it's undone
+    private void HpToggleMark(int index, HpMark mark)
+    {
+        if (_hpScored) return;
+        _hpMessage = string.Empty;
+
+        if (_hpMark[index] == mark)
+        {
+            _hpMark[index] = HpMark.None;
+            _hpActive = index;
+            _hpFocusInput = index;
+            return;
+        }
+
+        _hpMark[index] = mark;
+        _hpAnswer[index] = string.Empty;
+        int next = index < 4 ? index + 1 : index;
+        _hpActive = next;
+        _hpFocusInput = next;
+    }
+
+    // Submit also scrolls to the feedback; the cursor moves onto Next
+    // after a short wait so the same Enter press doesn't also press Next
+    private async Task HpSubmitAndShow()
+    {
+        HpSubmit();
+        if (!_hpScored) return;
+
+        _scrollToFeedback = true;
+        StateHasChanged();
+
+        await Task.Delay(200);
+        _hpFocusNext = true;
+    }
+
+    private void HpSubmit()
+    {
+        if (_hpScored) return;
+
+        for (int i = 0; i < 5; i++)
+        {
+            if ((_hpAnswer[i] ?? "").Length == 0 && _hpMark[i] == HpMark.None)
+            {
+                _hpMessage = i <= HdPayoutRound.Odds
+                    ? $"Enter the {HdPayoutRound.Names[i]} payout, or tap Push or Lose."
+                    : $"Enter the {HdPayoutRound.Names[i]} payout, or tap Lose.";
+                _hpActive = i;
+                _hpFocusInput = i;
+                return;
+            }
+        }
+
+        _hpRows.Clear();
+        for (int i = 0; i < 5; i++)
+        {
+            HdPay pay = _hpRound.Pays[i];
+            int? typed = HpCents(_hpAnswer[i] ?? "");
+            _hpOk[i] = _hpMark[i] switch
+            {
+                HpMark.Lose => pay.IsLose,
+                HpMark.Push => pay.IsPush,
+                _ => typed is int c && (c == 0 ? pay.IsLose : !pay.IsPush && c == pay.Cents)
+            };
+
+            _hpRows.Add(new BreakdownRow(HdPayoutRound.Names[i], HpEnteredMoney(i), HpPayMoney(pay), _hpOk[i], _hpRound.Why[i]));
+        }
+
+        _hpPlayed++;
+        if (_hpOk.All(o => o)) _hpCorrect++;
+
+        _hpResultText = BreakdownRow.Summary(_hpRows);
+        _hpMessage = string.Empty;
+        _hpScored = true;
+    }
+
+    private void HpNextTop()
+    {
+        HpNewRound();
+        _scrollToTopAfterNext = true;
+    }
+
+    // In the payout box after Submit: "LOSE", "PUSH", "15" or "7.50"
+    private string HpEnteredText(int i) => _hpMark[i] switch
+    {
+        HpMark.Lose => "LOSE",
+        HpMark.Push => "PUSH",
+        _ => HpCents(_hpAnswer[i] ?? "") is int c ? HoldemPayouts.MoneyCents(c).TrimStart('$') : _hpAnswer[i] ?? ""
+    };
+
+    private static string HpPayText(HdPay pay) =>
+        pay.IsPush ? "PUSH" : pay.IsLose ? "LOSE" : HoldemPayouts.MoneyCents(pay.Cents).TrimStart('$');
+
+    // In the breakdown: "Lose", "Push", "$15" or "$7.50"
+    private string HpEnteredMoney(int i) => _hpMark[i] switch
+    {
+        HpMark.Lose => "Lose",
+        HpMark.Push => "Push",
+        _ => HpCents(_hpAnswer[i] ?? "") is int c ? HoldemPayouts.MoneyCents(c) : _hpAnswer[i] ?? ""
+    };
+
+    private static string HpPayMoney(HdPay pay) =>
+        pay.IsPush ? "Push" : pay.IsLose ? "Lose" : HoldemPayouts.MoneyCents(pay.Cents);
+
+    // Chip color by the largest chip in the wager: $100 black, $25 green,
+    // $10 blue, $5 red, $1 grey
+    private static string HpChipClass(int wager) =>
+        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
+
 }

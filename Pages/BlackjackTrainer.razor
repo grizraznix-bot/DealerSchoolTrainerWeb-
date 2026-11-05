@@ -303,55 +303,59 @@ else if (_mode == BlackjackMode.SidePayouts)
 
         @* The two wagers: chip, name and a payout box each. Tap a row (or
            its box) to key into it; the active box has a blue outline. *@
-        <div class="sp-wagers">
-            @for (int w = 0; w < 2; w++)
-            {
-                int wi = w;
-                int wager = wi == 0 ? _spRound.TwentyOnePlus3Wager : _spRound.LuckyLadiesWager;
-                int answer = wi == 0 ? _spRound.TwentyOnePlus3Payout : _spRound.LuckyLadiesPayout;
-                <div class="sp-wrow @(!_spScored && _spActive == wi ? "sp-wrow-on" : "")" @onclick="() => SpSelect(wi)">
-                    <div class="sp-chip sp-chip-@wager">$@wager</div>
-                    <div class="sp-wname">@(wi == 0 ? "21 + 3" : "Lucky Ladies")<small>wager $@wager</small></div>
-                    @if (_spScored)
-                    {
-                        bool ok = _spOk[wi];
-                        <div class="sp-ans @(ok ? "sp-ans-ok" : "sp-ans-bad")">
-                            @if (ok)
-                            {
-                                <text>&#x2713; @SpEnteredText(wi)</text>
-                            }
-                            else
-                            {
-                                <text>&#x2717; @SpEnteredText(wi) &middot; Answer: @(answer == 0 ? "LOSE" : answer.ToString("N0"))</text>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        @* inputmode="none": phones use the keypad below instead
-                           of their own keyboard; a PC keyboard types normally *@
-                        @* A wager marked Lose shows LOSE in its box; typing a
-                           number (or Backspace) clears it *@
-                        <input type="text"
-                               class="sp-input @(_spLose[wi] ? "sp-input-lose" : "")"
-                               inputmode="none"
-                               autocomplete="off"
-                               value="@(_spLose[wi] ? "LOSE" : _spAnswer[wi])"
-                               @oninput="e => SpInput(wi, e)"
-                               @onkeydown="e => SpKeyDown(wi, e)"
-                               @onfocus="() => _spActive = wi"
-                               @ref="_spInputRefs[wi]"
-                               placeholder="Payout" />
-                    }
-                    @* Lose: one tap instead of entering 0 (0 still counts).
-                       Tap again to undo. Greyed out once the round is scored. *@
-                    <button type="button"
-                            class="sp-lose @(_spLose[wi] ? "sp-lose-on" : "")"
-                            disabled="@_spScored"
-                            @onclick="() => SpToggleLose(wi)"
-                            @onclick:stopPropagation="true">Lose</button>
-                </div>
-            }
+        <div class="pw-wrap">
+            <div class="pw-box @(!_spScored ? "pw-scroll" : "")">
+            <div class="sp-wagers">
+                @for (int w = 0; w < 2; w++)
+                {
+                    int wi = w;
+                    int wager = wi == 0 ? _spRound.TwentyOnePlus3Wager : _spRound.LuckyLadiesWager;
+                    int answer = wi == 0 ? _spRound.TwentyOnePlus3Payout : _spRound.LuckyLadiesPayout;
+                    <div class="sp-wrow @(!_spScored && _spActive == wi ? "sp-wrow-on" : "")" @onclick="() => SpSelect(wi)">
+                        <div class="sp-chip sp-chip-@wager">$@wager</div>
+                        <div class="sp-wname">@(wi == 0 ? "21 + 3" : "Lucky Ladies")<small>wager $@wager</small></div>
+                        @if (_spScored)
+                        {
+                            bool ok = _spOk[wi];
+                            <div class="sp-ans @(ok ? "sp-ans-ok" : "sp-ans-bad")">
+                                @if (ok)
+                                {
+                                    <text>&#x2713; @SpEnteredText(wi)</text>
+                                }
+                                else
+                                {
+                                    <text>&#x2717; @SpEnteredText(wi) &middot; Answer: @(answer == 0 ? "LOSE" : answer.ToString("N0"))</text>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            @* inputmode="none": phones use the keypad below instead
+                               of their own keyboard; a PC keyboard types normally *@
+                            @* A wager marked Lose shows LOSE in its box; typing a
+                               number (or Backspace) clears it *@
+                            <input type="text"
+                                   class="sp-input @(_spLose[wi] ? "sp-input-lose" : "")"
+                                   inputmode="none"
+                                   autocomplete="off"
+                                   value="@(_spLose[wi] ? "LOSE" : _spAnswer[wi])"
+                                   @oninput="e => SpInput(wi, e)"
+                                   @onkeydown="e => SpKeyDown(wi, e)"
+                                   @onfocus="() => _spActive = wi"
+                                   @ref="_spInputRefs[wi]"
+                                   placeholder="Payout" />
+                        }
+                        @* Lose: one tap instead of entering 0 (0 still counts).
+                           Tap again to undo. Greyed out once the round is scored. *@
+                        <button type="button"
+                                class="sp-lose @(_spLose[wi] ? "sp-lose-on" : "")"
+                                disabled="@_spScored"
+                                @onclick="() => SpToggleLose(wi)"
+                                @onclick:stopPropagation="true">Lose</button>
+                    </div>
+                }
+            </div>
+            </div>
         </div>
 
         <div class="sp-hint-row">
@@ -1550,11 +1554,18 @@ else
 
         // Side Wager Payouts: cursor into the active payout box, or onto
         // Next once the round is scored (so Enter deals the next round)
+        // Payouts, phones: size the wager box to the space above the keypad
+        if (_started && _mode == BlackjackMode.SidePayouts)
+        {
+            try { await JS.InvokeVoidAsync("dstFitWagerBox"); } catch { }
+        }
+
         if (_spFocusInput >= 0)
         {
             int i = _spFocusInput;
             _spFocusInput = -1;
             try { await _spInputRefs[i].FocusAsync(preventScroll: true); } catch { }
+            try { await JS.InvokeVoidAsync("dstWagerRowIntoView", i); } catch { }
         }
 
         if (_spFocusNext)

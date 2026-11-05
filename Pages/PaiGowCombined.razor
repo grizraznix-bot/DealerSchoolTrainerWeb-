@@ -241,59 +241,63 @@ else if (_mode == PaiGowMode.Payouts)
         @* The three wagers in settling order (Insurance, Main Wager,
            Emperor's Treasure): chip, name, payout box, then Push (Main
            Wager only) and Lose. Tap a row to key into it. *@
-        <div class="sp-wagers">
-            @for (int w = 0; w < 3; w++)
-            {
-                int wi = w;
-                int wager = _ppRound.Wagers[wi];
-                bool canPush = wi == PgPayoutRound.Main;
-                <div class="sp-wrow @(!_ppScored && _ppActive == wi ? "sp-wrow-on" : "")" @onclick="() => PpSelect(wi)">
-                    <div class="sp-chip @PpChipClass(wager)">$@wager</div>
-                    <div class="sp-wname">@PgPayoutRound.ShortNames[wi]<small>wager $@wager</small></div>
-                    @if (_ppScored)
-                    {
-                        <div class="sp-ans @(_ppOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
-                            @if (_ppOk[wi])
-                            {
-                                <text>&#x2713; @PpEnteredText(wi)</text>
-                            }
-                            else
-                            {
-                                <text>&#x2717; @PpEnteredText(wi) &middot; Ans: @PpPayText(_ppRound.Pays[wi])</text>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        @* inputmode="none": phones use the keypad; a PC keyboard
-                           types normally. A row marked Lose / Push shows that in
-                           its box; typing a number (or Backspace) clears it. *@
-                        <input type="text"
-                               class="sp-input @(_ppMark[wi] == PpMark.Lose ? "sp-input-lose" : _ppMark[wi] == PpMark.Push ? "tp-input-push" : "")"
-                               inputmode="none"
-                               autocomplete="off"
-                               value="@PpBoxValue(wi)"
-                               @oninput="e => PpInput(wi, e)"
-                               @onkeydown="e => PpKeyDown(wi, e)"
-                               @onfocus="() => _ppActive = wi"
-                               @ref="_ppInputRefs[wi]"
-                               placeholder="Payout" />
-                    }
-                    @if (canPush)
-                    {
+        <div class="pw-wrap">
+            <div class="pw-box @(!_ppScored ? "pw-scroll" : "")">
+            <div class="sp-wagers">
+                @for (int w = 0; w < 3; w++)
+                {
+                    int wi = w;
+                    int wager = _ppRound.Wagers[wi];
+                    bool canPush = wi == PgPayoutRound.Main;
+                    <div class="sp-wrow @(!_ppScored && _ppActive == wi ? "sp-wrow-on" : "")" @onclick="() => PpSelect(wi)">
+                        <div class="sp-chip @PpChipClass(wager)">$@wager</div>
+                        <div class="sp-wname">@PgPayoutRound.ShortNames[wi]<small>wager $@wager</small></div>
+                        @if (_ppScored)
+                        {
+                            <div class="sp-ans @(_ppOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
+                                @if (_ppOk[wi])
+                                {
+                                    <text>&#x2713; @PpEnteredText(wi)</text>
+                                }
+                                else
+                                {
+                                    <text>&#x2717; @PpEnteredText(wi) &middot; Ans: @PpPayText(_ppRound.Pays[wi])</text>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            @* inputmode="none": phones use the keypad; a PC keyboard
+                               types normally. A row marked Lose / Push shows that in
+                               its box; typing a number (or Backspace) clears it. *@
+                            <input type="text"
+                                   class="sp-input @(_ppMark[wi] == PpMark.Lose ? "sp-input-lose" : _ppMark[wi] == PpMark.Push ? "tp-input-push" : "")"
+                                   inputmode="none"
+                                   autocomplete="off"
+                                   value="@PpBoxValue(wi)"
+                                   @oninput="e => PpInput(wi, e)"
+                                   @onkeydown="e => PpKeyDown(wi, e)"
+                                   @onfocus="() => _ppActive = wi"
+                                   @ref="_ppInputRefs[wi]"
+                                   placeholder="Payout" />
+                        }
+                        @if (canPush)
+                        {
+                            <button type="button"
+                                    class="sp-lose tp-push @(_ppMark[wi] == PpMark.Push ? "tp-push-on" : "")"
+                                    disabled="@_ppScored"
+                                    @onclick="() => PpToggleMark(wi, PpMark.Push)"
+                                    @onclick:stopPropagation="true">Push</button>
+                        }
                         <button type="button"
-                                class="sp-lose tp-push @(_ppMark[wi] == PpMark.Push ? "tp-push-on" : "")"
+                                class="sp-lose @(_ppMark[wi] == PpMark.Lose ? "sp-lose-on" : "")"
                                 disabled="@_ppScored"
-                                @onclick="() => PpToggleMark(wi, PpMark.Push)"
-                                @onclick:stopPropagation="true">Push</button>
-                    }
-                    <button type="button"
-                            class="sp-lose @(_ppMark[wi] == PpMark.Lose ? "sp-lose-on" : "")"
-                            disabled="@_ppScored"
-                            @onclick="() => PpToggleMark(wi, PpMark.Lose)"
-                            @onclick:stopPropagation="true">Lose</button>
-                </div>
-            }
+                                @onclick="() => PpToggleMark(wi, PpMark.Lose)"
+                                @onclick:stopPropagation="true">Lose</button>
+                    </div>
+                }
+            </div>
+            </div>
         </div>
 
         <div class="sp-hint-row">
@@ -664,11 +668,18 @@ else
 
         // Payouts: cursor into the active payout box, or onto Next once
         // the round is scored (so Enter deals the next round)
+        // Payouts, phones: size the wager box to the space above the keypad
+        if (_started && _mode == PaiGowMode.Payouts)
+        {
+            try { await JS.InvokeVoidAsync("dstFitWagerBox"); } catch { }
+        }
+
         if (_ppFocusInput >= 0)
         {
             int i = _ppFocusInput;
             _ppFocusInput = -1;
             try { await _ppInputRefs[i].FocusAsync(preventScroll: true); } catch { }
+            try { await JS.InvokeVoidAsync("dstWagerRowIntoView", i); } catch { }
         }
 
         if (_ppFocusNext)

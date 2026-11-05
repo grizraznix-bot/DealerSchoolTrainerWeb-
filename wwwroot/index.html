@@ -152,6 +152,74 @@
             return bar.getBoundingClientRect().bottom + (padHeight || 260) <= window.innerHeight;
         };
     </script>
+    <!-- Payout modes, phones: the wager rows sit in a box (.pw-box.pw-scroll)
+         sized to fill the space between the cards and the keypad, so the
+         keypad stays above the bottom bar. If the rows don't all fit, the
+         box scrolls, with a fade at the edge that has more rows past it.
+         dstWagerRowIntoView scrolls the box to the active row (Next). -->
+    <script>
+        (function () {
+            function shade(box) {
+                var wrap = box.parentElement;
+                if (!wrap) return;
+                var more = box.scrollHeight - box.clientHeight;
+                wrap.classList.toggle('pw-more-below', more > 2 && box.scrollTop < more - 2);
+                wrap.classList.toggle('pw-more-above', more > 2 && box.scrollTop > 2);
+            }
+
+            window.dstFitWagerBox = function () {
+                document.querySelectorAll('.pw-box').forEach(function (box) {
+                    if (!box.dataset.pwBound) {
+                        box.dataset.pwBound = '1';
+                        box.addEventListener('scroll', function () { shade(box); }, { passive: true });
+                    }
+
+                    var screen = box.closest('.sp-screen');
+                    var pad = screen ? screen.querySelector('.sp-keypad') : null;
+                    var bar = document.querySelector('.game-bar');
+                    var phone = window.matchMedia('(max-width: 768px)').matches;
+
+                    if (!phone || !box.classList.contains('pw-scroll') || !pad || !bar) {
+                        box.style.maxHeight = '';
+                        shade(box);
+                        return;
+                    }
+
+                    // Page positions (independent of the current scroll)
+                    var y = window.scrollY || 0;
+                    var boxTop = box.getBoundingClientRect().top + y;
+                    var boxBottom = box.getBoundingClientRect().bottom + y;
+                    var padBottom = pad.getBoundingClientRect().bottom + y;
+                    var below = padBottom - boxBottom;        // hint row + keypad under the box
+                    var barTop = window.innerHeight - bar.getBoundingClientRect().height;
+                    var room = barTop - 6 - boxTop - below;
+
+                    // At least about one and a half rows, so the box is usable
+                    box.style.maxHeight = Math.max(76, Math.floor(room)) + 'px';
+                    shade(box);
+                });
+            };
+
+            window.dstWagerRowIntoView = function (index) {
+                var box = document.querySelector('.pw-box.pw-scroll');
+                if (!box) return;
+                var rows = box.querySelectorAll('.sp-wrow');
+                var row = rows[index];
+                if (!row) return;
+
+                var top = row.offsetTop;   // the box is the rows' offset parent (position: relative)
+                var bottom = top + row.offsetHeight;
+                // Keep a peek of the next row in view when there is one
+                var peek = index < rows.length - 1 ? 18 : 4;
+                var target = box.scrollTop;
+                if (top - 4 < box.scrollTop) target = top - 4;
+                else if (bottom + peek > box.scrollTop + box.clientHeight) target = bottom + peek - box.clientHeight;
+                if (target !== box.scrollTop) box.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+            };
+
+            window.addEventListener('resize', function () { window.dstFitWagerBox(); });
+        })();
+    </script>
     <!-- Scrolls a feedback block into view (Session Summary after End
          Session, Pai Gow's wager breakdown after Submit). Its CSS
          scroll-margin keeps it clear of the phone top bar. -->

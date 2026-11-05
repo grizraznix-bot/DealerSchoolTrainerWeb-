@@ -4726,8 +4726,8 @@ body {
     }
 }
 
-/* Short phones (iPhone SE and similar): smaller cards, wager rows and
-   keys so the whole keypad stays above the bottom bar */
+/* Short phones (iPhone SE and similar): smaller cards, so the wager
+   box above the keypad keeps room for its rows */
 @media (max-width: 768px) and (max-height: 620px) {
     .sp-card {
         width: 48px;
@@ -4756,40 +4756,6 @@ body {
         margin-bottom: 0.15rem;
     }
 
-    .sp-wagers {
-        gap: 4px;
-        margin: 0.4rem 0 0.15rem 0;
-    }
-
-    .sp-wrow {
-        padding: 4px 8px;
-    }
-
-    .sp-wrow.sp-wrow-on {
-        padding: 3px 7px;
-    }
-
-    .sp-chip {
-        width: 34px;
-        height: 34px;
-        font-size: 0.72rem;
-    }
-
-    .content .sp-wrow .sp-input,
-    .sp-ans {
-        height: 34px;
-        min-height: 0;
-    }
-
-    /* the chip already shows the amount */
-    .sp-wname small {
-        display: none;
-    }
-
-    .sp-screen .numeric-keypad-row button,
-    .sp-screen .numeric-keypad-row span {
-        height: 40px;
-    }
 }
 
 /* Side Wager Payouts: Lose button at the end of each wager row */
@@ -4838,32 +4804,6 @@ body {
 
 .sp-ans-bad {
     white-space: normal;
-}
-
-@media (max-width: 768px) and (max-height: 620px) {
-    .content .sp-wrow .sp-lose {
-        height: 34px;
-    }
-
-    .content .sp-wrow .sp-ans {
-        min-height: 34px;
-    }
-}
-
-/* Narrow phones (iPhone SE width): a little less room for the name */
-@media (max-width: 360px) {
-    .sp-wname {
-        width: 5.2rem;
-        font-size: 0.82rem;
-    }
-
-    .content .sp-wrow .sp-lose {
-        width: 3rem;
-    }
-
-    .sp-wrow {
-        gap: 6px;
-    }
 }
 
 /* Bottom bar: "End Session" shortens to "End" on phones so the text
@@ -4966,117 +4906,6 @@ body {
     letter-spacing: 0.05em;
 }
 
-/* Phones: slimmer rows so all five wagers and the keypad fit above the
-   bottom bar */
-@media (max-width: 768px) {
-    .tp-screen .sp-wagers {
-        gap: 3px;
-        margin: 0.4rem 0 0.15rem 0;
-    }
-
-    .tp-screen .sp-wrow {
-        gap: 5px;
-        padding: 3px 6px;
-    }
-
-    .tp-screen .sp-wrow.sp-wrow-on {
-        padding: 2px 5px;
-    }
-
-    .tp-screen .sp-chip {
-        width: 32px;
-        height: 32px;
-        border-width: 3px;
-        font-size: 0.6rem;
-    }
-
-    .tp-screen .sp-wname {
-        width: 4.7rem;
-        font-size: 0.82rem;
-    }
-
-    .tp-screen .sp-wname small {
-        font-size: 0.65rem;
-    }
-
-    .content .tp-screen .sp-wrow .sp-input,
-    .content .tp-screen .sp-wrow .sp-ans {
-        height: 32px;
-        min-height: 32px;
-        padding: 0 0.45rem;
-        font-size: 1rem;
-    }
-
-    .content .tp-screen .sp-wrow .sp-ans {
-        height: auto;
-    }
-
-    .tp-screen .sp-ans-bad {
-        font-size: 0.75rem;
-    }
-
-    .content .tp-screen .sp-wrow .sp-lose {
-        width: 2.8rem;
-        height: 32px;
-        font-size: 0.72rem;
-    }
-
-    .content .sp-screen.tp-screen .numeric-keypad-row button,
-    .sp-screen.tp-screen .numeric-keypad-row span {
-        height: 40px;
-        min-height: 0;
-    }
-
-    .tp-felt {
-        padding: 0.3rem 0.6rem 0.4rem 0.6rem;
-    }
-
-    .tp-card {
-        width: 48px;
-        height: 67px;
-    }
-
-    .tp-card + .tp-card {
-        margin-left: -12px;
-    }
-
-    .tp-screen .sp-hint-row {
-        margin: 0;
-    }
-
-    .tp-screen .numeric-keypad {
-        margin-top: 0.25rem;
-    }
-
-    .tp-qtag {
-        margin-top: 0.15rem;
-    }
-
-    .tp-screen .sp-wagers {
-        margin-top: 0.3rem;
-    }
-}
-
-@media (max-width: 360px) {
-    .tp-card {
-        width: 48px;
-        height: 67px;
-    }
-
-    .tp-card + .tp-card {
-        margin-left: -12px;
-    }
-
-    .tp-screen .sp-wname {
-        width: 4.1rem;
-        font-size: 0.76rem;
-    }
-
-    .content .tp-screen .sp-wrow .sp-lose {
-        width: 2.5rem;
-    }
-}
-
 @media (min-width: 769px) {
     .tp-card {
         width: 75px;
@@ -5101,11 +4930,6 @@ body {
     letter-spacing: -0.02em;
 }
 
-@media (max-width: 768px) {
-    .tp-screen .sp-chip.sp-chip-100 {
-        font-size: 0.52rem;
-    }
-}
 
 /* ------------------------------------------------------------------
    Pai Gow - Payouts (pp-): dealer and player rows, each set into Low
@@ -5167,8 +4991,8 @@ body {
 }
 
 .pp-card {
-    width: 40px;
-    height: 56px;
+    width: 44px;
+    height: 62px;
     border-radius: 3px;
     background-color: white;
     box-shadow: -1px 0 2px rgba(0, 0, 0, 0.3);
@@ -5217,5 +5041,236 @@ body {
     .pp-name {
         width: 4.5rem;
         font-size: 0.8rem;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Payout modes (Side Wager, Three Card Prime, Pai Gow, Hold'em): one
+   standard wager row on phones, and the wager box. The box (.pw-box)
+   is sized by dstFitWagerBox (index.html) to the space between the
+   cards and the keypad; when the rows don't all fit it scrolls, with a
+   fade on the side that has more rows. After Submit (no keypad) it
+   shows every row.
+   ------------------------------------------------------------------ */
+.pw-wrap {
+    position: relative;
+    align-self: stretch;
+    margin: 0.5rem 0 0.25rem 0;
+}
+
+.pw-box {
+    position: relative;
+}
+
+.pw-box .sp-wagers {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .pw-box.pw-scroll {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .pw-wrap.pw-more-below::after,
+    .pw-wrap.pw-more-above::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        height: 22px;
+        pointer-events: none;
+    }
+
+    .pw-wrap.pw-more-below::after {
+        bottom: 0;
+        background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95));
+    }
+
+    .pw-wrap.pw-more-above::before {
+        top: 0;
+        background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+    }
+
+    /* Standard row: 48px -- 36px chip, name with the wager under it,
+       40px payout box, then Push / Lose */
+    .sp-screen .sp-wagers {
+        gap: 4px;
+    }
+
+    .sp-screen .sp-wrow {
+        gap: 6px;
+        padding: 3px 6px;
+    }
+
+    .sp-screen .sp-wrow.sp-wrow-on {
+        padding: 2px 5px;
+    }
+
+    .sp-screen .sp-chip {
+        width: 36px;
+        height: 36px;
+        border-width: 3px;
+        font-size: 0.7rem;
+    }
+
+    .sp-screen .sp-chip.sp-chip-100 {
+        font-size: 0.56rem;
+    }
+
+    .sp-screen .sp-wname {
+        width: 5.8rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    .sp-screen .sp-wname small {
+        font-size: 0.68rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .content .sp-screen .sp-wrow .sp-input,
+    .content .sp-screen .sp-wrow .sp-ans {
+        height: 40px;
+        min-height: 40px;
+        padding: 0 0.5rem;
+        font-size: 1.05rem;
+    }
+
+    .content .sp-screen .sp-wrow .sp-ans {
+        height: auto;
+    }
+
+    .sp-screen .sp-ans-bad {
+        font-size: 0.78rem;
+    }
+
+    .content .sp-screen .sp-wrow .sp-lose {
+        width: 3rem;
+        height: 40px;
+        font-size: 0.75rem;
+    }
+
+    .sp-screen .sp-hint-row {
+        margin: 0;
+    }
+
+    .sp-screen .numeric-keypad {
+        margin-top: 0.3rem;
+    }
+}
+
+/* Narrow phones (iPhone SE width): a little less room for the name and
+   buttons, so the payout box keeps its width */
+@media (max-width: 360px) {
+    .sp-screen .sp-wname {
+        width: 4.6rem;
+        font-size: 0.76rem;
+    }
+
+    .content .sp-screen .sp-wrow .sp-lose {
+        width: 2.6rem;
+        font-size: 0.68rem;
+    }
+
+    .sp-screen .sp-wrow {
+        gap: 4px;
+    }
+
+    .tp-card {
+        width: 48px;
+        height: 67px;
+    }
+
+    .tp-card + .tp-card {
+        margin-left: -12px;
+    }
+
+    .pp-card {
+        width: 38px;
+        height: 53px;
+    }
+
+    .pp-card + .pp-card {
+        margin-left: -12px;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Hold'em - Payouts (hp-): dealer and player hole cards side by side,
+   then the board
+   ------------------------------------------------------------------ */
+.hp-felt {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.3rem 0.6rem 0.4rem 0.6rem;
+}
+
+.hp-top {
+    display: flex;
+    align-items: flex-start;
+}
+
+.hp-hand {
+    display: flex;
+    flex-direction: column;
+}
+
+.hp-hand-player {
+    margin-left: auto;
+    align-items: flex-end;
+}
+
+.hp-hand .pp-cap {
+    white-space: nowrap;
+}
+
+.hp-board {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hp-cards {
+    display: flex;
+    gap: 4px;
+}
+
+.hp-card {
+    width: 42px;
+    height: 59px;
+    border-radius: 3px;
+    background-color: white;
+}
+
+.hp-felt .tp-qtag {
+    margin: 0 0 0 0.2rem;
+    font-size: 0.55rem;
+    vertical-align: 1px;
+}
+
+@media (max-width: 360px) {
+    .hp-card {
+        width: 40px;
+        height: 56px;
+    }
+}
+
+@media (min-width: 769px) {
+    .hp-card {
+        width: 62px;
+        height: 87px;
+    }
+}
+
+/* Hold'em Payouts, phones: no "BOARD" caption (the five cards in the
+   middle are plainly the board), for more room in the wager box */
+@media (max-width: 768px) {
+    .hp-board .pp-cap {
+        display: none;
     }
 }
