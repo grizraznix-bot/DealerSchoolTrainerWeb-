@@ -4881,3 +4881,228 @@ body {
         display: inline;
     }
 }
+
+/* ------------------------------------------------------------------
+   Three Card Prime - Payouts (tp-): reuses the Side Wager Payouts rows
+   (sp-*) with five wagers; dealer and player hands side by side.
+   ------------------------------------------------------------------ */
+.sp-chip-100 { background-color: #222; }
+
+.tp-felt {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.4rem 0.75rem 0.5rem 0.75rem;
+}
+
+.tp-hand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+}
+
+.tp-hand-player {
+    margin-left: auto;
+}
+
+.tp-hand .sp-cap {
+    white-space: nowrap;
+}
+
+.tp-cards {
+    display: flex;
+}
+
+/* Overlapped 25%, every card's corner still showing */
+.tp-card {
+    width: 56px;
+    height: 78px;
+    border-radius: 4px;
+    background-color: white;
+    box-shadow: -1px 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.tp-card + .tp-card {
+    margin-left: -14px;
+}
+
+.tp-qtag {
+    margin-top: 0.3rem;
+    padding: 0 0.35rem;
+    border-radius: 4px;
+    background-color: white;
+    color: #222;
+    font-size: 0.62rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.tp-qtag.tp-qtag-no {
+    background-color: #ffd24d;
+}
+
+/* Push button (Play and Ante): gold, like Push elsewhere */
+.content .sp-wrow .sp-lose.tp-push {
+    border-color: #c9a000;
+    color: #7a5d00;
+}
+
+.content .sp-wrow .sp-lose.tp-push.tp-push-on {
+    background-color: var(--c-push);
+    color: #222;
+}
+
+.content .sp-wrow .sp-lose.tp-push:disabled {
+    border-color: #ccc;
+    background-color: #f4f4f4;
+    color: #aaa;
+}
+
+.content .sp-wrow .sp-input.tp-input-push {
+    border-color: #c9a000;
+    background-color: #fff8dc;
+    color: #7a5d00;
+    letter-spacing: 0.05em;
+}
+
+/* Phones: slimmer rows so all five wagers and the keypad fit above the
+   bottom bar */
+@media (max-width: 768px) {
+    .tp-screen .sp-wagers {
+        gap: 3px;
+        margin: 0.4rem 0 0.15rem 0;
+    }
+
+    .tp-screen .sp-wrow {
+        gap: 5px;
+        padding: 3px 6px;
+    }
+
+    .tp-screen .sp-wrow.sp-wrow-on {
+        padding: 2px 5px;
+    }
+
+    .tp-screen .sp-chip {
+        width: 32px;
+        height: 32px;
+        border-width: 3px;
+        font-size: 0.6rem;
+    }
+
+    .tp-screen .sp-wname {
+        width: 4.7rem;
+        font-size: 0.82rem;
+    }
+
+    .tp-screen .sp-wname small {
+        font-size: 0.65rem;
+    }
+
+    .content .tp-screen .sp-wrow .sp-input,
+    .content .tp-screen .sp-wrow .sp-ans {
+        height: 32px;
+        min-height: 32px;
+        padding: 0 0.45rem;
+        font-size: 1rem;
+    }
+
+    .content .tp-screen .sp-wrow .sp-ans {
+        height: auto;
+    }
+
+    .tp-screen .sp-ans-bad {
+        font-size: 0.75rem;
+    }
+
+    .content .tp-screen .sp-wrow .sp-lose {
+        width: 2.8rem;
+        height: 32px;
+        font-size: 0.72rem;
+    }
+
+    .content .sp-screen.tp-screen .numeric-keypad-row button,
+    .sp-screen.tp-screen .numeric-keypad-row span {
+        height: 40px;
+        min-height: 0;
+    }
+
+    .tp-felt {
+        padding: 0.3rem 0.6rem 0.4rem 0.6rem;
+    }
+
+    .tp-card {
+        width: 48px;
+        height: 67px;
+    }
+
+    .tp-card + .tp-card {
+        margin-left: -12px;
+    }
+
+    .tp-screen .sp-hint-row {
+        margin: 0;
+    }
+
+    .tp-screen .numeric-keypad {
+        margin-top: 0.25rem;
+    }
+
+    .tp-qtag {
+        margin-top: 0.15rem;
+    }
+
+    .tp-screen .sp-wagers {
+        margin-top: 0.3rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .tp-card {
+        width: 48px;
+        height: 67px;
+    }
+
+    .tp-card + .tp-card {
+        margin-left: -12px;
+    }
+
+    .tp-screen .sp-wname {
+        width: 4.1rem;
+        font-size: 0.76rem;
+    }
+
+    .content .tp-screen .sp-wrow .sp-lose {
+        width: 2.5rem;
+    }
+}
+
+@media (min-width: 769px) {
+    .tp-card {
+        width: 75px;
+        height: 105px;
+    }
+
+    .tp-card + .tp-card {
+        margin-left: -19px;
+    }
+}
+
+/* Pay table line that spans both columns (normal weight, wraps) */
+.sp-pt td.tp-pt-wide {
+    text-align: left;
+    font-weight: normal;
+    white-space: normal;
+}
+
+/* $100+ chips: smaller text so "$300" fits inside the chip */
+.sp-chip.sp-chip-100 {
+    font-size: 0.66rem;
+    letter-spacing: -0.02em;
+}
+
+@media (max-width: 768px) {
+    .tp-screen .sp-chip.sp-chip-100 {
+        font-size: 0.52rem;
+    }
+}

@@ -14,15 +14,211 @@
     <div class="start-screen">
         <h1>THREE CARD PRIME</h1>
 
-        @* A single mode, so its card is always open (no title to tap);
-           styled like the other games' start screens for consistency. *@
+        @* Two modes, each a collapsible card (one open at a time) *@
         <div class="mode-list">
             <ModeCard Title="Three Card Prime"
                       Description="Settle the outcome of each wager (Win / Lose / Push), mark Ante Bonus if it pays, then Submit."
-                      Collapsible="false"
+                      Expanded="@(_openMode == TcMode.Settle)"
+                      OnToggle="() => ToggleMode(TcMode.Settle)"
                       OnStart="StartGame" />
 
+            <ModeCard Title="Three Card Prime Payouts"
+                      Description="Pay every wager. Enter the winnings for each (the Ante includes any Ante Bonus), or tap Push / Lose, then Submit."
+                      Expanded="@(_openMode == TcMode.Payouts)"
+                      OnToggle="() => ToggleMode(TcMode.Payouts)"
+                      OnStart="StartGame" />
         </div>
+    </div>
+}
+else if (_tcMode == TcMode.Payouts)
+{
+    <div class="play-screen sp-screen tp-screen has-game-bar">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        <GameStatus Title="Three Card Prime Payouts" Correct="_tpCorrect" Played="_tpPlayed" />
+
+        @* Dealer's hand (with whether it qualifies) and the player's hand,
+           side by side, each with its hand name *@
+        <div class="felt tp-felt">
+            <div class="tp-hand">
+                <div class="sp-cap">DEALER &middot; @_tpRound.DealerHand</div>
+                <div class="tp-cards">
+                    @foreach (Card c in _tpRound.DealerCards)
+                    {
+                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
+                    }
+                </div>
+                <span class="tp-qtag @(_tpRound.DealerQualifies ? "" : "tp-qtag-no")">@(_tpRound.DealerQualifies ? "QUALIFIES" : "DOESN'T QUALIFY")</span>
+            </div>
+            <div class="tp-hand tp-hand-player">
+                <div class="sp-cap">PLAYER &middot; @_tpRound.PlayerHand</div>
+                <div class="tp-cards">
+                    @foreach (Card c in _tpRound.PlayerCards)
+                    {
+                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* The five wagers in settling order: chip, name, payout box, then
+           Push (Play and Ante only) and Lose. Tap a row to key into it. *@
+        <div class="sp-wagers">
+            @for (int w = 0; w < 5; w++)
+            {
+                int wi = w;
+                int wager = _tpRound.Wagers[wi];
+                bool canPush = wi <= TcpPayoutRound.Ante;
+                <div class="sp-wrow @(!_tpScored && _tpActive == wi ? "sp-wrow-on" : "")" @onclick="() => TpSelect(wi)">
+                    <div class="sp-chip @TpChipClass(wager)">$@wager</div>
+                    <div class="sp-wname">@TcpPayoutRound.Names[wi]<small>wager $@wager</small></div>
+                    @if (_tpScored)
+                    {
+                        <div class="sp-ans @(_tpOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
+                            @if (_tpOk[wi])
+                            {
+                                <text>&#x2713; @TpEnteredText(wi)</text>
+                            }
+                            else
+                            {
+                                <text>&#x2717; @TpEnteredText(wi) &middot; Ans: @TpPayText(_tpRound.Pays[wi])</text>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @* inputmode="none": phones use the keypad; a PC keyboard
+                           types normally. A row marked Lose / Push shows that in
+                           its box; typing a number (or Backspace) clears it. *@
+                        <input type="text"
+                               class="sp-input @(_tpMark[wi] == TpMark.Lose ? "sp-input-lose" : _tpMark[wi] == TpMark.Push ? "tp-input-push" : "")"
+                               inputmode="none"
+                               autocomplete="off"
+                               value="@TpBoxValue(wi)"
+                               @oninput="e => TpInput(wi, e)"
+                               @onkeydown="e => TpKeyDown(wi, e)"
+                               @onfocus="() => _tpActive = wi"
+                               @ref="_tpInputRefs[wi]"
+                               placeholder="Payout" />
+                    }
+                    @if (canPush)
+                    {
+                        <button type="button"
+                                class="sp-lose tp-push @(_tpMark[wi] == TpMark.Push ? "tp-push-on" : "")"
+                                disabled="@_tpScored"
+                                @onclick="() => TpToggleMark(wi, TpMark.Push)"
+                                @onclick:stopPropagation="true">Push</button>
+                    }
+                    <button type="button"
+                            class="sp-lose @(_tpMark[wi] == TpMark.Lose ? "sp-lose-on" : "")"
+                            disabled="@_tpScored"
+                            @onclick="() => TpToggleMark(wi, TpMark.Lose)"
+                            @onclick:stopPropagation="true">Lose</button>
+                </div>
+            }
+        </div>
+
+        <div class="sp-hint-row">
+            <span class="sp-desk-hint">Type each payout; Tab or Enter moves to the next box.</span>
+            <button class="keypad-toggle" @onclick="() => _tpShowKeypad = !_tpShowKeypad">123</button>
+        </div>
+
+        @if (!_tpScored)
+        {
+            <div class="keypad-wrap sp-keypad @(_tpShowKeypad ? "keypad-open" : "")">
+                <NumericKeypad AllowDecimal="false" @bind-Value="TpActiveText" OnEnter="TpKeypadEnter" EnterLabel="@(_tpActive < 4 ? "Next ↓" : "Enter")" />
+            </div>
+        }
+
+        <div class="feedback-area sp-feedback">
+            @if (_tpScored)
+            {
+                <ResultBreakdown ResultText="@_tpResultText" IsCorrect="_tpOk.All(o => o)" Rows="_tpRows" />
+            }
+            else if (_tpMessage.Length > 0)
+            {
+                <p class="result-line txt-bad">@_tpMessage</p>
+            }
+        </div>
+
+        @* Desktop: pay tables always in view (phones: in Help) *@
+        <aside class="sp-paytable tp-paytable">
+            <table class="sp-pt">
+                <tr class="sp-pt-hd"><td>Play &amp; Ante</td><td></td></tr>
+                <tr><td>Player wins</td><td>1 to 1</td></tr>
+                <tr><td>Tie</td><td>Push</td></tr>
+                <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't qualify: Ante 1 to 1, Play pushes</td></tr>
+                <tr class="sp-pt-hd"><td>Ante Bonus</td><td></td></tr>
+                <tr><td>Straight Flush</td><td>5 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
+                <tr><td>Straight</td><td>1 to 1</td></tr>
+                <tr class="sp-pt-hd"><td>Pair Bonus</td><td></td></tr>
+                <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
+                <tr><td>Straight</td><td>6 to 1</td></tr>
+                <tr><td>Flush</td><td>3 to 1</td></tr>
+                <tr><td>Any Pair</td><td>1 to 1</td></tr>
+            </table>
+            <table class="sp-pt">
+                <tr class="sp-pt-hd"><td>Prime</td><td></td></tr>
+                <tr><td>All 6 cards same color</td><td>4 to 1</td></tr>
+                <tr><td>Player's 3 same color</td><td>3 to 1</td></tr>
+                <tr class="sp-pt-hd"><td>All 6</td><td></td></tr>
+                <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
+                <tr><td>Straight Flush</td><td>200 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
+                <tr><td>Full House</td><td>25 to 1</td></tr>
+                <tr><td>Flush</td><td>20 to 1</td></tr>
+                <tr><td>Straight</td><td>10 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
+            </table>
+            <p class="sp-pt-note">Winnings only. Ante includes any Ante Bonus.</p>
+        </aside>
+
+        <GameBar HelpTitle="Three Card Prime Pay Tables" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_tpScored)
+                {
+                    <button class="game-bar-main" @onclick="TpSubmitAndShow">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="TpNextTop" @ref="_tpNextButtonRef">Next</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <table class="help-table sp-help-table">
+                    <tr class="sp-pt-hd"><td>Play &amp; Ante (dealer qualifies with Queen high or better)</td><td></td></tr>
+                    <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
+                    <tr><td>Dealer doesn't qualify</td><td>Ante 1 to 1, Play push</td></tr>
+                    <tr><td>Tie</td><td>Both push</td></tr>
+                    <tr class="sp-pt-hd"><td>Ante Bonus (paid with the Ante, win or lose)</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>5 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
+                    <tr><td>Straight</td><td>1 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Pair Bonus (player's 3 cards)</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
+                    <tr><td>Straight</td><td>6 to 1</td></tr>
+                    <tr><td>Flush</td><td>3 to 1</td></tr>
+                    <tr><td>Any Pair</td><td>1 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Prime (color)</td><td></td></tr>
+                    <tr><td>Player AND dealer cards same color</td><td>4 to 1</td></tr>
+                    <tr><td>Player's cards same color</td><td>3 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>All 6 (best 5 of all 6 cards)</td><td></td></tr>
+                    <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
+                    <tr><td>Straight Flush</td><td>200 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
+                    <tr><td>Full House</td><td>25 to 1</td></tr>
+                    <tr><td>Flush</td><td>20 to 1</td></tr>
+                    <tr><td>Straight</td><td>10 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
+                </table>
+                <p>Enter the winnings only. The Ante's payout includes any Ante Bonus. For a losing or pushed wager, tap Lose or Push (0 also counts as Lose).</p>
+            </HelpContent>
+        </GameBar>
     </div>
 }
 else
@@ -169,9 +365,18 @@ else
 {
     <div class="session-summary">
         <h3>Session Summary</h3>
-        <p>Rounds Played: @_totalRounds</p>
-        <p>Correct: @_correctCount</p>
-        <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        @if (_tcMode == TcMode.Payouts)
+        {
+            <p>Rounds Played: @_tpPlayed</p>
+            <p>Correct: @_tpCorrect</p>
+            <p>Incorrect: @(_tpPlayed - _tpCorrect)</p>
+        }
+        else
+        {
+            <p>Rounds Played: @_totalRounds</p>
+            <p>Correct: @_correctCount</p>
+            <p>Incorrect: @(_totalRounds - _correctCount)</p>
+        }
         <button @onclick="CloseSummary">OK</button>
     </div>
 }
@@ -249,6 +454,31 @@ else
         {
             _lastRenderedStarted = _started;
             try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+
+            // Payouts on desktop: open the number pad straight away when
+            // the window is tall enough for it (123 still hides / shows it)
+            if (_started && _tcMode == TcMode.Payouts)
+            {
+                bool fits = false;
+                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", 315); } catch { }
+                _tpShowKeypad = fits;
+                if (fits) StateHasChanged();
+            }
+        }
+
+        // Payouts: cursor into the active payout box, or onto Next once
+        // the round is scored (so Enter deals the next round)
+        if (_tpFocusInput >= 0)
+        {
+            int i = _tpFocusInput;
+            _tpFocusInput = -1;
+            try { await _tpInputRefs[i].FocusAsync(preventScroll: true); } catch { }
+        }
+
+        if (_tpFocusNext)
+        {
+            _tpFocusNext = false;
+            try { await _tpNextButtonRef.FocusAsync(preventScroll: true); } catch { }
         }
     }
 
@@ -263,6 +493,19 @@ else
     }
 
     private bool _started;
+
+    // Two modes: Settle (Win / Lose / Push calls) and Payouts. Start
+    // screen: which mode card is open (null = all closed); opening a card
+    // also selects its mode.
+    private enum TcMode { Settle, Payouts }
+    private TcMode _tcMode = TcMode.Settle;
+    private TcMode? _openMode;
+
+    private void ToggleMode(TcMode mode)
+    {
+        _openMode = _openMode == mode ? null : mode;
+        if (_openMode is not null) _tcMode = mode;
+    }
 
     private Deck _deck = new();
     private Card[] _playerCards = Array.Empty<Card>();
@@ -346,6 +589,12 @@ else
     private void StartGame()
     {
         _started = true;
+        if (_tcMode == TcMode.Payouts)
+        {
+            TpStartGame();
+            return;
+        }
+
         _correctCount = 0;
         _totalRounds = 0;
         _scoreText = "Score: 0 / 0 (0.0%)";
@@ -611,7 +860,7 @@ else
 
     private void EndSession()
     {
-        if (_totalRounds > 0)
+        if (_tcMode == TcMode.Payouts ? _tpPlayed > 0 : _totalRounds > 0)
         {
             _showSessionSummary = true;
             _scrollToSummary = true;
@@ -627,6 +876,230 @@ else
         _showSessionSummary = false;
         _started = false;
     }
+
+    // ============================================================
+    // PAYOUTS (Tp prefix)
+    // ============================================================
+
+    private enum TpMark { None, Lose, Push }
+
+    private TcpPayoutRound _tpRound = ThreeCardPayouts.Deal(Random.Shared);
+    private readonly string[] _tpAnswer = new string[5];
+    private readonly TpMark[] _tpMark = new TpMark[5];
+    private readonly bool[] _tpOk = new bool[5];
+    private int _tpActive;
+    private bool _tpScored;
+    private bool _tpShowKeypad;
+    private string _tpMessage = string.Empty;
+    private string _tpResultText = string.Empty;
+    private readonly List<BreakdownRow> _tpRows = new();
+    private int _tpCorrect;
+    private int _tpPlayed;
+
+    private readonly ElementReference[] _tpInputRefs = new ElementReference[5];
+    private ElementReference _tpNextButtonRef;
+    private int _tpFocusInput = -1;
+    private bool _tpFocusNext;
+
+    // The keypad types into whichever box is active
+    private string TpActiveText
+    {
+        get => _tpAnswer[_tpActive] ?? string.Empty;
+        set
+        {
+            _tpAnswer[_tpActive] = TpDigitsOnly(value);
+            _tpMark[_tpActive] = TpMark.None;
+            _tpMessage = string.Empty;
+        }
+    }
+
+    private void TpStartGame()
+    {
+        _tpCorrect = 0;
+        _tpPlayed = 0;
+        TpNewRound();
+    }
+
+    private void TpNewRound()
+    {
+        _tpRound = ThreeCardPayouts.Deal(Random.Shared);
+        for (int i = 0; i < 5; i++)
+        {
+            _tpAnswer[i] = string.Empty;
+            _tpMark[i] = TpMark.None;
+            _tpOk[i] = false;
+        }
+        _tpActive = 0;
+        _tpScored = false;
+        _tpMessage = string.Empty;
+        _tpResultText = string.Empty;
+        _tpRows.Clear();
+        _tpFocusInput = 0;
+    }
+
+    private void TpSelect(int index)
+    {
+        if (_tpScored || _tpActive == index) return;
+        _tpActive = index;
+        _tpFocusInput = index;
+    }
+
+    // Whole dollars only, at most 5 digits (the top pay is $5,000)
+    private static string TpDigitsOnly(string? raw)
+    {
+        System.Text.StringBuilder sb = new();
+        foreach (char c in raw ?? string.Empty)
+        {
+            if (char.IsDigit(c) && sb.Length < 5) sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
+    private string TpBoxValue(int i) => _tpMark[i] switch
+    {
+        TpMark.Lose => "LOSE",
+        TpMark.Push => "PUSH",
+        _ => _tpAnswer[i] ?? string.Empty
+    };
+
+    private void TpInput(int index, ChangeEventArgs e)
+    {
+        _tpAnswer[index] = TpDigitsOnly(e.Value?.ToString());
+        _tpMark[index] = TpMark.None;
+        _tpActive = index;
+        _tpMessage = string.Empty;
+    }
+
+    // Keyboard Enter: on to the next box; on the last box, Submit
+    private async Task TpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key != "Enter" || _tpScored) return;
+        _tpActive = index;
+        await TpKeypadEnter();
+    }
+
+    private async Task TpKeypadEnter()
+    {
+        if (_tpScored) return;
+
+        if (_tpActive < 4)
+        {
+            _tpActive++;
+            _tpFocusInput = _tpActive;
+        }
+        else
+        {
+            await TpSubmitAndShow();
+        }
+    }
+
+    // Lose / Push: marks the wager (clearing any amount typed) and moves
+    // on to the next wager; tapped again it's undone
+    private void TpToggleMark(int index, TpMark mark)
+    {
+        if (_tpScored) return;
+        _tpMessage = string.Empty;
+
+        if (_tpMark[index] == mark)
+        {
+            _tpMark[index] = TpMark.None;
+            _tpActive = index;
+            _tpFocusInput = index;
+            return;
+        }
+
+        _tpMark[index] = mark;
+        _tpAnswer[index] = string.Empty;
+        int next = index < 4 ? index + 1 : index;
+        _tpActive = next;
+        _tpFocusInput = next;
+    }
+
+    // Submit also scrolls to the feedback; the cursor moves onto Next
+    // after a short wait so the same Enter press doesn't also press Next
+    private async Task TpSubmitAndShow()
+    {
+        TpSubmit();
+        if (!_tpScored) return;
+
+        _scrollToFeedback = true;
+        StateHasChanged();
+
+        await Task.Delay(200);
+        _tpFocusNext = true;
+    }
+
+    private void TpSubmit()
+    {
+        if (_tpScored) return;
+
+        for (int i = 0; i < 5; i++)
+        {
+            if ((_tpAnswer[i] ?? "").Length == 0 && _tpMark[i] == TpMark.None)
+            {
+                _tpMessage = i <= TcpPayoutRound.Ante
+                    ? $"Enter the {TcpPayoutRound.Names[i]} payout, or tap Push or Lose."
+                    : $"Enter the {TcpPayoutRound.Names[i]} payout, or tap Lose.";
+                _tpActive = i;
+                _tpFocusInput = i;
+                return;
+            }
+        }
+
+        _tpRows.Clear();
+        for (int i = 0; i < 5; i++)
+        {
+            TcpPay pay = _tpRound.Pays[i];
+            _tpOk[i] = _tpMark[i] switch
+            {
+                TpMark.Lose => pay.IsLose,
+                TpMark.Push => pay.IsPush,
+                _ => long.TryParse(_tpAnswer[i], out long v) && (v == 0 ? pay.IsLose : !pay.IsPush && v == pay.Amount)
+            };
+
+            _tpRows.Add(new BreakdownRow(TcpPayoutRound.Names[i], TpEnteredMoney(i), TpPayMoney(pay), _tpOk[i], _tpRound.Why[i]));
+        }
+
+        _tpPlayed++;
+        if (_tpOk.All(o => o)) _tpCorrect++;
+
+        _tpResultText = BreakdownRow.Summary(_tpRows);
+        _tpMessage = string.Empty;
+        _tpScored = true;
+    }
+
+    private void TpNextTop()
+    {
+        TpNewRound();
+        _scrollToTopAfterNext = true;
+    }
+
+    // In the payout box after Submit: "LOSE", "PUSH" or "150"
+    private string TpEnteredText(int i) => _tpMark[i] switch
+    {
+        TpMark.Lose => "LOSE",
+        TpMark.Push => "PUSH",
+        _ => long.TryParse(_tpAnswer[i], out long v) ? v.ToString("N0") : _tpAnswer[i] ?? ""
+    };
+
+    private static string TpPayText(TcpPay pay) =>
+        pay.IsPush ? "PUSH" : pay.IsLose ? "LOSE" : pay.Amount.ToString("N0");
+
+    // In the breakdown: "Lose", "Push" or "$150"
+    private string TpEnteredMoney(int i) => _tpMark[i] switch
+    {
+        TpMark.Lose => "Lose",
+        TpMark.Push => "Push",
+        _ => long.TryParse(_tpAnswer[i], out long v) ? $"${v:N0}" : _tpAnswer[i] ?? ""
+    };
+
+    private static string TpPayMoney(TcpPay pay) =>
+        pay.IsPush ? "Push" : pay.IsLose ? "Lose" : ThreeCardPayouts.Money(pay.Amount);
+
+    // Chip color by the largest chip in the wager: $100 black, $25 green,
+    // $10 blue, $5 red, $1 grey
+    private static string TpChipClass(int wager) =>
+        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
 
     private RenderFragment RenderWager(WagerState w) =>
         @<div class="wager-shape @(w.IsDiamond ? "" : "wager-circle") @(w.Wrong && !w.IsDiamond ? "wager-wrong" : "") @(_roundScored && w.Wrong && !w.IsDiamond ? "wager-shaded-wrong" : "")"
