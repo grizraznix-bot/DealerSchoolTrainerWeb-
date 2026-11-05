@@ -312,7 +312,7 @@ else if (_mode == BlackjackMode.SidePayouts)
                     int wager = wi == 0 ? _spRound.TwentyOnePlus3Wager : _spRound.LuckyLadiesWager;
                     int answer = wi == 0 ? _spRound.TwentyOnePlus3Payout : _spRound.LuckyLadiesPayout;
                     <div class="sp-wrow @(!_spScored && _spActive == wi ? "sp-wrow-on" : "")" @onclick="() => SpSelect(wi)">
-                        <div class="sp-chip sp-chip-@wager">$@wager</div>
+                        <div class="sp-chip @SpChipClass(wager)">$@wager</div>
                         <div class="sp-wname">@(wi == 0 ? "21 + 3" : "Lucky Ladies")<small>wager $@wager</small></div>
                         @if (_spScored)
                         {
@@ -1251,6 +1251,11 @@ else
 
     private static string SpAnswerMoney(int dollars) =>
         dollars == 0 ? "Lose" : SideWagerPayouts.Money(dollars);
+
+    // Chip color by the largest chip in the wager: $25 green, $10 blue,
+    // $5 red, $1 grey
+    private static string SpChipClass(int wager) =>
+        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
 
     private static string SpShowEntered(string raw) =>
         long.TryParse(raw, out long v) ? $"${v:N0}" : raw;

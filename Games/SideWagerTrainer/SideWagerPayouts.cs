@@ -30,7 +30,6 @@ public sealed class SideWagerPayoutRound
 
 public static class SideWagerPayouts
 {
-    public static readonly int[] WagerAmounts = { 1, 5, 10, 25 };
     private const int Decks = 6;
 
     /// <summary>
@@ -58,8 +57,8 @@ public static class SideWagerPayouts
                 Player2 = p2,
                 DealerUp = up,
                 DealerHole = hole,
-                TwentyOnePlus3Wager = WagerAmounts[rng.Next(WagerAmounts.Length)],
-                LuckyLadiesWager = WagerAmounts[rng.Next(WagerAmounts.Length)],
+                TwentyOnePlus3Wager = SideWager(rng),
+                LuckyLadiesWager = SideWager(rng),
                 TwentyOnePlus3Pays = tcPays,
                 TwentyOnePlus3Hand = tcHand,
                 LuckyLadiesPays = llPays,
@@ -67,6 +66,20 @@ public static class SideWagerPayouts
             };
         }
     }
+
+    // Real-world betting pattern, each wager on its own ($1-$50: $1-$5,
+    // then $5 steps): mostly $1 or $5, sometimes $2-$4 or $10, now and
+    // then $15-$25, rarely $30-$50 (mostly $50)
+    private static int SideWager(Random rng)
+    {
+        double r = rng.NextDouble();
+        if (r < 0.60) return Pick(rng, 1, 5);
+        if (r < 0.85) return Pick(rng, 2, 3, 4, 10);
+        if (r < 0.96) return Pick(rng, 15, 20, 25);
+        return rng.NextDouble() < 0.5 ? 50 : Pick(rng, 30, 35, 40, 45);
+    }
+
+    private static int Pick(Random rng, params int[] values) => values[rng.Next(values.Length)];
 
     // 21 + 3: Straight Flush 30, Three of a Kind 20, Straight 10, Flush 5
     public static (int Pays, string Hand) Score21Plus3(Card p1, Card p2, Card up) =>
