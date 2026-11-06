@@ -413,30 +413,39 @@ else
 
         <GameStatus Title="Settling Bets" Correct="_sbCorrectCount" Played="_sbTotalRounds" />
 
-        <div class="felt pp-felt">
-            @foreach (bool isDealer in new[] { true, false })
+        @* Laid out from the dealer's side of the table: the player's hand
+           on top, the dealer's at the bottom, each set into Low beside High
+           with a small caption over each (hand names only after Submit).
+           Captions above the hands instead of a name column on the left
+           leave the width for larger cards. *@
+        <div class="felt pg-felt">
+            @foreach (bool isDealer in new[] { false, true })
             {
                 List<PaiGowCard> low = isDealer ? _sbDealerLowSorted : _sbPlayerLowSorted;
                 List<PaiGowCard> high = isDealer ? _sbDealerHighSorted : _sbPlayerHighSorted;
                 string lowLabel = isDealer ? _sbDealerLowLabel : _sbPlayerLowLabel;
                 string highLabel = isDealer ? _sbDealerHighLabel : _sbPlayerHighLabel;
-                <div class="pp-row">
-                    <div class="pp-name">@(isDealer ? "DEALER" : "PLAYER")</div>
-                    <div class="pp-group">
-                        <div class="pp-cap">LOW@(_sbRoundScored && lowLabel.Length > 0 ? " · " + lowLabel : "")</div>
-                        <div class="pp-cards">
+                @if (isDealer)
+                {
+                    <div class="cr-sep"></div>
+                }
+                <div class="cr-cap">@(isDealer ? "DEALER" : "PLAYER")</div>
+                <div class="pg-hand">
+                    <div class="pg-group">
+                        <div class="pg-sub">LOW@(_sbRoundScored && lowLabel.Length > 0 ? " · " + lowLabel : "")</div>
+                        <div class="pg-cards">
                             @foreach (PaiGowCard c in low)
                             {
-                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="pp-card" />
+                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" />
                             }
                         </div>
                     </div>
-                    <div class="pp-group">
-                        <div class="pp-cap">HIGH@(_sbRoundScored && highLabel.Length > 0 ? " · " + highLabel : "")</div>
-                        <div class="pp-cards">
+                    <div class="pg-group">
+                        <div class="pg-sub">HIGH@(_sbRoundScored && highLabel.Length > 0 ? " · " + highLabel : "")</div>
+                        <div class="pg-cards">
                             @foreach (PaiGowCard c in high)
                             {
-                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="pp-card" />
+                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" />
                             }
                         </div>
                     </div>

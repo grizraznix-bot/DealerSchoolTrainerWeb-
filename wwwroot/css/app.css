@@ -5648,6 +5648,73 @@ body {
     transform: translateY(6px);
 }
 
+/* Pai Gow Settling Bets felt: player on top, dealer at the bottom, Low
+   beside High. Card width fits Low (2 cards) + High (5 cards) at 25%
+   overlap across the felt: 56px on most phones, smaller on narrow ones,
+   75px (the desktop game card size) on wide screens. */
+.felt.pg-felt {
+    --pgw: clamp(40px, calc((100vw - 64px) / 5.75), 56px);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 8px 10px 12px 10px;
+}
+
+@media (min-width: 769px) {
+    .felt.pg-felt {
+        --pgw: 75px;
+    }
+}
+
+.pg-felt .cr-sep {
+    margin: 6px 0 4px 0;
+}
+
+.pg-hand {
+    margin-top: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.pg-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0;
+}
+
+/* LOW / HIGH (plus the hand name after Submit); may wrap, never widens
+   the group past its cards */
+.pg-sub {
+    width: 0;
+    min-width: 100%;
+    margin-bottom: 2px;
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    line-height: 1.15;
+    opacity: 0.85;
+}
+
+.pg-cards {
+    display: flex;
+}
+
+.pg-cards img {
+    width: var(--pgw);
+    height: calc(var(--pgw) * 1.4);
+    border-radius: 4px;
+    background-color: white;
+    box-shadow: -1px 0 2px rgba(0, 0, 0, 0.35);
+}
+
+.pg-cards img + img {
+    margin-left: calc(var(--pgw) * -0.25);
+}
+
 /* Short how-to line under the rows (first round) */
 .cr-howto {
     align-self: stretch;
