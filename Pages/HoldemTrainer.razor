@@ -45,36 +45,36 @@ else if (_mode == TrainerMode.Payouts)
 
         <GameStatus Title="Hold'em Payouts" Correct="_hpCorrect" Played="_hpPlayed" />
 
-        @* Dealer's and player's hole cards (with hand names; the dealer
-           tagged OPENS / DOESN'T OPEN), then the board *@
+        @* The board on top (the dealer's 2 unused cards dimmed, wherever
+           they are), then the dealer's and player's hole cards side by side
+           with their hand names; the dealer tagged OPENS / DOESN'T OPEN.
+           Kept short so about two wager rows still fit above the keypad. *@
         <div class="felt hp-felt">
-            <div class="hp-top">
+            <div class="cr-cap">BOARD &middot; dimmed = not in the dealer's hand</div>
+            <div class="hp-cards">
+                @foreach (Card c in _hpRound.Board)
+                {
+                    <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card @(HpDealerUnused(c) ? "hp-unused" : "")" />
+                }
+            </div>
+            <div class="hp-pair">
                 <div class="hp-hand">
-                    <div class="pp-cap">DEALER &middot; @_hpRound.DealerHand <span class="tp-qtag @(_hpRound.DealerOpens ? "" : "tp-qtag-no")">@(_hpRound.DealerOpens ? "OPENS" : "DOESN'T OPEN")</span></div>
+                    <div class="cr-cap">DEALER &middot; @_hpRound.DealerHand <span class="tp-qtag @(_hpRound.DealerOpens ? "" : "tp-qtag-no")">@(_hpRound.DealerOpens ? "OPENS" : "DOESN'T OPEN")</span></div>
                     <div class="hp-cards">
                         @foreach (Card c in _hpRound.DealerCards)
                         {
-                            <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card" />
+                            <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card @(HpDealerUnused(c) ? "hp-unused" : "")" />
                         }
                     </div>
                 </div>
-                <div class="hp-hand hp-hand-player">
-                    <div class="pp-cap">PLAYER &middot; @_hpRound.PlayerHand</div>
+                <div class="hp-hand">
+                    <div class="cr-cap">PLAYER &middot; @_hpRound.PlayerHand</div>
                     <div class="hp-cards">
                         @foreach (Card c in _hpRound.PlayerCards)
                         {
                             <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card" />
                         }
                     </div>
-                </div>
-            </div>
-            <div class="hp-board">
-                <div class="pp-cap">BOARD</div>
-                <div class="hp-cards">
-                    @foreach (Card c in _hpRound.Board)
-                    {
-                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card" />
-                    }
                 </div>
             </div>
         </div>
@@ -145,7 +145,7 @@ else if (_mode == TrainerMode.Payouts)
         @if (!_hpScored)
         {
             <div class="keypad-wrap sp-keypad @(_hpShowKeypad ? "keypad-open" : "")">
-                <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="HpActiveText" OnEnter="HpKeypadEnter" EnterLabel="@(_hpActive < 4 ? "Next ↓" : "Enter")" />
+                <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="HpActiveText" />
             </div>
         }
 
@@ -1147,6 +1147,11 @@ else
     private enum HpMark { None, Lose, Push }
 
     private HdPayoutRound _hpRound = null!; // dealt by HpStartGame
+    // The dealer's best five of 7 (hole cards + board), for dimming the
+    // 2 cards the dealer doesn't use
+    private List<Card> _hpDealerBest = new();
+
+    private bool HpDealerUnused(Card c) => !_hpDealerBest.Contains(c);
     private readonly string[] _hpAnswer = new string[5];
     private readonly HpMark[] _hpMark = new HpMark[5];
     private readonly bool[] _hpOk = new bool[5];
@@ -1186,6 +1191,7 @@ else
     private void HpNewRound()
     {
         _hpRound = HoldemPayouts.Deal(Random.Shared);
+        _hpDealerBest = HandEvaluator.BestFiveCards(_hpRound.DealerCards.Concat(_hpRound.Board).ToList());
         for (int i = 0; i < 5; i++)
         {
             _hpAnswer[i] = string.Empty;

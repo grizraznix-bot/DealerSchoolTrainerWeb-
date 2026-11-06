@@ -237,7 +237,8 @@ else if (_mode == BlackjackMode.Payouts)
         </div>
 
         <div class="keypad-wrap @(_poShowKeypad ? "keypad-open" : "")">
-            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_poAnswerText" OnEnter="PoKeypadEnter" EnterLabel="@(_poNewRoundEnabled ? "Next" : "Enter")" />
+            @* No Enter key: Submit / Next is on the bottom bar *@
+            <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="_poAnswerText" />
         </div>
 
         <div class="feedback-area">

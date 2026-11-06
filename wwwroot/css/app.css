@@ -5266,79 +5266,72 @@ body {
 }
 
 /* ------------------------------------------------------------------
-   Hold'em - Payouts (hp-): dealer and player hole cards side by side,
-   then the board
+   Hold'em - Payouts (hp-): the board on top (dealer's unused cards
+   dimmed, not dropped), then dealer and player hole cards side by
+   side. Card width: 52px on phones, 48px on narrow ones, 66px on
+   wide screens.
    ------------------------------------------------------------------ */
-.hp-felt {
+.felt.hp-felt {
+    --hpw: 52px;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
-    padding: 0.3rem 0.6rem 0.4rem 0.6rem;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px 10px 10px;
 }
 
-.hp-top {
+@media (max-width: 374px) {
+    .felt.hp-felt {
+        --hpw: 48px;
+    }
+}
+
+@media (min-width: 769px) {
+    .felt.hp-felt {
+        --hpw: 66px;
+    }
+}
+
+.hp-pair {
+    align-self: stretch;
     display: flex;
-    align-items: flex-start;
+    justify-content: space-around;
 }
 
 .hp-hand {
     display: flex;
     flex-direction: column;
-}
-
-.hp-hand-player {
-    margin-left: auto;
-    align-items: flex-end;
-}
-
-.hp-hand .pp-cap {
-    white-space: nowrap;
-}
-
-.hp-board {
-    display: flex;
-    flex-direction: column;
     align-items: center;
+    gap: 4px;
+}
+
+.hp-hand .cr-cap {
+    white-space: nowrap;
 }
 
 .hp-cards {
     display: flex;
-    gap: 4px;
+    justify-content: center;
+    gap: 5px;
 }
 
 .hp-card {
-    width: 42px;
-    height: 59px;
-    border-radius: 3px;
+    width: var(--hpw);
+    height: calc(var(--hpw) * 1.4);
+    border-radius: 5px;
     background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.hp-card.hp-unused {
+    filter: brightness(0.5);
 }
 
 .hp-felt .tp-qtag {
-    margin: 0 0 0 0.2rem;
-    font-size: 0.55rem;
+    margin: 0 0 0 0.3rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.03em;
     vertical-align: 1px;
-}
-
-@media (max-width: 360px) {
-    .hp-card {
-        width: 40px;
-        height: 56px;
-    }
-}
-
-@media (min-width: 769px) {
-    .hp-card {
-        width: 62px;
-        height: 87px;
-    }
-}
-
-/* Hold'em Payouts, phones: no "BOARD" caption (the five cards in the
-   middle are plainly the board), for more room in the wager box */
-@media (max-width: 768px) {
-    .hp-board .pp-cap {
-        display: none;
-    }
 }
 
 /* ------------------------------------------------------------------
