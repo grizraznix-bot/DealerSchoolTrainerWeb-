@@ -29,7 +29,7 @@
                       OnStart="StartGame" />
 
             <ModeCard Title="Hold'em Payouts"
-                      Description="The hand is dealt and settled out. Pay each wager (Raise, Ante, Odds, Trips Plus, Pocket Bonus): enter the winnings, or tap Push / Lose, then Submit."
+                      Description="The hand is dealt and settled out. Tap a hand to see its rank. Pay each wager (Raise, Ante, Odds, Trips Plus, Pocket Bonus): enter the winnings, or tap Push / Lose, then Submit."
                       Expanded="@IsModeOpen(TrainerMode.Payouts)"
                       OnToggle="() => ToggleMode(TrainerMode.Payouts)"
                       OnStart="StartGame" />
@@ -47,10 +47,25 @@ else if (_mode == TrainerMode.Payouts)
 
         @* The board on top (the dealer's 2 unused cards dimmed, wherever
            they are), then the dealer's and player's hole cards side by side
-           with their hand names; the dealer tagged OPENS / DOESN'T OPEN.
-           Kept short so about two wager rows still fit above the keypad. *@
+           under plain DEALER / PLAYER captions. Tap a hand for a bubble with
+           its rank (the dealer's adds OPENS / DOESN'T OPEN), as in Pai Gow
+           Payouts. Until the first tap this session, the board caption
+           fades between the dimmed-card note and the tap prompt every 5
+           seconds (CSS only; @key restarts it on each deal). After Submit
+           each rank shows under its caption (the keypad is gone by then, so
+           the extra line costs nothing). *@
         <div class="felt hp-felt">
-            <div class="cr-cap">BOARD &middot; dimmed = not in the dealer's hand</div>
+            @if (_hpPeekUsed || _hpScored)
+            {
+                <div class="cr-cap hp-board-cap">BOARD &middot; dimmed = not in dealer's hand</div>
+            }
+            else
+            {
+                <div class="cr-cap hp-board-cap pp-alt" @key="@_hpDealNo">
+                    <span class="pp-alt-a">BOARD &middot; dimmed = not in dealer's hand</span>
+                    <span class="pp-alt-b">Tap Dealer or Player cards for rank</span>
+                </div>
+            }
             <div class="hp-cards">
                 @foreach (Card c in _hpRound.Board)
                 {
@@ -58,26 +73,50 @@ else if (_mode == TrainerMode.Payouts)
                 }
             </div>
             <div class="hp-pair">
-                <div class="hp-hand">
-                    <div class="cr-cap">DEALER &middot; @_hpRound.DealerHand <span class="tp-qtag @(_hpRound.DealerOpens ? "" : "tp-qtag-no")">@(_hpRound.DealerOpens ? "OPENS" : "DOESN'T OPEN")</span></div>
-                    <div class="hp-cards">
-                        @foreach (Card c in _hpRound.DealerCards)
+                @foreach (bool isDealer in new[] { true, false })
+                {
+                    bool dealerHand = isDealer;
+                    string rank = isDealer ? _hpRound.DealerHand : _hpRound.PlayerHand;
+                    Card[] hole = isDealer ? _hpRound.DealerCards : _hpRound.PlayerCards;
+                    bool peekOpen = !_hpScored && _hpPeek == (isDealer ? 2 : 1);
+                    <div class="hp-hand @(!_hpScored ? "hp-tap" : "") @(peekOpen ? "hp-tap-on" : "")"
+                         role="@(!_hpScored ? "button" : null)"
+                         @onclick="() => HpTogglePeek(dealerHand)">
+                        @if (peekOpen)
                         {
-                            <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card @(HpDealerUnused(c) ? "hp-unused" : "")" />
+                            <div class="hp-bub">
+                                <div>@rank</div>
+                                @if (isDealer)
+                                {
+                                    <span class="tp-qtag @(_hpRound.DealerOpens ? "" : "tp-qtag-no")">@(_hpRound.DealerOpens ? "OPENS" : "DOESN'T OPEN")</span>
+                                }
+                            </div>
                         }
-                    </div>
-                </div>
-                <div class="hp-hand">
-                    <div class="cr-cap">PLAYER &middot; @_hpRound.PlayerHand</div>
-                    <div class="hp-cards">
-                        @foreach (Card c in _hpRound.PlayerCards)
+                        <div class="cr-cap">@(isDealer ? "DEALER" : "PLAYER")</div>
+                        @if (_hpScored)
                         {
-                            <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card" />
+                            <div class="hp-rank">
+                                @rank
+                                @if (isDealer)
+                                {
+                                    <span class="tp-qtag @(_hpRound.DealerOpens ? "" : "tp-qtag-no")">@(_hpRound.DealerOpens ? "OPENS" : "DOESN'T OPEN")</span>
+                                }
+                            </div>
                         }
+                        <div class="hp-cards">
+                            @foreach (Card c in hole)
+                            {
+                                <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hp-card @(isDealer && HpDealerUnused(c) ? "hp-unused" : "")" />
+                            }
+                        </div>
                     </div>
-                </div>
+                }
             </div>
         </div>
+        @if (_hpPeek != 0 && !_hpScored)
+        {
+            <div class="cr-backdrop" @onclick="HpClosePeek"></div>
+        }
 
         @* The five wagers in settling order, in the shared wager box (on
            phones it scrolls when the rows don't all fit above the keypad) *@
@@ -212,6 +251,7 @@ else if (_mode == TrainerMode.Payouts)
                 }
             </ChildContent>
             <HelpContent>
+                <p>Tap the Dealer or Player cards to see that hand's rank (and whether the dealer opens). Dimmed cards are the 2 the dealer doesn't use.</p>
                 <table class="help-table sp-help-table">
                     <tr class="sp-pt-hd"><td>Raise &amp; Ante</td><td></td></tr>
                     <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
@@ -1152,6 +1192,30 @@ else
     private List<Card> _hpDealerBest = new();
 
     private bool HpDealerUnused(Card c) => !_hpDealerBest.Contains(c);
+
+    // Tap-a-hand rank bubble: 0 = closed, 1 = player, 2 = dealer.
+    // _hpPeekUsed: tapped once this session, so the board caption stops
+    // alternating with the tap prompt. _hpDealNo restarts the caption fade
+    // on each deal.
+    private int _hpPeek;
+    private bool _hpPeekUsed;
+    private int _hpDealNo;
+
+    private void HpTogglePeek(bool dealer)
+    {
+        if (_hpScored) return;
+        int which = dealer ? 2 : 1;
+        _hpPeek = _hpPeek == which ? 0 : which;
+        _hpPeekUsed = true;
+    }
+
+    // Closing the bubble puts the cursor back in the active payout box
+    // (a PC keyboard keeps typing there)
+    private void HpClosePeek()
+    {
+        _hpPeek = 0;
+        _hpFocusInput = _hpActive;
+    }
     private readonly string[] _hpAnswer = new string[5];
     private readonly HpMark[] _hpMark = new HpMark[5];
     private readonly bool[] _hpOk = new bool[5];
@@ -1185,12 +1249,15 @@ else
     {
         _hpCorrect = 0;
         _hpPlayed = 0;
+        _hpPeekUsed = false;
         HpNewRound();
     }
 
     private void HpNewRound()
     {
         _hpRound = HoldemPayouts.Deal(Random.Shared);
+        _hpPeek = 0;
+        _hpDealNo++;
         _hpDealerBest = HandEvaluator.BestFiveCards(_hpRound.DealerCards.Concat(_hpRound.Board).ToList());
         for (int i = 0; i < 5; i++)
         {
