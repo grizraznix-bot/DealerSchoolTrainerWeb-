@@ -446,7 +446,7 @@ else
         @* One player hand. The felt is laid out from the dealer's side of
            the table: the player's cards across the top, the dealer's up-card
            at the bottom (nearest the dealer), all at the Blackjack Payouts
-           card size. Then one row per wager (Lucky Ladies, 21 + 3) with its
+           card size. Then one row per wager (21 + 3, Lucky Ladies) with its
            chip and a Call button. *@
         <div class="felt cr-felt">
             @if (_swHands.Count > 0)
@@ -469,16 +469,16 @@ else
             @foreach (SwHandState hand in _swHands)
             {
                 SwHandState h = hand;
-                <CallRow Chip="h.LuckyLadiesWager" Name="Lucky Ladies" Sub="@($"wager ${h.LuckyLadiesWager}")"
-                         Value="@h.LuckyLadiesSelection?.ToString()"
-                         OnPick="k => { h.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); h.LuckyLadiesWrong = false; }"
-                         Locked="_swRoundScored" Wrong="h.LuckyLadiesWrong"
-                         AnswerText="@(SideWagerRules.QualifiesLuckyLadies(h.Card1, h.Card2) ? "Win" : "Lose")" />
                 <CallRow Chip="h.TwentyOnePlus3Wager" Name="21 + 3" Sub="@($"wager ${h.TwentyOnePlus3Wager}")"
                          Value="@h.TwentyOnePlus3Selection?.ToString()"
                          OnPick="k => { h.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); h.TwentyOnePlus3Wrong = false; }"
                          Locked="_swRoundScored" Wrong="h.TwentyOnePlus3Wrong"
                          AnswerText="@(SideWagerRules.Qualifies21Plus3(h.Card1, h.Card2, _swDealerCard!) ? "Win" : "Lose")" />
+                <CallRow Chip="h.LuckyLadiesWager" Name="Lucky Ladies" Sub="@($"wager ${h.LuckyLadiesWager}")"
+                         Value="@h.LuckyLadiesSelection?.ToString()"
+                         OnPick="k => { h.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); h.LuckyLadiesWrong = false; }"
+                         Locked="_swRoundScored" Wrong="h.LuckyLadiesWrong"
+                         AnswerText="@(SideWagerRules.QualifiesLuckyLadies(h.Card1, h.Card2) ? "Win" : "Lose")" />
             }
         </div>
 
@@ -1446,12 +1446,13 @@ else
             WagerOutcome llActual = ll ? WagerOutcome.Win : WagerOutcome.Lose;
             WagerOutcome tcActual = tc ? WagerOutcome.Win : WagerOutcome.Lose;
 
-            _swRows.Add(new BreakdownRow($"{prefix}Lucky Ladies", $"{hand.LuckyLadiesSelection}", $"{llActual}",
-                hand.LuckyLadiesSelection == llActual,
-                ll ? "The first two cards total 20." : $"The first two cards total {two.Total} (needs 20)."));
+            // 21 + 3 first, then Lucky Ladies (same order as the rows)
             _swRows.Add(new BreakdownRow($"{prefix}21 + 3", $"{hand.TwentyOnePlus3Selection}", $"{tcActual}",
                 hand.TwentyOnePlus3Selection == tcActual,
                 $"With the dealer's up card: {tcName}."));
+            _swRows.Add(new BreakdownRow($"{prefix}Lucky Ladies", $"{hand.LuckyLadiesSelection}", $"{llActual}",
+                hand.LuckyLadiesSelection == llActual,
+                ll ? "The first two cards total 20." : $"The first two cards total {two.Total} (needs 20)."));
         }
 
         // Summary parts by wager ("Hand 2 Lucky Ladies" counts as Lucky Ladies)
