@@ -92,7 +92,7 @@
             </ModeCard>
 
             <ModeCard Title="Pai Gow Payouts"
-                      Description="Both hands are dealt and set. Pay each wager: enter the winnings, or tap Push / Lose, then Submit."
+                      Description="Both hands are dealt and set. Tap a hand to see its ranks. Pay each wager: enter the winnings, or tap Push / Lose, then Submit."
                       Expanded="@IsModeOpen(PaiGowMode.Payouts)"
                       OnToggle="() => ToggleMode(PaiGowMode.Payouts)"
                       OnStart="StartGame" />
@@ -201,42 +201,84 @@ else if (_mode == PaiGowMode.Payouts)
 
         <GameStatus Title="Pai Gow Payouts" Correct="_ppCorrect" Played="_ppPlayed" />
 
-        @* Dealer and player, each set into Low (2 cards) and High (5 cards)
-           with the hand names; the dealer gets a tag on an Ace-high Pai Gow *@
-        <div class="felt pp-felt">
-            @foreach (bool isDealer in new[] { true, false })
+        @* Laid out from the dealer's side of the table, like Settling Bets:
+           the player's hand on top, the dealer's at the bottom, Low beside
+           High. Hand names are not shown on the felt: tap a hand for a
+           bubble with its Low and High names (and the dealer's Ace-high Pai
+           Gow note). Until the first tap this session, each caption fades
+           between its name and "Tap ... cards to reveal rank" every 5
+           seconds (CSS only; @key restarts it on each deal). After Submit
+           the names show on the felt, as in Settling Bets. *@
+        <div class="felt pg-felt">
+            @foreach (bool isDealer in new[] { false, true })
             {
+                bool dealerHand = isDealer;
                 List<PaiGowCard> low = isDealer ? _ppRound.DealerLow : _ppRound.PlayerLow;
                 List<PaiGowCard> high = isDealer ? _ppRound.DealerHigh : _ppRound.PlayerHigh;
-                <div class="pp-row">
-                    <div class="pp-name">
-                        @(isDealer ? "DEALER" : "PLAYER")
-                        @if (isDealer && _ppRound.DealerAceHighPaiGow)
+                string lowLabel = isDealer ? _ppRound.DealerLowLabel : _ppRound.PlayerLowLabel;
+                string highLabel = isDealer ? _ppRound.DealerHighLabel : _ppRound.PlayerHighLabel;
+                string who = isDealer ? "Dealer" : "Player";
+                bool peekOpen = !_ppScored && _ppPeek == (isDealer ? 2 : 1);
+                @if (isDealer)
+                {
+                    <div class="cr-sep"></div>
+                }
+                @if (_ppScored || _ppPeekUsed)
+                {
+                    <div class="cr-cap">
+                        @who.ToUpperInvariant()
+                        @if (isDealer && _ppScored && _ppRound.DealerAceHighPaiGow)
                         {
-                            <span class="tp-qtag tp-qtag-no">ACE-HIGH PAI GOW</span>
+                            <span class="tp-qtag tp-qtag-no pp-cap-tag">ACE-HIGH PAI GOW</span>
                         }
                     </div>
-                    <div class="pp-group">
-                        <div class="pp-cap">LOW &middot; @(isDealer ? _ppRound.DealerLowLabel : _ppRound.PlayerLowLabel)</div>
-                        <div class="pp-cards">
+                }
+                else
+                {
+                    <div class="cr-cap pp-alt" @key="@($"{_ppDealNo}-{who}")">
+                        <span class="pp-alt-a">@who.ToUpperInvariant()</span>
+                        <span class="pp-alt-b">Tap @who cards to reveal rank</span>
+                    </div>
+                }
+                <div class="pg-hand @(!_ppScored ? "pp-tap" : "") @(peekOpen ? "pp-tap-on" : "")"
+                     role="@(!_ppScored ? "button" : null)"
+                     @onclick="() => PpTogglePeek(dealerHand)">
+                    @if (peekOpen)
+                    {
+                        <div class="pp-bub @(isDealer ? "pp-bub-up" : "pp-bub-dn")">
+                            <div><b>LOW</b>@lowLabel</div>
+                            <div><b>HIGH</b>@highLabel</div>
+                            @if (isDealer && _ppRound.DealerAceHighPaiGow)
+                            {
+                                <span class="tp-qtag tp-qtag-no">ACE-HIGH PAI GOW</span>
+                            }
+                        </div>
+                    }
+                    <div class="pg-group">
+                        <div class="pg-sub">LOW@(_ppScored && lowLabel.Length > 0 ? " · " + lowLabel : "")</div>
+                        <div class="pg-cards">
                             @foreach (PaiGowCard c in low)
                             {
-                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="pp-card" />
+                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" />
                             }
                         </div>
                     </div>
-                    <div class="pp-group">
-                        <div class="pp-cap">HIGH &middot; @(isDealer ? _ppRound.DealerHighLabel : _ppRound.PlayerHighLabel)</div>
-                        <div class="pp-cards">
+                    <div class="pg-group">
+                        <div class="pg-sub">HIGH@(_ppScored && highLabel.Length > 0 ? " · " + highLabel : "")</div>
+                        <div class="pg-cards">
                             @foreach (PaiGowCard c in high)
                             {
-                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="pp-card" />
+                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" />
                             }
                         </div>
                     </div>
                 </div>
             }
         </div>
+        @if (_ppPeek != 0 && !_ppScored)
+        {
+            <div class="cr-backdrop" @onclick="PpClosePeek"></div>
+        }
 
         @* The three wagers in settling order (Insurance, Main Wager,
            Emperor's Treasure): chip, name, payout box, then Push (Main
@@ -368,6 +410,7 @@ else if (_mode == PaiGowMode.Payouts)
                 }
             </ChildContent>
             <HelpContent>
+                <p>Tap the Player or Dealer cards to see that hand's Low and High ranks.</p>
                 <table class="help-table sp-help-table">
                     <tr class="sp-pt-hd"><td>Pai Gow Insurance (player's 7 cards are a Pai Gow; Joker = Ace)</td><td></td></tr>
                     <tr><td>9 high</td><td>100 to 1</td></tr>
@@ -1416,6 +1459,30 @@ else
     private int _ppFocusInput = -1;
     private bool _ppFocusNext;
 
+    // Tap-a-hand rank bubble: 0 = closed, 1 = player, 2 = dealer.
+    // _ppPeekUsed: tapped once this session, so the captions stop
+    // alternating with the tap prompt. _ppDealNo restarts the caption
+    // fade on each deal.
+    private int _ppPeek;
+    private bool _ppPeekUsed;
+    private int _ppDealNo;
+
+    private void PpTogglePeek(bool dealer)
+    {
+        if (_ppScored) return;
+        int which = dealer ? 2 : 1;
+        _ppPeek = _ppPeek == which ? 0 : which;
+        _ppPeekUsed = true;
+    }
+
+    // Closing the bubble puts the cursor back in the active payout box
+    // (a PC keyboard keeps typing there)
+    private void PpClosePeek()
+    {
+        _ppPeek = 0;
+        _ppFocusInput = _ppActive;
+    }
+
     // The keypad types into whichever box is active
     private string PpActiveText
     {
@@ -1432,12 +1499,15 @@ else
     {
         _ppCorrect = 0;
         _ppPlayed = 0;
+        _ppPeekUsed = false;
         PpNewRound();
     }
 
     private void PpNewRound()
     {
         _ppRound = PaiGowPayouts.Deal(Random.Shared);
+        _ppPeek = 0;
+        _ppDealNo++;
         for (int i = 0; i < 3; i++)
         {
             _ppAnswer[i] = string.Empty;
