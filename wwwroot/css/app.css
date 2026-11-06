@@ -3537,6 +3537,20 @@ label,
     overflow-y: auto;
 }
 
+/* Phones: the 52px menu bar stays on top of everything, so pop-ups
+   (Help and the reveal / answer pop-ups) center in the space below it
+   and a tall Help box stops 1rem under it instead of sliding beneath */
+@media (max-width: 768px) {
+    .reveal-box {
+        top: calc(50% + 26px);
+    }
+
+    .reveal-box.help-box {
+        max-height: calc(100vh - 52px - 2rem);
+        max-height: calc(100dvh - 52px - 2rem);
+    }
+}
+
 .help-title {
     margin: 0 0 0.5rem 0;
     font-size: 1.15rem;
