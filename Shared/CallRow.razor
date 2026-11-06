@@ -1,0 +1,139 @@
+@* One wager (or player) row in the "call it" modes -- Blackjack Side
+   Wagers, Three Card Prime, Pai Gow Settling Bets and Hold'em Settle the
+   Bets -- in the same standard row as the payout modes: chip, name, any
+   extras (ChildContent: player cards, an Ante Bonus toggle), then a Call
+   button on the right.
+
+   Tapping Call pops the choices (Win / Lose / Push, or Foul / Not Foul)
+   out to its left; picking one closes them and the button fills with
+   that pick's color. One pop-out open at a time on the page; tapping
+   anywhere else closes it unchanged.
+
+   After Submit (Locked) the button becomes the answer box, the same as
+   the payout modes: "✓ Win", or "✗ Win · Ans: Lose". *@
+@implements IDisposable
+
+<div class="sp-wrow cr-row @(_open ? "sp-wrow-on" : "") @RowCss">
+    @if (Chip is int chip)
+    {
+        <div class="sp-chip @ChipCss(chip)">$@chip</div>
+    }
+    <div class="sp-wname">@Name@if (Sub is not null)
+        {
+            <small>@Sub</small>
+        }</div>
+
+    @ChildContent
+
+    @if (Locked && LockedText is not null)
+    {
+        @* Not graded this round (e.g. Pai Gow: a floor call) *@
+        <div class="sp-ans cr-ans cr-ans-plain">@LockedText</div>
+    }
+    else if (Locked)
+    {
+        <div class="sp-ans cr-ans @(Wrong ? "sp-ans-bad" : "sp-ans-ok")">
+            @if (Wrong)
+            {
+                <text>&#x2717; @(Selected?.Text ?? "")@YouSuffix &middot; Ans: @AnswerText</text>
+            }
+            else
+            {
+                <text>&#x2713; @(Selected?.Text ?? "")@YouSuffix</text>
+            }
+        </div>
+    }
+    else
+    {
+        @if (_open)
+        {
+            <div class="cr-pop">
+                @foreach (WagerPickOption option in Options)
+                {
+                    WagerPickOption o = option;
+                    <button type="button" class="cr-choice cr-choice-@o.Key.ToLowerInvariant() @(Value == o.Key ? "cr-choice-on" : "")"
+                            @onclick="() => Pick(o)">@o.Text</button>
+                }
+            </div>
+        }
+        <button type="button" class="cr-btn @SelectedCss" aria-haspopup="true" aria-expanded="@(_open ? "true" : "false")"
+                @onclick="Toggle">@(Selected is null ? "Call ▾" : Selected.Text.ToUpperInvariant() + YouSuffix)</button>
+    }
+</div>
+
+@if (_open)
+{
+    <div class="cr-backdrop" @onclick="Close"></div>
+}
+
+@code {
+    /// <summary>Wager amount for the chip; null = no chip (e.g. a player row).</summary>
+    [Parameter] public int? Chip { get; set; }
+    [Parameter] public string Name { get; set; } = "";
+    /// <summary>Small line under the name, e.g. "wager $5".</summary>
+    [Parameter] public string? Sub { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public IReadOnlyList<WagerPickOption> Options { get; set; } = WagerPick.WinLose;
+    /// <summary>Key of the current pick (null = not called yet).</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> OnPick { get; set; }
+    /// <summary>Added after the pick on the button and answer box, e.g. " + Bonus".</summary>
+    [Parameter] public string YouSuffix { get; set; } = "";
+
+    /// <summary>After Submit: no more changes; shows the answer box.</summary>
+    [Parameter] public bool Locked { get; set; }
+    [Parameter] public bool Wrong { get; set; }
+    /// <summary>The right call, shown when Wrong, e.g. "Lose" or "Win + Bonus".</summary>
+    [Parameter] public string AnswerText { get; set; } = "";
+    /// <summary>After Submit, a plain (ungraded) line instead of ✓ / ✗, e.g. "Floor call".</summary>
+    [Parameter] public string? LockedText { get; set; }
+
+    private bool _open;
+
+    // One pop-out open at a time across the page
+    private static event Action<CallRow>? AnyOpened;
+
+    protected override void OnInitialized() => AnyOpened += OnAnyOpened;
+
+    public void Dispose() => AnyOpened -= OnAnyOpened;
+
+    private void OnAnyOpened(CallRow opened)
+    {
+        if (opened != this && _open)
+        {
+            _open = false;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Locked) _open = false;
+    }
+
+    private void Toggle()
+    {
+        if (Locked) return;
+        _open = !_open;
+        if (_open) AnyOpened?.Invoke(this);
+    }
+
+    private void Close() => _open = false;
+
+    private async Task Pick(WagerPickOption o)
+    {
+        _open = false;
+        await OnPick.InvokeAsync(o.Key);
+    }
+
+    private WagerPickOption? Selected => Value is null ? null : Options.FirstOrDefault(o => o.Key == Value);
+
+    private string SelectedCss => Selected is null ? "" : "cr-btn-" + Selected.Key.ToLowerInvariant();
+
+    // The row takes a light tint of the pick (before Submit)
+    private string RowCss => Locked || Selected is null ? "" : "cr-row-" + Selected.Key.ToLowerInvariant();
+
+    public static string ChipCss(int wager) =>
+        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
+}

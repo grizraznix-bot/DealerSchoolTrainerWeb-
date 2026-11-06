@@ -5422,3 +5422,242 @@ body {
         left: calc(-1 * (220px + 1.5rem) / 2);
     }
 }
+
+/* ------------------------------------------------------------------
+   "Call it" modes (Side Wagers, Three Card Prime, Pai Gow Settling
+   Bets, Hold'em Settle the Bets): the payout-mode rows (Shared/CallRow)
+   with a Call button that pops Win / Lose / Push out to its left.
+   ------------------------------------------------------------------ */
+.cr-row {
+    position: relative;
+    cursor: default;
+}
+
+.content .cr-btn {
+    flex: none;
+    margin: 0 0 0 auto;
+    width: 6.4rem;
+    height: 40px;
+    min-height: 0;
+    padding: 0;
+    border: 1px solid var(--c-primary-dark);
+    border-radius: 8px;
+    background-color: white;
+    color: var(--c-primary-dark);
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.content .cr-btn.cr-btn-win {
+    background-color: var(--c-primary);
+    color: white;
+}
+
+.content .cr-btn.cr-btn-lose {
+    background-color: var(--c-lose);
+    border-color: var(--c-lose-dark);
+    color: white;
+}
+
+.content .cr-btn.cr-btn-foul {
+    background-color: var(--c-foul);
+    border-color: #b86400;
+    color: white;
+}
+
+.content .cr-btn.cr-btn-push {
+    background-color: var(--c-push);
+    border-color: #b89f00;
+    color: #3a3000;
+}
+
+.content .cr-btn.cr-btn-notfoul {
+    background-color: #555;
+    border-color: #333;
+    color: white;
+}
+
+.cr-row-win { background-color: #f1f6ff; }
+.cr-row-lose { background-color: #fdf1f1; }
+.cr-row-foul { background-color: #fff3e6; }
+.cr-row-push { background-color: #fffbe3; }
+
+/* The choices, out to the left of the Call button */
+.cr-pop {
+    position: absolute;
+    top: 50%;
+    right: calc(6.4rem + 14px);
+    z-index: 1001;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+    background-color: var(--c-info-bg);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    transform: translateY(-50%);
+}
+
+.content .cr-choice {
+    width: 3.4rem;
+    height: 36px;
+    min-height: 0;
+    margin: 0;
+    padding: 0 4px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    background-color: white;
+    font-size: 0.8rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.content .cr-choice-win { color: var(--c-primary); border-color: var(--c-primary); }
+.content .cr-choice-lose { color: var(--c-lose); border-color: var(--c-lose); }
+.content .cr-choice-foul { color: #b86400; border-color: var(--c-foul); }
+.content .cr-choice-push { color: #6a5200; border-color: #c9ae00; }
+.content .cr-choice-notfoul { width: 4.6rem; color: #333; border-color: #555; }
+
+.content .cr-choice-win.cr-choice-on { background-color: var(--c-primary); color: white; }
+.content .cr-choice-lose.cr-choice-on { background-color: var(--c-lose); color: white; }
+.content .cr-choice-foul.cr-choice-on { background-color: var(--c-foul); color: white; }
+.content .cr-choice-push.cr-choice-on { background-color: var(--c-push); color: #3a3000; }
+.content .cr-choice-notfoul.cr-choice-on { background-color: #555; color: white; }
+
+.cr-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.cr-row .cr-ans {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 6.4rem;
+    margin-left: auto;
+    font-weight: 700;
+}
+
+/* Call-it screens use the payout rows but have no pay table beside
+   them on wide windows, so they stay centered */
+@media (min-width: 1120px) {
+    .play-screen.sp-screen.cr-screen,
+    .play-screen.sp-screen.cr-screen ~ .session-summary.ss {
+        left: 0;
+    }
+}
+
+/* Three Card Prime: Ante Bonus toggle in the Ante row */
+.content .cr-bonus {
+    flex: none;
+    height: 40px;
+    min-height: 0;
+    margin: 0 0 0 auto;
+    padding: 0 8px;
+    border: 1px solid var(--c-primary);
+    border-radius: 8px;
+    background-color: white;
+    color: var(--c-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.content .cr-bonus.cr-bonus-on {
+    background-color: var(--c-primary);
+    color: white;
+}
+
+/* With a toggle (or cards) before it, the Call button sits right after */
+.cr-row .cr-bonus + .cr-btn,
+.cr-row .cr-bonus + .cr-pop + .cr-btn {
+    margin-left: 6px;
+}
+
+/* Side Wagers: dealer up-card, then the player hands (wrapping when
+   there are several; smaller cards from 3 hands on) */
+.cr-sw-hands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+}
+
+.cr-sw-many .sp-card {
+    width: 42px;
+    height: 59px;
+}
+
+.cr-ans.cr-ans-plain {
+    border-color: var(--c-border);
+    background-color: #f2f2f2;
+    color: var(--c-muted);
+    font-weight: 600;
+}
+
+/* Pai Gow Settling Bets: the Ace-high Pai Gow reminder under the rows */
+.cr-note {
+    align-self: stretch;
+    margin: 0.35rem 0 0 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-align: center;
+    color: #223;
+}
+
+/* Hold'em Settle the Bets: each player's two cards in their row, and
+   the dealer's 2 unused cards on the felt dropped and darkened */
+.cr-pcards {
+    display: flex;
+    flex: none;
+    gap: 3px;
+}
+
+.cr-pcards img {
+    width: 30px;
+    height: 42px;
+    border-radius: 3px;
+    background-color: white;
+    box-shadow: 0 0 0 1px #ccc;
+}
+
+@media (min-width: 769px) {
+    .cr-pcards img {
+        width: 36px;
+        height: 50px;
+    }
+}
+
+/* Dealer's two cards and the board side by side */
+.hp-felt.cr-hd-felt {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding-bottom: 0.7rem;
+}
+
+.cr-hd-felt .hp-board {
+    margin-left: auto;
+    align-items: flex-end;
+}
+
+.cr-hd-felt .hp-board .pp-cap {
+    display: block;
+    font-weight: normal;
+    opacity: 0.85;
+}
+
+.hp-card.cr-unused {
+    filter: brightness(0.5);
+    transform: translateY(6px);
+}
+
+/* Short how-to line under the rows (first round) */
+.cr-howto {
+    align-self: stretch;
+    margin: 0.4rem 0 0 0;
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    background-color: var(--c-info-bg);
+    color: #223;
+    font-size: 0.82rem;
+}

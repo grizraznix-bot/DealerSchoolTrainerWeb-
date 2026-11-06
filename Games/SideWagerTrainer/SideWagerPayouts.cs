@@ -69,8 +69,9 @@ public static class SideWagerPayouts
 
     // Real-world betting pattern, each wager on its own ($1-$50: $1-$5,
     // then $5 steps): mostly $1 or $5, sometimes $2-$4 or $10, now and
-    // then $15-$25, rarely $30-$50 (mostly $50)
-    private static int SideWager(Random rng)
+    // then $15-$25, rarely $30-$50 (mostly $50). Also the chips in Side
+    // Wagers (Win / Lose).
+    internal static int SideWager(Random rng)
     {
         double r = rng.NextDouble();
         if (r < 0.60) return Pick(rng, 1, 5);

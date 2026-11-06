@@ -227,111 +227,66 @@ else if (_tcMode == TcMode.Payouts)
 }
 else
 {
-    <div class="play-screen tcp-play has-game-bar">
+    @* Win / Lose / Push mode, in the payout modes' layout: dealer and
+       player hands side by side (no hand names -- that's the answer), then
+       one row per wager in settling order with its chip and a Call button
+       that pops Win / Lose (/ Push) out beside it. Ante Bonus is a toggle
+       in the Ante row. *@
+    <div class="play-screen sp-screen tp-screen cr-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
         <GameStatus Title="Three Card Prime" Correct="_correctCount" Played="_totalRounds" />
 
-        <div class="tcp-table felt">
-            <div class="tcp-hands">
-                <h3>Player</h3>
-                <div class="card-row">
-                    @foreach (Card c in _playerCards)
-                    {
-                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="game-card" />
-                    }
-                </div>
-
-                <p class="table-rule">DEALER PLAYS WITH A QUEEN OR BETTER</p>
-
-                <h3>Dealer</h3>
-                <div class="card-row">
+        <div class="felt tp-felt">
+            <div class="tp-hand">
+                <div class="sp-cap">DEALER</div>
+                <div class="tp-cards">
                     @foreach (Card c in _dealerCards)
                     {
-                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="game-card" />
+                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
                     }
                 </div>
             </div>
-
-            <div class="tcp-wagers">
-                @RenderWager(_play)
-
-                <!-- The Ante shape's box is kept at a fixed 90px width,
-                     matching its actual size, so the outer column centers
-                     it identically to Play/Pair Bonus above/below --
-                     otherwise the checkbox's extra width would get
-                     included in what's being centered and visibly shift
-                     the diamond itself to the left. The checkbox is
-                     positioned as an absolute overlay outside that box
-                     instead, so it never factors into the centering. -->
-                <div class="tcp-ante-box">
-                    @RenderWager(_ante)
-                    <label class="ante-bonus-label tcp-ante-bonus @(_anteBonusWrong ? "tcp-ante-bonus-wrong" : "")">
-                        <input type="checkbox" @bind="_anteBonusChecked" @bind:after="() => _anteBonusWrong = false" />
-                        Ante Bonus
-                    </label>
+            <div class="tp-hand tp-hand-player">
+                <div class="sp-cap">PLAYER</div>
+                <div class="tp-cards">
+                    @foreach (Card c in _playerCards)
+                    {
+                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
+                    }
                 </div>
-
-                @RenderWager(_pairBonus)
-                <div class="tcp-wager-pair">
-                    @RenderWager(_allSix)
-                    @RenderWager(_prime)
-                </div>
-            </div>
-
-            @* Phones only (hidden on desktop by CSS): the hands' cards overlap
-               25% on the left, and the wagers are a column of buttons down the
-               right edge in settling order. Tapping a wager slides its choices
-               out to the left beside it (Ante also gets Ante Bonus); picking
-               one closes them and the button fills with the result color.
-               Tapping anywhere else closes them unchanged. *@
-            <div class="tcp-rail">
-                @foreach (WagerState w in RailOrder)
-                {
-                    WagerState wager = w;
-                    bool open = _openWager == wager;
-                    <div class="tcp-rail-item">
-                        <button class="tcp-rail-btn @RailClass(wager) @(open ? "tcp-rail-active" : "") @(_roundScored && wager.Wrong ? "tcp-rail-wrong" : "")"
-                                aria-expanded="@(open ? "true" : "false")"
-                                @onclick="() => OpenWager(wager)">
-                            <span class="tcp-rail-name">@wager.Name</span>
-                            <small>@RailStateText(wager)</small>
-                        </button>
-
-                        @if (open)
-                        {
-                            <div class="tcp-fly">
-                                @foreach (WagerOutcome outcome in wager.AllowPush ? WinLosePush : WinLose)
-                                {
-                                    WagerOutcome choice = outcome;
-                                    <button class="tcp-fly-choice @(wager.Selection == choice ? "tcp-fly-" + choice.ToString().ToLowerInvariant() : "")"
-                                            @onclick="() => PickWager(wager, choice)">@choice</button>
-                                }
-                                @if (wager == _ante)
-                                {
-                                    <button class="tcp-fly-bonus @(_anteBonusChecked ? "on" : "")"
-                                            aria-pressed="@(_anteBonusChecked ? "true" : "false")"
-                                            @onclick="ToggleAnteBonus">Ante Bonus@(_anteBonusChecked ? " \u2713" : "")</button>
-                                }
-                            </div>
-                        }
-                    </div>
-                }
             </div>
         </div>
 
-        @* Closes the open wager choices when tapping anywhere else *@
-        @if (_openWager is not null)
-        {
-            <div class="tcp-fly-backdrop" @onclick="CloseWager"></div>
-        }
+        <div class="sp-wagers">
+            @foreach (WagerState w in RailOrder)
+            {
+                WagerState wager = w;
+                bool isAnte = wager == _ante;
+                <CallRow Chip="wager.Wager" Name="@wager.Name" Sub="@($"wager ${wager.Wager}")"
+                         Options="@(wager.AllowPush ? WagerPick.WinLosePush : WagerPick.WinLose)"
+                         Value="@wager.Selection?.ToString()"
+                         OnPick="key => PickWager(wager, Enum.Parse<WagerOutcome>(key))"
+                         YouSuffix="@(isAnte && _anteBonusChecked ? " + Bonus" : "")"
+                         Locked="_roundScored"
+                         Wrong="@(wager.Wrong || (isAnte && _anteBonusWrong))"
+                         AnswerText="@(isAnte ? AnteAnswerText : $"{wager.Actual}")">
+                    @if (isAnte && !_roundScored)
+                    {
+                        <button type="button" class="cr-bonus @(_anteBonusChecked ? "cr-bonus-on" : "")"
+                                aria-pressed="@(_anteBonusChecked ? "true" : "false")"
+                                @onclick="ToggleAnteBonus">+ Bonus</button>
+                    }
+                </CallRow>
+            }
+        </div>
 
         @* First round only: what to do *@
         @if (_totalRounds == 0 && !_roundScored)
         {
-            <p class="first-hint">Tap each wager on the right to call it, mark Ante Bonus inside Ante if it pays, then Submit.</p>
+            <p class="cr-howto">Tap Call on each wager and pick Win, Lose or Push. Tap + Bonus if the Ante Bonus pays.</p>
         }
 
         <div class="feedback-area">
@@ -492,7 +447,7 @@ else
     private sealed class WagerState
     {
         public required string Name;
-        public bool IsDiamond;
+        public int Wager;           // chip amount shown on the row (real-world betting pattern)
         public bool AllowPush;
         public WagerOutcome? Selection;
         public bool Wrong;
@@ -518,8 +473,8 @@ else
     private Card[] _playerCards = Array.Empty<Card>();
     private Card[] _dealerCards = Array.Empty<Card>();
 
-    private readonly WagerState _play = new() { Name = "Play", IsDiamond = true, AllowPush = true };
-    private readonly WagerState _ante = new() { Name = "Ante", IsDiamond = true, AllowPush = true };
+    private readonly WagerState _play = new() { Name = "Play", AllowPush = true };
+    private readonly WagerState _ante = new() { Name = "Ante", AllowPush = true };
     private readonly WagerState _pairBonus = new() { Name = "Pair Bonus", AllowPush = false };
     private readonly WagerState _prime = new() { Name = "Prime", AllowPush = false };
     private readonly WagerState _allSix = new() { Name = "All 6", AllowPush = false };
@@ -537,60 +492,27 @@ else
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
 
-    // Phones: which wager's choices are slid out (null = none)
-    private WagerState? _openWager;
-
-    private static readonly WagerOutcome[] WinLosePush = { WagerOutcome.Win, WagerOutcome.Lose, WagerOutcome.Push };
-    private static readonly WagerOutcome[] WinLose = { WagerOutcome.Win, WagerOutcome.Lose };
-
-    // Wager buttons in settling order, top to bottom
+    // Wager rows in settling order, top to bottom
     private WagerState[] RailOrder => new[] { _play, _ante, _pairBonus, _prime, _allSix };
 
-    // Tap a wager button: slide its choices out (tap again to close).
-    // Locked after Submit.
-    private void OpenWager(WagerState w)
-    {
-        if (_roundScored) return;
-        _openWager = _openWager == w ? null : w;
-    }
-
-    private void CloseWager() => _openWager = null;
-
-    // Pick a result: record it and slide the choices back in
+    // A wager row's Call pick (locked after Submit)
     private void PickWager(WagerState w, WagerOutcome choice)
     {
         if (_roundScored) return;
         w.Selection = choice;
         w.Wrong = false;
-        _openWager = null;
     }
 
-    // Ante Bonus toggles without closing the Ante choices
+    // Ante row after Submit: the right call, with "+ Bonus" when it pays
+    private string AnteAnswerText =>
+        $"{_ante.Actual}{(ThreeCardEvaluator.QualifiesAnteBonus(_playerCards) ? " + Bonus" : "")}";
+
+    // Ante Bonus toggle in the Ante row
     private void ToggleAnteBonus()
     {
         if (_roundScored) return;
         _anteBonusChecked = !_anteBonusChecked;
         _anteBonusWrong = false;
-    }
-
-    private static string RailClass(WagerState w) => w.Selection switch
-    {
-        WagerOutcome.Win => "win",
-        WagerOutcome.Lose => "lose",
-        WagerOutcome.Push => "push",
-        _ => ""
-    };
-
-    // Small line under the wager name: its result (plus Ante Bonus on the
-    // Ante button), then after Submit a check, or the actual result
-    private string RailStateText(WagerState w)
-    {
-        string text = w.Selection is null ? "" : PillText(w.Selection);
-        if (w == _ante && _anteBonusChecked) text = text.Length > 0 ? $"{text} + Bonus" : "Bonus";
-        if (_roundScored && w.Selection is not null)
-            text = w.Wrong ? $"{PillText(w.Selection)} \u2717 {PillText(w.Actual)}" : $"{text} \u2713";
-        if (_roundScored && w == _ante && _anteBonusWrong) text += " (Bonus \u2717)";
-        return text;
     }
 
     // What happened this session, for the summary (Shared/SessionSummary)
@@ -662,13 +584,18 @@ else
             w.Actual = null;
         }
 
+        // Chips on the rows, as the payout mode bets them (Ante = Play)
+        _ante.Wager = _play.Wager = ThreeCardPayouts.AntePlayWager(Random.Shared);
+        _pairBonus.Wager = ThreeCardPayouts.SideWager(Random.Shared);
+        _prime.Wager = ThreeCardPayouts.SideWager(Random.Shared);
+        _allSix.Wager = ThreeCardPayouts.AllSixWager(Random.Shared);
+
         _anteBonusChecked = false;
         _anteBonusWrong = false;
 
         _resultText = string.Empty;
         _roundScored = false;
         _submitEnabled = true;
-        _openWager = null;
     }
 
     private void DealAgain() => DealNewRound();
@@ -697,34 +624,8 @@ else
         });
     }
 
-    private void CycleWager(WagerState w)
-    {
-        if (w.AllowPush)
-        {
-            w.Selection = w.Selection switch
-            {
-                null => WagerOutcome.Win,
-                WagerOutcome.Win => WagerOutcome.Lose,
-                WagerOutcome.Lose => WagerOutcome.Push,
-                _ => WagerOutcome.Win
-            };
-        }
-        else
-        {
-            w.Selection = w.Selection switch
-            {
-                null => WagerOutcome.Win,
-                WagerOutcome.Win => WagerOutcome.Lose,
-                _ => WagerOutcome.Win
-            };
-        }
-
-        w.Wrong = false;
-    }
-
     private void SubmitRound()
     {
-        _openWager = null;
 
         WagerState[] all = { _play, _ante, _pairBonus, _prime, _allSix };
 
@@ -1122,36 +1023,4 @@ else
     // $10 blue, $5 red, $1 grey
     private static string TpChipClass(int wager) =>
         wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
-
-    private RenderFragment RenderWager(WagerState w) =>
-        @<div class="wager-shape @(w.IsDiamond ? "" : "wager-circle") @(w.Wrong && !w.IsDiamond ? "wager-wrong" : "") @(_roundScored && w.Wrong && !w.IsDiamond ? "wager-shaded-wrong" : "")"
-              @onclick="() => CycleWager(w)">
-            @if (w.IsDiamond)
-            {
-                <svg viewBox="0 0 90 90" class="wager-diamond-svg">
-                    <polygon points="45,3 87,45 45,87 3,45" fill="@(_roundScored && w.Wrong ? "#f8d0d0" : "white")" stroke="@(w.Wrong ? "black" : "#999")" stroke-width="@(w.Wrong ? 3 : 1)" />
-                </svg>
-            }
-            <span class="wager-label">@w.Name</span>
-            @if (w.Selection is not null)
-            {
-                <div class="wager-pill @PillClass(w.Selection)">@PillText(w.Selection)</div>
-            }
-        </div>;
-
-    private static string PillClass(WagerOutcome? outcome) => outcome switch
-    {
-        WagerOutcome.Win => "pill-win",
-        WagerOutcome.Lose => "pill-lose",
-        WagerOutcome.Push => "pill-push",
-        _ => ""
-    };
-
-    private static string PillText(WagerOutcome? outcome) => outcome switch
-    {
-        WagerOutcome.Win => "WIN",
-        WagerOutcome.Lose => "LOSE",
-        WagerOutcome.Push => "PUSH",
-        _ => ""
-    };
 }

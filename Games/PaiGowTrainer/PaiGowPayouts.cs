@@ -206,7 +206,7 @@ public static class PaiGowPayouts
     // Main Wager $10-$300 in $5 steps: mostly $10-$25, then $30-$50
     // (mostly $50), then $55-$100 (mostly $75/$100), rarely $105-$300
     // (mostly $150/$200/$300)
-    private static int MainWager(Random rng)
+    internal static int MainWager(Random rng)
     {
         double r = rng.NextDouble();
         if (r < 0.55) return Pick(rng, 10, 15, 20, 25);
@@ -217,7 +217,7 @@ public static class PaiGowPayouts
 
     // Insurance / Emperor's Treasure $1-$30 ($1-$5, then $5 steps): mostly
     // $1 or $5, sometimes $2-$4 or $10, rarely $15-$30
-    private static int SideWager(Random rng)
+    internal static int SideWager(Random rng)
     {
         double r = rng.NextDouble();
         if (r < 0.65) return Pick(rng, 1, 5);

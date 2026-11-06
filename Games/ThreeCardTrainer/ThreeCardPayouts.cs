@@ -211,10 +211,11 @@ public static class ThreeCardPayouts
     }
 
     // ---- Real-world betting patterns ----------------------------------
+    // (also used for the chips in Three Card Prime's Win / Lose / Push mode)
 
     // Ante/Play $5-$300: mostly $5-$15, then $20-$25, then $30-$100
     // (mostly $50/$75/$100), rarely $105-$300 (mostly $150/$200/$300)
-    private static int AntePlayWager(Random rng)
+    internal static int AntePlayWager(Random rng)
     {
         double r = rng.NextDouble();
         if (r < 0.50) return Pick(rng, 5, 10, 15);
@@ -224,7 +225,7 @@ public static class ThreeCardPayouts
     }
 
     // Pair Bonus / Prime $5-$100: mostly $5-$10, sometimes $15-$25, rarely $50/$100
-    private static int SideWager(Random rng)
+    internal static int SideWager(Random rng)
     {
         double r = rng.NextDouble();
         if (r < 0.70) return Pick(rng, 5, 10);
@@ -233,7 +234,7 @@ public static class ThreeCardPayouts
     }
 
     // All 6 $1-$5: mostly $1 or $5, sometimes $2-$4
-    private static int AllSixWager(Random rng) =>
+    internal static int AllSixWager(Random rng) =>
         rng.NextDouble() < 0.75 ? Pick(rng, 1, 5) : Pick(rng, 2, 3, 4);
 
     private static int Pick(Random rng, params int[] values) => values[rng.Next(values.Length)];

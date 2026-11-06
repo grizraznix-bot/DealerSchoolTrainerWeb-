@@ -253,14 +253,104 @@ else if (_mode == TrainerMode.Payouts)
         </GameBar>
     </div>
 }
+else if (_mode == TrainerMode.SettleBets)
+{
+    @* Settle the Bets in the payout modes' layout: the dealer's two cards
+       and the board on the felt, with the 2 cards the dealer doesn't use
+       already marked (dropped and darkened), then one row per player with
+       their two cards and a Call button that pops Win / Lose / Push out
+       beside it. Every player is on screen (no paging). *@
+    <div class="play-screen sp-screen hp-screen cr-screen has-game-bar">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        <GameStatus Title="Settle the Bets" Correct="_correctCount" Played="_totalRounds" />
+
+        <div class="felt hp-felt cr-hd-felt">
+            <div class="hp-hand">
+                <div class="pp-cap">DEALER</div>
+                <div class="hp-cards">
+                    <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Name" class="hp-card @(_dealerCard1Rotated ? "cr-unused" : "")" />
+                    <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Name" class="hp-card @(_dealerCard2Rotated ? "cr-unused" : "")" />
+                </div>
+            </div>
+            <div class="hp-board">
+                <div class="pp-cap">BOARD &middot; dimmed = not used</div>
+                <div class="hp-cards">
+                    @for (int i = 0; i < _community.Length; i++)
+                    {
+                        Card? c = _community[i];
+                        <img src="images/cards/@(c?.Code).png" alt="@c?.Name" class="hp-card @(_communityRotated[i] ? "cr-unused" : "")" />
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="sp-wagers">
+            @for (int h = 0; h < _hands.Count; h++)
+            {
+                int handIndex = h;
+                HandState hand = _hands[handIndex];
+                <CallRow Name="@($"Player {handIndex + 1}")" Options="WagerPick.WinLosePush"
+                         Value="@hand.WagerSelection?.ToString()"
+                         OnPick="k => PickOutcome(handIndex, Enum.Parse<WagerOutcome>(k))"
+                         Locked="_roundScored" Wrong="hand.WagerWrong"
+                         AnswerText="@($"{hand.ActualOutcome}")">
+                    <div class="cr-pcards">
+                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
+                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
+                    </div>
+                </CallRow>
+            }
+        </div>
+
+        @* First round only: what to do *@
+        @if (_totalRounds == 0 && !_roundScored)
+        {
+            <p class="cr-howto">Tap Call on each player and pick Win, Lose or Push against the dealer's marked hand, then Submit.</p>
+        }
+
+        <div class="feedback-area sp-feedback">
+            @if (_roundScored)
+            {
+                @* After Submit: each player with the right answer and why *@
+                <ResultBreakdown ResultText="@_resultText" IsCorrect="_isCorrect" Rows="_rows" />
+            }
+            else if (_resultText.Length > 0)
+            {
+                <p class="result-line txt-bad">@_resultText</p>
+            }
+        </div>
+
+        @* Pinned bottom bar: Help | Submit (once every player is called),
+           then Next | End Session *@
+        <GameBar HelpTitle="Hand Rankings" OnEnd="EndSession">
+            <ChildContent>
+                @if (!_roundScored)
+                {
+                    <button class="game-bar-main" @onclick="SubmitAndShow" disabled="@(!(_submitEnabled && AllHandsAnswered))">Submit</button>
+                }
+                else
+                {
+                    <button class="game-bar-main" @onclick="NextFromTop" disabled="@(!_dealEnabled)">Next</button>
+                }
+            </ChildContent>
+            <HelpContent>
+                <img src="images/cards/HandRankings.png" alt="Hold'em Hand Rankings" class="help-image" />
+            </HelpContent>
+        </GameBar>
+    </div>
+}
 else
 {
+    @* Identify the Hands *@
     <div class="play-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="@(_mode == TrainerMode.IdentifyHands ? "Identify the Hands" : "Settle the Bets")" Correct="_correctCount" Played="_totalRounds" />
+        <GameStatus Title="Identify the Hands" Correct="_correctCount" Played="_totalRounds" />
 
         @* On phones (see app.css, "Heads-Up Hold'em") this table becomes a
            single column: the current player hand (Settle the Bets only),
@@ -269,68 +359,6 @@ else
            fixed 900px width and the side-positioned feedback apply on
            desktop only. *@
         <div class="hd-table hd-settle @(_mode == TrainerMode.IdentifyHands ? "hd-identify" : "")">
-
-            @* Phones only (hidden on desktop by CSS): one player hand is
-               shown at a time. This banner names it; the Previous / Next
-               buttons sit beside that hand's answer control below, to save
-               a row. Desktop still shows every hand side by side. *@
-            @if (PlayersVisible && _hands.Count > 1)
-            {
-                <div class="hd-pager">
-                    <span class="hd-pager-label">Player @(_currentHand + 1) of @_hands.Count</span>
-                </div>
-            }
-
-            @if (PlayersVisible)
-            {
-            <div class="hd-hands felt">
-            @for (int h = 0; h < _hands.Count; h++)
-            {
-                int handIndex = h;
-                HandState hand = _hands[handIndex];
-
-                <div class="hd-hand @(handIndex == _currentHand ? "hd-hand-current" : "")">
-                    <div class="hd-hand-number caption">@(handIndex + 1)</div>
-
-                    <div class="hd-hand-cards stack-2">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
-                    </div>
-
-                    @* Phones: Previous | Win Lose Push | Next (Submit / Deal are
-                       in the bar pinned to the bottom of the screen). Desktop
-                       hides Previous / Next and shows every hand. *@
-                    <div class="hd-hand-controls @(_hands.Count == 1 ? "hd-hand-controls-single" : "")">
-                    @if (_hands.Count > 1)
-                    {
-                        <button class="hd-inline-pager" @onclick="PreviousHand" disabled="@(handIndex <= 0)">Previous</button>
-                    }
-
-                    @* Win / Lose / Push buttons: the picked one fills with its
-                       color. After Submit, a wrong pick gets a heavy red border
-                       and the right answer a heavy dark outline. *@
-                    <div class="hd-outcomes" role="group" aria-label="Hand @(handIndex + 1) vs Dealer">
-                        @foreach (WagerOutcome outcome in OutcomeChoices)
-                        {
-                            WagerOutcome choice = outcome;
-                            bool picked = hand.WagerSelection == choice;
-                            <button class="hd-outcome hd-outcome-@choice.ToString().ToLowerInvariant() @(picked ? "hd-outcome-picked" : "") @(_roundScored && picked && hand.WagerWrong ? "hd-outcome-wrong" : "") @(_roundScored && hand.WagerWrong && hand.ActualOutcome == choice ? "hd-outcome-answer" : "")"
-                                    aria-pressed="@(picked ? "true" : "false")"
-                                    disabled="@_roundScored"
-                                    @onclick="() => PickOutcome(handIndex, choice)">@choice</button>
-                        }
-                    </div>
-
-                    @if (_hands.Count > 1)
-                    {
-                        <button class="hd-inline-pager" @onclick="NextHand" disabled="@(handIndex >= _hands.Count - 1)">Next</button>
-                    }
-                    </div>
-
-                </div>
-            }
-            </div>
-            }
 
         <!-- Community cards are centered within a fixed 900px-wide
              reference (the width of a full 6-hand row), so their
@@ -341,12 +369,6 @@ else
              the trainee taps to mark the 2 unused cards. Settle the Bets:
              the dealer's best hand comes already marked. -->
         <div class="hd-center">
-            @* First round of Settle the Bets only: what to do *@
-            @if (_mode == TrainerMode.SettleBets && _totalRounds == 0 && !_roundScored)
-            {
-                <p class="first-hint hd-first-hint">Call each player Win, Lose or Push against the dealer's marked hand, then Submit.</p>
-            }
-
             @* On the felt: the community cards and the dealer's cards *@
             <div class="hd-board felt">
             <h3 class="hd-community-title">Community Cards</h3>
@@ -633,7 +655,6 @@ else
     }
 
     private bool _started;
-    private int _currentHand; // phone layout only: which player hand is showing
     private int _handCount = 1;
     private int _handCountSettleBets = 1;
     private TrainerMode _mode = TrainerMode.IdentifyHands;
@@ -791,7 +812,6 @@ else
         _rows.Clear();
         _roundScored = false;
         _submitEnabled = true;
-        _currentHand = 0;
     }
 
     private void DealAgain() => DealNewRound();
@@ -800,17 +820,7 @@ else
     // called. Submit only shows up at that point.
     private bool AllHandsAnswered => _hands.Count > 0 && _hands.All(h => h.WagerSelection is not null);
 
-    private void PreviousHand()
-    {
-        if (_currentHand > 0) _currentHand--;
-    }
-
-    private void NextHand()
-    {
-        if (_currentHand < _hands.Count - 1) _currentHand++;
-    }
-
-    // Settle the Bets: record the call. Next moves on to the next player.
+    // Settle the Bets: record the call.
     private void PickOutcome(int handIndex, WagerOutcome choice)
     {
         if (_roundScored) return;
@@ -1029,7 +1039,6 @@ else
             {
                 _resultText = "Tap every hand's outcome before submitting.";
                 _isCorrect = false;
-                _currentHand = h;
                 return;
             }
         }
@@ -1085,7 +1094,7 @@ else
                     : $"{hand.RankName} vs the dealer's {dealerDesc}: the {(actualOutcome == WagerOutcome.Win ? "player's" : "dealer's")} cards are higher.";
 
             _handRankLines.Add(($"Hand {h + 1}: {hand.Reason}", hand.WagerWrong ? "txt-bad" : "txt-ok"));
-            _rows.Add(new BreakdownRow($"Hand {h + 1}", $"{hand.WagerSelection}", $"{actualOutcome}", !hand.WagerWrong, hand.Reason));
+            _rows.Add(new BreakdownRow($"Player {h + 1}", $"{hand.WagerSelection}", $"{actualOutcome}", !hand.WagerWrong, hand.Reason));
         }
         _handRankLines.Insert(0, ($"Dealer: {dealerDesc}", "txt-ok"));
         _log.AddRows(_rows, r => r.Answer switch { "Win" => "Player wins", "Lose" => "Dealer wins", _ => "Pushes" });

@@ -401,128 +401,91 @@ else if (_mode == PaiGowMode.Payouts)
 }
 else
 {
-    @* On phones (see app.css, "Pai Gow - Settling Bets") this screen
-       becomes one column: player hands, dealer hands, the Ace-High
-       push note, the four wagers (2 x 2), action buttons, then the
-       winning-wager results. *@
-    <div class="play-screen sb-screen has-game-bar">
+    @* Settling Bets in the payout modes' layout: dealer and player, each
+       set into Low and High (hand names only after Submit -- they'd give
+       the answer away), then one row per wager in settling order with its
+       chip and a Call button that pops Win / Lose (/ Push) out beside it,
+       and a last row to mark the player's hand Foul. *@
+    <div class="play-screen sp-screen tp-screen pp-screen cr-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
         <GameStatus Title="Settling Bets" Correct="_sbCorrectCount" Played="_sbTotalRounds" />
 
-        <div class="sb-player felt">
-        <h3 class="tight">Player</h3>
-        <div class="sb-hand-row">
-            <div>
-                <div class="caption">High Hand</div>
-                <div class="sb-cards pg-row pg-row-gap">
-                    @foreach (PaiGowCard c in _sbPlayerHighSorted)
-                    {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
-                    }
-                </div>
-                <div class="caption">Low Hand</div>
-                <div class="sb-cards pg-row">
-                    @foreach (PaiGowCard c in _sbPlayerLowSorted)
-                    {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
-                    }
-                </div>
-            </div>
-
-            @if (_sbRoundScored)
+        <div class="felt pp-felt">
+            @foreach (bool isDealer in new[] { true, false })
             {
-                <div class="feedback-area sb-hand-labels">
-                    <p class="tight">High Hand: @_sbPlayerHighLabel</p>
-                    <p class="tight-top">Low Hand: @_sbPlayerLowLabel</p>
-                </div>
-            }
-        </div>
-        </div>
-
-        <div class="sb-wager-row">
-            <div class="sb-wagers">
-            @* Wager buttons: tap for a pop-up of choices. Picking a wager
-               result clears Foul; marking Foul clears the wager picks. *@
-            <WagerPick Label="Emperor's Treasure"
-                       Value="@_sbEmperorsTreasure.Selection?.ToString()"
-                       OnPick="k => { _sbEmperorsTreasure.Selection = Enum.Parse<WagerOutcome>(k); _sbEmperorsTreasure.Wrong = false; SbResetFoul(); }"
-                       Locked="_sbRoundScored" Wrong="_sbEmperorsTreasure.Wrong" />
-
-            <WagerPick Label="Main Wager" Options="WagerPick.WinLosePush"
-                       Value="@_sbMainWager.Selection?.ToString()"
-                       OnPick="k => { _sbMainWager.Selection = Enum.Parse<WagerOutcome>(k); _sbMainWager.Wrong = false; SbResetFoul(); }"
-                       Locked="_sbRoundScored" Wrong="_sbMainWager.Wrong" />
-
-            <WagerPick Label="Pai Gow Insurance"
-                       Value="@_sbInsurance.Selection?.ToString()"
-                       OnPick="k => { _sbInsurance.Selection = Enum.Parse<WagerOutcome>(k); _sbInsurance.Wrong = false; SbResetFoul(); }"
-                       Locked="_sbRoundScored" Wrong="_sbInsurance.Wrong" />
-
-            <WagerPick Label="Foul" Options="FoulOptions"
-                       Value="@(_sbFoulFlagged ? "Foul" : null)"
-                       OnPick='k => SbSetFoul(k == "Foul")'
-                       Locked="_sbRoundScored" Wrong="_sbFoulWrong" />
-            </div>
-
-            @* First round only: what to do *@
-            @if (_sbTotalRounds == 0 && !_sbRoundScored)
-            {
-                <p class="first-hint sb-first-hint">Call each wager Win, Lose or Push, or mark the player's hand Foul, then Submit.</p>
-            }
-
-            @* Before Submit: the "tap every wager" reminder, if needed *@
-            @if (!_sbRoundScored && _sbResultText.Length > 0)
-            {
-                <div class="sb-status">
-                    <p class="result-line txt-bad">@_sbResultText</p>
+                List<PaiGowCard> low = isDealer ? _sbDealerLowSorted : _sbPlayerLowSorted;
+                List<PaiGowCard> high = isDealer ? _sbDealerHighSorted : _sbPlayerHighSorted;
+                string lowLabel = isDealer ? _sbDealerLowLabel : _sbPlayerLowLabel;
+                string highLabel = isDealer ? _sbDealerHighLabel : _sbPlayerHighLabel;
+                <div class="pp-row">
+                    <div class="pp-name">@(isDealer ? "DEALER" : "PLAYER")</div>
+                    <div class="pp-group">
+                        <div class="pp-cap">LOW@(_sbRoundScored && lowLabel.Length > 0 ? " · " + lowLabel : "")</div>
+                        <div class="pp-cards">
+                            @foreach (PaiGowCard c in low)
+                            {
+                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="pp-card" />
+                            }
+                        </div>
+                    </div>
+                    <div class="pp-group">
+                        <div class="pp-cap">HIGH@(_sbRoundScored && highLabel.Length > 0 ? " · " + highLabel : "")</div>
+                        <div class="pp-cards">
+                            @foreach (PaiGowCard c in high)
+                            {
+                                <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="pp-card" />
+                            }
+                        </div>
+                    </div>
                 </div>
             }
         </div>
 
-        <p class="sb-push-note">All Hands Push with a Dealer Ace-High Pai Gow</p>
-
-        <div class="sb-dealer felt">
-        <h3 class="tight">Dealer</h3>
-        <div class="sb-hand-row">
-            <div>
-                <div class="caption">Low Hand</div>
-                <div class="sb-cards pg-row pg-row-gap">
-                    @foreach (PaiGowCard c in _sbDealerLowSorted)
-                    {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
-                    }
-                </div>
-                <div class="caption">High Hand</div>
-                <div class="sb-cards pg-row">
-                    @foreach (PaiGowCard c in _sbDealerHighSorted)
-                    {
-                        <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="sb-card" />
-                    }
-                </div>
-            </div>
-
-            @if (_sbRoundScored)
+        @* Picking a wager result clears Foul; marking Foul clears the wager
+           picks (a fouled hand is a floor call, not settled wager by wager) *@
+        <div class="sp-wagers">
+            @foreach (var (name, wager, options) in SbRowOrder)
             {
-                <div class="feedback-area sb-hand-labels">
-                    <p class="tight">Low Hand: @_sbDealerLowLabel</p>
-                    <p class="tight-top">High Hand: @_sbDealerHighLabel</p>
-                </div>
+                SbWagerState w = wager;
+                <CallRow Chip="w.Wager" Name="@name" Sub="@($"wager ${w.Wager}")" Options="options"
+                         Value="@w.Selection?.ToString()"
+                         OnPick="k => { w.Selection = Enum.Parse<WagerOutcome>(k); w.Wrong = false; SbResetFoul(); }"
+                         Locked="_sbRoundScored" Wrong="w.Wrong"
+                         AnswerText="@($"{w.Actual}")"
+                         LockedText="@SbWagerLockedText(w)" />
             }
-        </div>
+            <CallRow Name="Foul hand" Sub="player's hand" Options="FoulOptions"
+                     Value="@(_sbFoulFlagged ? "Foul" : _sbNotFoulPicked || _sbRoundScored ? "NotFoul" : null)"
+                     OnPick='k => SbSetFoul(k == "Foul")'
+                     Locked="_sbRoundScored" Wrong="_sbFoulWrong"
+                     AnswerText="@(_sbIsPlayerFoul ? "Foul" : "Not Foul")" />
         </div>
 
-        @* After Submit: the result, then each wager with the right answer
-           and why (same style as Roulette's payout breakdown) *@
-        @if (_sbRoundScored)
+        <p class="cr-note">All Hands Push with a Dealer Ace-High Pai Gow</p>
+
+        @* First round only: what to do *@
+        @if (_sbTotalRounds == 0 && !_sbRoundScored)
         {
-            <div class="sb-feedback">
-                <ResultBreakdown ResultText="@_sbResultText" IsCorrect="_sbIsCorrect" Rows="_sbRows"
-                                 NoteLabel="Floor call:" Note="@_sbFloorNote" />
-            </div>
+            <p class="cr-howto">Tap Call on each wager and pick Win, Lose or Push, or mark the player's hand Foul, then Submit.</p>
         }
+
+        <div class="feedback-area sp-feedback">
+            @if (_sbRoundScored)
+            {
+                @* After Submit: the result, then each wager with the right answer and why *@
+                <div class="sb-feedback">
+                    <ResultBreakdown ResultText="@_sbResultText" IsCorrect="_sbIsCorrect" Rows="_sbRows"
+                                     NoteLabel="Floor call:" Note="@_sbFloorNote" />
+                </div>
+            }
+            else if (_sbResultText.Length > 0)
+            {
+                <p class="result-line txt-bad">@_sbResultText</p>
+            }
+        </div>
 
         @* Pinned bottom bar: Help | Submit, then Next | End Session *@
         <GameBar HelpTitle="Settling Bets Wager Rules" OnEnd="EndSession">
@@ -972,6 +935,25 @@ else
     {
         public WagerOutcome? Selection;
         public bool Wrong;
+        public WagerOutcome? Actual;   // set at Submit
+        public bool Graded;            // false when the round was a floor call
+        public int Wager;              // chip amount on the row (real-world betting pattern)
+    }
+
+    // Rows in settling order (same as Pai Gow Payouts)
+    private (string Name, SbWagerState Wager, IReadOnlyList<WagerPickOption> Options)[] SbRowOrder => new[]
+    {
+        ("Insurance", _sbInsurance, WagerPick.WinLose),
+        ("Main Wager", _sbMainWager, WagerPick.WinLosePush),
+        ("Emperor's Treasure", _sbEmperorsTreasure, WagerPick.WinLose)
+    };
+
+    // After Submit, a wager that wasn't graded: the hand was fouled (a
+    // floor call), or a good hand was marked Foul (shows the right call)
+    private string? SbWagerLockedText(SbWagerState w)
+    {
+        if (!_sbRoundScored || w.Graded) return null;
+        return _sbIsPlayerFoul ? "Floor call" : $"Ans: {w.Actual}";
     }
 
     private int _sbJokerFrequencyLevel;
@@ -1065,8 +1047,19 @@ else
         _sbInsurance.Selection = null; _sbInsurance.Wrong = false;
         _sbMainWager.Selection = null; _sbMainWager.Wrong = false;
         _sbEmperorsTreasure.Selection = null; _sbEmperorsTreasure.Wrong = false;
+        foreach (SbWagerState w in new[] { _sbInsurance, _sbMainWager, _sbEmperorsTreasure })
+        {
+            w.Actual = null;
+            w.Graded = false;
+        }
         _sbFoulFlagged = false;
         _sbFoulWrong = false;
+        _sbNotFoulPicked = false;
+
+        // Chips on the rows, as Pai Gow Payouts bets them
+        _sbInsurance.Wager = PaiGowPayouts.SideWager(Random.Shared);
+        _sbMainWager.Wager = PaiGowPayouts.MainWager(Random.Shared);
+        _sbEmperorsTreasure.Wager = PaiGowPayouts.SideWager(Random.Shared);
 
         _sbResultText = string.Empty;
         _sbPlayerLowLabel = string.Empty;
@@ -1171,9 +1164,13 @@ else
 
     // Marking Foul clears the three wager picks (a foul hand isn't
     // settled wager by wager); Not Foul just clears the flag.
+    // Foul row showing Not Foul (picked, until Foul is picked or the next deal)
+    private bool _sbNotFoulPicked;
+
     private void SbSetFoul(bool foul)
     {
         _sbFoulWrong = false;
+        _sbNotFoulPicked = !foul;
         if (!foul)
         {
             _sbFoulFlagged = false;
@@ -1315,14 +1312,16 @@ else
         string insuranceWhy = $"Best hand in the 7 cards: {bestOfSeven}. Wins only on High Card (no pair, straight or flush).";
 
         bool allOk = true;
-        allOk &= SbAddWagerRow("Emperor's Treasure", _sbEmperorsTreasure, emperorsOutcome, emperorsWhy, graded);
-        allOk &= SbAddWagerRow("Main Wager", _sbMainWager, mainOutcome, mainWhy, graded);
         allOk &= SbAddWagerRow("Pai Gow Insurance", _sbInsurance, insuranceOutcome, insuranceWhy, graded);
+        allOk &= SbAddWagerRow("Main Wager", _sbMainWager, mainOutcome, mainWhy, graded);
+        allOk &= SbAddWagerRow("Emperor's Treasure", _sbEmperorsTreasure, emperorsOutcome, emperorsWhy, graded);
         return allOk;
     }
 
     private bool SbAddWagerRow(string name, SbWagerState wager, WagerOutcome actual, string why, bool graded)
     {
+        wager.Actual = actual;
+        wager.Graded = graded;
         if (!graded)
         {
             wager.Wrong = false;

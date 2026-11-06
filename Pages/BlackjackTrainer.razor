@@ -434,88 +434,70 @@ else if (_mode == BlackjackMode.SidePayouts)
 }
 else
 {
-    <div class="play-screen sw-screen has-game-bar">
+    @* Side Wagers in the payout modes' layout: the dealer's up-card and
+       each player hand on the felt, then two rows per hand (Lucky Ladies,
+       21 + 3) with the wager's chip and a Call button that pops Win / Lose
+       out beside it. *@
+    <div class="play-screen sp-screen cr-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
         <GameStatus Title="Side Wagers" Correct="_swTotalCorrect" Played="_swTotalAnswered" />
 
-        @* Phones only (hidden on desktop by CSS): one player hand is
-           shown at a time. Desktop still shows every hand side by side. *@
-        @if (_swHands.Count > 1)
-        {
-            <div class="hand-pager">
-                <span class="hand-pager-label">Player @(_swCurrentHand + 1) of @_swHands.Count</span>
+        <div class="felt sp-felt cr-sw-felt @(_swHands.Count > 2 ? "cr-sw-many" : "")">
+            <div class="sp-col">
+                <div class="sp-cap">DEALER</div>
+                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Name" class="sp-card" />
             </div>
-        }
+            <div class="cr-sw-hands">
+                @for (int h = 0; h < _swHands.Count; h++)
+                {
+                    SwHandState hand = _swHands[h];
+                    <div class="sp-col">
+                        <div class="sp-cap">@(_swHands.Count > 1 ? $"HAND {h + 1}" : "PLAYER")</div>
+                        <div class="sp-cards">
+                            <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" class="sp-card" />
+                            <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" class="sp-card" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
 
-        <div class="sw-hands felt">
+        <div class="sp-wagers">
             @for (int h = 0; h < _swHands.Count; h++)
             {
-                int handIndex = h;
-                SwHandState hand = _swHands[handIndex];
-
-                <div class="sw-hand paged-hand @(handIndex == _swCurrentHand ? "paged-hand-current" : "")">
-                    <div class="paged-hand-number caption">@(handIndex + 1)</div>
-
-                    <div class="sw-hand-cards stack-2">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
-                    </div>
-
-                    @* Phones: Previous / Next sit either side of the two wagers,
-                       below the cards (hidden on desktop) *@
-                    <div class="sw-hand-controls">
-                    @if (_swHands.Count > 1)
-                    {
-                        <button class="hd-inline-pager" @onclick="SwPreviousHand" disabled="@(handIndex <= 0)">Previous</button>
-                    }
-                    @* Wager buttons: tap for a Win / Lose pop-up *@
-                    <div class="sw-wager-picks">
-                        <WagerPick Label="Lucky Ladies"
-                                   Value="@hand.LuckyLadiesSelection?.ToString()"
-                                   OnPick="k => { hand.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); hand.LuckyLadiesWrong = false; }"
-                                   Locked="_swRoundScored" Wrong="hand.LuckyLadiesWrong" />
-
-                        <WagerPick Label="21 + 3"
-                                   Value="@hand.TwentyOnePlus3Selection?.ToString()"
-                                   OnPick="k => { hand.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); hand.TwentyOnePlus3Wrong = false; }"
-                                   Locked="_swRoundScored" Wrong="hand.TwentyOnePlus3Wrong" />
-                    </div>
-                    @if (_swHands.Count > 1)
-                    {
-                        <button class="hd-inline-pager" @onclick="SwNextHand" disabled="@(handIndex >= _swHands.Count - 1)">Next</button>
-                    }
-                    </div>
-                </div>
+                SwHandState hand = _swHands[h];
+                <CallRow Chip="hand.LuckyLadiesWager" Name="Lucky Ladies" Sub="@(_swHands.Count > 1 ? $"Hand {h + 1} · ${hand.LuckyLadiesWager}" : $"wager ${hand.LuckyLadiesWager}")"
+                         Value="@hand.LuckyLadiesSelection?.ToString()"
+                         OnPick="k => { hand.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); hand.LuckyLadiesWrong = false; }"
+                         Locked="_swRoundScored" Wrong="hand.LuckyLadiesWrong"
+                         AnswerText="@(SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2) ? "Win" : "Lose")" />
+                <CallRow Chip="hand.TwentyOnePlus3Wager" Name="21 + 3" Sub="@(_swHands.Count > 1 ? $"Hand {h + 1} · ${hand.TwentyOnePlus3Wager}" : $"wager ${hand.TwentyOnePlus3Wager}")"
+                         Value="@hand.TwentyOnePlus3Selection?.ToString()"
+                         OnPick="k => { hand.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); hand.TwentyOnePlus3Wrong = false; }"
+                         Locked="_swRoundScored" Wrong="hand.TwentyOnePlus3Wrong"
+                         AnswerText="@(SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _swDealerCard!) ? "Win" : "Lose")" />
             }
         </div>
 
         @* First round only: what to do *@
         @if (_swTotalAnswered == 0 && !_swRoundScored)
         {
-            <p class="first-hint">Tap Lucky Ladies and 21 + 3 on each hand to call Win or Lose, then Submit.</p>
+            <p class="cr-howto">Tap Call on each wager and pick Win or Lose, then Submit.</p>
         }
 
-        <div class="sw-footer">
-
-            <div class="sw-footer-dealer felt">
-                <h3 class="tight">Dealer</h3>
-                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Name" class="sw-dealer-card" />
-            </div>
-
-            <div class="feedback-area sw-footer-feedback">
-                @if (_swRoundScored)
-                {
-                    @* After Submit: each wager with the right answer and why *@
-                    <ResultBreakdown ResultText="@_swResultText" IsCorrect="_swIsCorrect" Rows="_swRows" />
-                }
-                else
-                {
-                    <p class="result-line sw-result txt-bad">@_swResultText</p>
-                }
-            </div>
+        <div class="feedback-area sp-feedback">
+            @if (_swRoundScored)
+            {
+                @* After Submit: each wager with the right answer and why *@
+                <ResultBreakdown ResultText="@_swResultText" IsCorrect="_swIsCorrect" Rows="_swRows" />
+            }
+            else if (_swResultText.Length > 0)
+            {
+                <p class="result-line txt-bad">@_swResultText</p>
+            }
         </div>
 
         @* Pinned bottom bar: Help | Submit (once every wager is called),
@@ -1318,6 +1300,9 @@ else
         public WagerOutcome? TwentyOnePlus3Selection;
         public bool LuckyLadiesWrong;
         public bool TwentyOnePlus3Wrong;
+        // Chips on the rows (real-world betting pattern, $1-$50)
+        public int LuckyLadiesWager;
+        public int TwentyOnePlus3Wager;
     }
 
     private int _swHandCount = 1;
@@ -1334,8 +1319,6 @@ else
     private string _swResultText = string.Empty;
     private bool _swIsCorrect;
     private string _swScoreText = "Score: 0 / 0 (0.0%)";
-
-    private int _swCurrentHand; // phone layout only: which player hand is showing
 
     private void SwStartGame()
     {
@@ -1360,7 +1343,9 @@ else
             _swHands.Add(new SwHandState
             {
                 Card1 = _swDeck.Draw(),
-                Card2 = _swDeck.Draw()
+                Card2 = _swDeck.Draw(),
+                LuckyLadiesWager = SideWagerPayouts.SideWager(Random.Shared),
+                TwentyOnePlus3Wager = SideWagerPayouts.SideWager(Random.Shared)
             });
         }
 
@@ -1369,23 +1354,12 @@ else
         _swResultText = string.Empty;
         _swRoundScored = false;
         _swSubmitEnabled = true;
-        _swCurrentHand = 0;
     }
 
     // True once every hand has both of its wagers called (Win or Lose) --
     // Submit only shows up at that point.
     private bool SwAllAnswered => _swHands.Count > 0 && _swHands.All(h =>
         h.LuckyLadiesSelection is not null && h.TwentyOnePlus3Selection is not null);
-
-    private void SwPreviousHand()
-    {
-        if (_swCurrentHand > 0) _swCurrentHand--;
-    }
-
-    private void SwNextHand()
-    {
-        if (_swCurrentHand < _swHands.Count - 1) _swCurrentHand++;
-    }
 
     // After Submit: Lucky Ladies and 21 + 3 for each hand, with the right
     // answer and why
@@ -1407,8 +1381,6 @@ else
 
     private void SwSubmitRound()
     {
-        // On phones, also jumps the pager to the first hand with a
-        // wager still untapped.
         for (int h = 0; h < _swHands.Count; h++)
         {
             SwHandState hand = _swHands[h];
@@ -1416,7 +1388,6 @@ else
             {
                 _swResultText = "Tap every wager to select an outcome before submitting.";
                 _swIsCorrect = false;
-                _swCurrentHand = h;
                 return;
             }
         }
