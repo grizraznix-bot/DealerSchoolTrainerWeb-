@@ -66,12 +66,10 @@
             </ModeCard>
 
             <ModeCard Title="Side Wagers"
-                      Description="Settle the outcome of each side wager by tapping the wager to cycle Win / Lose, then Submit."
+                      Description="Call each side wager Win or Lose with its Call button, then Submit."
                       Expanded="@IsModeOpen(BlackjackMode.SideWagers)"
                       OnToggle="() => ToggleMode(BlackjackMode.SideWagers)"
-                      OnStart="StartGame">
-                <CountStepper Label="Number of Hands" Min="1" Max="6" @bind-Value="_swHandCount" />
-            </ModeCard>
+                      OnStart="StartGame" />
 
             <ModeCard Title="Side Wager Payouts"
                       Description="Pay the 21 + 3 and Lucky Ladies wagers. Enter the winnings for each, then Submit."
@@ -445,45 +443,42 @@ else
 
         <GameStatus Title="Side Wagers" Correct="_swTotalCorrect" Played="_swTotalAnswered" />
 
-        @* Only the dealer's up-card on the felt (Blackjack Payouts card size);
-           each player hand is its own box below: its two cards once, then
-           its two wagers (Lucky Ladies, 21 + 3) with a Call button each.
-           Several hands: each box gets the hand's color on its left edge and
-           a numbered badge, with a gap between hands. *@
-        <div class="felt sp-felt cr-dealer-felt">
-            <div class="sp-col">
-                <div class="sp-cap">DEALER</div>
-                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Name" class="sp-card cr-dealer-card" />
+        @* One player hand. The felt is laid out from the dealer's side of
+           the table: the player's cards across the top, the dealer's up-card
+           at the bottom (nearest the dealer), all at the Blackjack Payouts
+           card size. Then one row per wager (Lucky Ladies, 21 + 3) with its
+           chip and a Call button. *@
+        <div class="felt cr-felt">
+            @if (_swHands.Count > 0)
+            {
+                SwHandState player = _swHands[0];
+                <div class="cr-cap">PLAYER</div>
+                <div class="cr-lane cr-big">
+                    <img src="images/cards/@(player.Card1.Code).png" alt="@player.Card1.Name" />
+                    <img src="images/cards/@(player.Card2.Code).png" alt="@player.Card2.Name" />
+                </div>
+            }
+            <div class="cr-sep"></div>
+            <div class="cr-cap">DEALER</div>
+            <div class="cr-lane cr-big">
+                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Name" />
             </div>
         </div>
 
-        <div class="cr-hands">
-            @for (int h = 0; h < _swHands.Count; h++)
+        <div class="sp-wagers">
+            @foreach (SwHandState hand in _swHands)
             {
-                SwHandState hand = _swHands[h];
-                bool many = _swHands.Count > 1;
-                <div class="cr-hbox @(many ? $"cr-hand cr-hand-{h + 1}" : "")">
-                    @if (many)
-                    {
-                        <div class="cr-badge">@(h + 1)</div>
-                    }
-                    <div class="cr-hcards">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
-                    </div>
-                    <div class="cr-hrows">
-                        <CallRow Chip="hand.LuckyLadiesWager" Name="Lucky Ladies" Sub="@($"wager ${hand.LuckyLadiesWager}")"
-                                 Value="@hand.LuckyLadiesSelection?.ToString()"
-                                 OnPick="k => { hand.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); hand.LuckyLadiesWrong = false; }"
-                                 Locked="_swRoundScored" Wrong="hand.LuckyLadiesWrong"
-                                 AnswerText="@(SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2) ? "Win" : "Lose")" />
-                        <CallRow Chip="hand.TwentyOnePlus3Wager" Name="21 + 3" Sub="@($"wager ${hand.TwentyOnePlus3Wager}")"
-                                 Value="@hand.TwentyOnePlus3Selection?.ToString()"
-                                 OnPick="k => { hand.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); hand.TwentyOnePlus3Wrong = false; }"
-                                 Locked="_swRoundScored" Wrong="hand.TwentyOnePlus3Wrong"
-                                 AnswerText="@(SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _swDealerCard!) ? "Win" : "Lose")" />
-                    </div>
-                </div>
+                SwHandState h = hand;
+                <CallRow Chip="h.LuckyLadiesWager" Name="Lucky Ladies" Sub="@($"wager ${h.LuckyLadiesWager}")"
+                         Value="@h.LuckyLadiesSelection?.ToString()"
+                         OnPick="k => { h.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); h.LuckyLadiesWrong = false; }"
+                         Locked="_swRoundScored" Wrong="h.LuckyLadiesWrong"
+                         AnswerText="@(SideWagerRules.QualifiesLuckyLadies(h.Card1, h.Card2) ? "Win" : "Lose")" />
+                <CallRow Chip="h.TwentyOnePlus3Wager" Name="21 + 3" Sub="@($"wager ${h.TwentyOnePlus3Wager}")"
+                         Value="@h.TwentyOnePlus3Selection?.ToString()"
+                         OnPick="k => { h.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); h.TwentyOnePlus3Wrong = false; }"
+                         Locked="_swRoundScored" Wrong="h.TwentyOnePlus3Wrong"
+                         AnswerText="@(SideWagerRules.Qualifies21Plus3(h.Card1, h.Card2, _swDealerCard!) ? "Win" : "Lose")" />
             }
         </div>
 
@@ -1310,7 +1305,7 @@ else
         public int TwentyOnePlus3Wager;
     }
 
-    private int _swHandCount = 1;
+    private const int _swHandCount = 1;   // one player hand (multiple hands removed)
     private Deck _swDeck = new();
     private readonly List<SwHandState> _swHands = new();
     private Card? _swDealerCard;
@@ -1327,7 +1322,6 @@ else
 
     private void SwStartGame()
     {
-        _swHandCount = Math.Clamp(_swHandCount, 1, 6);
         _swTotalCorrect = 0;
         _swTotalAnswered = 0;
         _swScoreText = "Score: 0 / 0 (0.0%)";

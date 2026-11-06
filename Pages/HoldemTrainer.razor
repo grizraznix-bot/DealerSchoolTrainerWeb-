@@ -23,12 +23,10 @@
                       OnStart="StartGame" />
 
             <ModeCard Title="Settle the Bets"
-                      Description="The dealer's best hand is already set -- its 2 unused cards are marked. Tap each player hand's circle to call Win / Lose / Push against it, then Submit."
+                      Description="The dealer's best hand is already set -- its 2 unused cards are dimmed. Call the player Win / Lose / Push against it with the Call button, then Submit."
                       Expanded="@IsModeOpen(TrainerMode.SettleBets)"
                       OnToggle="() => ToggleMode(TrainerMode.SettleBets)"
-                      OnStart="StartGame">
-                <CountStepper Label="Number of Hands" Min="1" Max="6" @bind-Value="_handCountSettleBets" />
-            </ModeCard>
+                      OnStart="StartGame" />
 
             <ModeCard Title="Hold'em Payouts"
                       Description="The hand is dealt and settled out. Pay each wager (Raise, Ante, Odds, Trips Plus, Pocket Bonus): enter the winnings, or tap Push / Lose, then Submit."
@@ -267,59 +265,54 @@ else if (_mode == TrainerMode.SettleBets)
 
         <GameStatus Title="Settle the Bets" Correct="_correctCount" Played="_totalRounds" />
 
-        <div class="felt hp-felt cr-hd-felt">
-            <div class="hp-hand">
-                <div class="pp-cap">DEALER</div>
-                <div class="hp-cards">
-                    <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Name" class="hp-card @(_dealerCard1Rotated ? "cr-unused" : "")" />
-                    <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Name" class="hp-card @(_dealerCard2Rotated ? "cr-unused" : "")" />
+        @* One player. The felt is laid out from the dealer's side of the
+           table: the player's cards across the top, then the board, then the
+           dealer's two cards at the bottom (nearest the dealer). The 2 cards
+           the dealer doesn't use are already dimmed and dropped. Then one Call
+           row for the player. *@
+        <div class="felt cr-felt">
+            @if (_hands.Count > 0)
+            {
+                HandState player = _hands[0];
+                <div class="cr-cap">PLAYER</div>
+                <div class="cr-lane cr-mid">
+                    <img src="images/cards/@(player.Card1.Code).png" alt="@player.Card1.Name" />
+                    <img src="images/cards/@(player.Card2.Code).png" alt="@player.Card2.Name" />
                 </div>
+            }
+            <div class="cr-sep"></div>
+            <div class="cr-cap">BOARD &middot; dimmed = not in the dealer's hand</div>
+            <div class="cr-lane cr-board">
+                @for (int i = 0; i < _community.Length; i++)
+                {
+                    Card? c = _community[i];
+                    <img src="images/cards/@(c?.Code).png" alt="@c?.Name" class="@(_communityRotated[i] ? "cr-unused" : "")" />
+                }
             </div>
-            <div class="hp-board">
-                <div class="pp-cap">BOARD &middot; dimmed = not used</div>
-                <div class="hp-cards">
-                    @for (int i = 0; i < _community.Length; i++)
-                    {
-                        Card? c = _community[i];
-                        <img src="images/cards/@(c?.Code).png" alt="@c?.Name" class="hp-card @(_communityRotated[i] ? "cr-unused" : "")" />
-                    }
-                </div>
+            <div class="cr-cap">DEALER</div>
+            <div class="cr-lane cr-mid">
+                <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Name" class="@(_dealerCard1Rotated ? "cr-unused" : "")" />
+                <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Name" class="@(_dealerCard2Rotated ? "cr-unused" : "")" />
             </div>
         </div>
 
-        @* One box per player: their two cards, then a Call row. Several
-           players: each box gets its own color on the left edge and a
-           numbered badge (same as Blackjack Side Wagers). *@
-        <div class="cr-hands">
+        <div class="sp-wagers">
             @for (int h = 0; h < _hands.Count; h++)
             {
                 int handIndex = h;
                 HandState hand = _hands[handIndex];
-                bool many = _hands.Count > 1;
-                <div class="cr-hbox @(many ? $"cr-hand cr-hand-{handIndex + 1}" : "")">
-                    @if (many)
-                    {
-                        <div class="cr-badge">@(handIndex + 1)</div>
-                    }
-                    <div class="cr-hcards">
-                        <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
-                        <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
-                    </div>
-                    <div class="cr-hrows">
-                        <CallRow Name="@(many ? "" : "Player")" Options="WagerPick.WinLosePush"
-                                 Value="@hand.WagerSelection?.ToString()"
-                                 OnPick="k => PickOutcome(handIndex, Enum.Parse<WagerOutcome>(k))"
-                                 Locked="_roundScored" Wrong="hand.WagerWrong"
-                                 AnswerText="@($"{hand.ActualOutcome}")" />
-                    </div>
-                </div>
+                <CallRow Name="Player vs dealer" Options="WagerPick.WinLosePush"
+                         Value="@hand.WagerSelection?.ToString()"
+                         OnPick="k => PickOutcome(handIndex, Enum.Parse<WagerOutcome>(k))"
+                         Locked="_roundScored" Wrong="hand.WagerWrong"
+                         AnswerText="@($"{hand.ActualOutcome}")" />
             }
         </div>
 
         @* First round only: what to do *@
         @if (_totalRounds == 0 && !_roundScored)
         {
-            <p class="cr-howto">Tap Call on each player and pick Win, Lose or Push against the dealer's marked hand, then Submit.</p>
+            <p class="cr-howto">Tap Call and pick Win, Lose or Push for the player against the dealer's hand, then Submit.</p>
         }
 
         <div class="feedback-area sp-feedback">
@@ -667,7 +660,7 @@ else
 
     private bool _started;
     private int _handCount = 1;
-    private int _handCountSettleBets = 1;
+    private const int _handCountSettleBets = 1;   // one player (multiple players removed)
     private TrainerMode _mode = TrainerMode.IdentifyHands;
 
     // Start screen: which mode card is open (null = all closed). Opening
@@ -763,7 +756,7 @@ else
         }
 
         _handCount = _mode == TrainerMode.SettleBets
-            ? Math.Clamp(_handCountSettleBets, 1, 6)
+            ? _handCountSettleBets
             : 0; // Identify the Hands: dealer hand only
         _started = true;
         _correctCount = 0;
@@ -1105,7 +1098,7 @@ else
                     : $"{hand.RankName} vs the dealer's {dealerDesc}: the {(actualOutcome == WagerOutcome.Win ? "player's" : "dealer's")} cards are higher.";
 
             _handRankLines.Add(($"Hand {h + 1}: {hand.Reason}", hand.WagerWrong ? "txt-bad" : "txt-ok"));
-            _rows.Add(new BreakdownRow($"Player {h + 1}", $"{hand.WagerSelection}", $"{actualOutcome}", !hand.WagerWrong, hand.Reason));
+            _rows.Add(new BreakdownRow(_hands.Count > 1 ? $"Player {h + 1}" : "Player", $"{hand.WagerSelection}", $"{actualOutcome}", !hand.WagerWrong, hand.Reason));
         }
         _handRankLines.Insert(0, ($"Dealer: {dealerDesc}", "txt-ok"));
         _log.AddRows(_rows, r => r.Answer switch { "Win" => "Player wins", "Lose" => "Dealer wins", _ => "Pushes" });

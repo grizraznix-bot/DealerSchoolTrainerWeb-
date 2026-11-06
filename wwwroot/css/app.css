@@ -5591,183 +5591,61 @@ body {
     color: #223;
 }
 
-/* Dealer's two cards and the board side by side */
-.hp-felt.cr-hd-felt {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 0.6rem;
-    padding-bottom: 0.7rem;
-}
-
-.cr-hd-felt .hp-board {
-    margin-left: auto;
-    align-items: flex-end;
-}
-
-.cr-hd-felt .hp-board .pp-cap {
-    display: block;
-    font-weight: normal;
-    opacity: 0.85;
-}
-
-/* Hold'em Settle the Bets: the dealer's 2 unused cards dropped and darkened */
-.hp-card.cr-unused {
-    filter: brightness(0.5);
-    transform: translateY(6px);
-}
-
-/* Player hands (Side Wagers, Hold'em Settle the Bets): one box per hand
-   -- its cards once, then its Call rows. Several hands: each box has the
-   hand's color on its left edge and a numbered badge, with a gap between
-   hands. Colors kept clear of Win blue, Lose red and Push gold. */
-.cr-hand-1 { --hc: #0a7d8c; }
-.cr-hand-2 { --hc: #7a3fb5; }
-.cr-hand-3 { --hc: #d0680b; }
-.cr-hand-4 { --hc: #b0287a; }
-.cr-hand-5 { --hc: #5b7f1a; }
-.cr-hand-6 { --hc: #6d4c3d; }
-
-.cr-badge {
-    flex: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: var(--hc);
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cr-hands {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-self: stretch;
-}
-
-.cr-hbox {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 6px;
-    border: 1px solid var(--c-border);
-    border-radius: 8px;
-    background-color: white;
-}
-
-.cr-hbox.cr-hand {
-    border-left: 7px solid var(--hc);
-}
-
-.cr-hcards {
-    display: flex;
-    flex: none;
-}
-
-.cr-hcards img {
-    width: 50px;
-    height: 70px;
-    border-radius: 4px;
-    background-color: white;
-    box-shadow: 0 0 0 1px #bbb;
-}
-
-.cr-hcards img + img {
-    margin-left: -12px;
-}
-
-.cr-hrows {
-    flex: 1 1 auto;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-}
-
-/* The rows inside a hand box: no borders of their own, a thin line
-   between the two wagers */
-.cr-hrows .sp-wrow,
-.sp-screen .cr-hrows .sp-wrow,
-.cr-hrows .sp-wrow.sp-wrow-on,
-.sp-screen .cr-hrows .sp-wrow.sp-wrow-on {
-    gap: 6px;
-    min-height: 0;
-    padding: 2px 0;
-    border: 0;
-    border-radius: 6px;
-    background-color: transparent;
-}
-
-.cr-hrows .sp-wrow + .sp-wrow,
-.sp-screen .cr-hrows .sp-wrow + .sp-wrow {
-    border-top: 1px solid #e3e3e3;
-    border-radius: 0;
-}
-
-.cr-hrows .sp-wrow.sp-wrow-on { background-color: #f3f8ff; }
-.cr-hrows .sp-wrow.cr-row-win { background-color: #f1f6ff; }
-.cr-hrows .sp-wrow.cr-row-lose { background-color: #fdf1f1; }
-.cr-hrows .sp-wrow.cr-row-push { background-color: #fffbe3; }
-
-.cr-hrows .sp-wname,
-.sp-screen .cr-hrows .sp-wname {
-    flex: 1 1 auto;
+/* Call rows: the name takes the room it needs (no fixed column), so
+   longer names like "Player vs dealer" stay on one line */
+.cr-row .sp-wname,
+.sp-screen .cr-row .sp-wname {
+    flex: 0 1 auto;
     width: auto;
     min-width: 0;
 }
 
-.cr-hrows .sp-chip,
-.sp-screen .cr-hrows .sp-chip {
-    width: 32px;
-    height: 32px;
-    font-size: 0.65rem;
-}
-
-.content .cr-hrows .cr-btn {
-    width: 5.4rem;
-    height: 38px;
-    margin-left: 4px;
-}
-
-.cr-hrows .cr-pop {
-    right: calc(5.4rem + 10px);
-}
-
-.content .cr-hrows .cr-ans {
-    min-width: 5.4rem;
-    padding-left: 0.4rem;
-    padding-right: 0.4rem;
-    font-size: 0.78rem;
-    white-space: nowrap;
-}
-
-.cr-hrows .sp-wname,
-.sp-screen .cr-hrows .sp-wname {
-    font-size: 0.82rem;
-}
-
-/* Felt with only the dealer's card (Side Wagers), at the Blackjack
-   Payouts card size */
-.cr-dealer-felt {
-    justify-content: center;
-    padding: 0.4rem 0.75rem 0.6rem 0.75rem;
-}
-
-.cr-dealer-felt .sp-col {
-    flex-direction: row;
+/* One-hand felt (Side Wagers, Hold'em Settle the Bets), laid out from
+   the dealer's side of the table: player on top, dealer at the bottom */
+.felt.cr-felt {
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    padding: 8px 10px 12px 10px;
 }
 
-.cr-dealer-felt .sp-cap {
-    margin: 0;
+.cr-cap {
+    align-self: stretch;
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.85);
 }
 
-.cr-dealer-felt .sp-card.cr-dealer-card {
-    width: 75px;
-    height: 105px;
+.cr-lane {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.cr-lane img {
+    border-radius: 5px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.cr-big img { width: 75px; height: 105px; }
+.cr-mid img { width: 66px; height: 92px; }
+
+/* Room under the board for the dropped (unused) cards */
+.cr-board { gap: 4px; padding-bottom: 8px; }
+.cr-board img { width: 58px; height: 81px; }
+
+.cr-sep {
+    align-self: stretch;
+    border-top: 1px dashed rgba(255, 255, 255, 0.35);
+}
+
+/* Hold'em: the dealer's 2 unused cards dimmed and dropped */
+.cr-lane img.cr-unused {
+    filter: brightness(0.5);
+    transform: translateY(6px);
 }
 
 /* Short how-to line under the rows (first round) */
