@@ -143,16 +143,36 @@
          window) and the window is tall enough to open the pad below the
          answer box without pushing the Submit / End bar off screen. The
          pad is about 250px tall (305 with Payouts' extra Enter row); the
-         bar sits just under the game. -->
+         bar sits just under the game.
+         Payout modes (wager box, .pw-box): the box shrinks and scrolls to
+         make room for the pad, so the pad opens when at least two wager
+         rows still fit above it (the bar sticks to the bottom edge). -->
     <script>
         window.dstKeypadFits = function (padHeight) {
             if (!window.matchMedia('(min-width: 769px) and (pointer: fine)').matches) return false;
             var bar = document.querySelector('.game-bar');
             if (!bar) return false;
+
+            var box = document.querySelector('.pw-box.pw-scroll');
+            var screen = box ? box.closest('.sp-screen') : null;
+            var pad = screen ? screen.querySelector('.sp-keypad') : null;
+            if (box && pad) {
+                // Open the pad for a moment to measure it (no repaint in between)
+                var wasOpen = pad.classList.contains('keypad-open');
+                if (!wasOpen) pad.classList.add('keypad-open');
+                var boxRect = box.getBoundingClientRect();
+                var below = pad.getBoundingClientRect().bottom - boxRect.bottom;   // hint row + pad
+                if (!wasOpen) pad.classList.remove('keypad-open');
+
+                var room = window.innerHeight - bar.getBoundingClientRect().height - 6 - boxRect.top - below;
+                return room >= Math.min(box.scrollHeight, 120);
+            }
+
             return bar.getBoundingClientRect().bottom + (padHeight || 260) <= window.innerHeight;
         };
     </script>
-    <!-- Payout modes, phones: the wager rows sit in a box (.pw-box.pw-scroll)
+    <!-- Payout modes (phones, and desktop while the number pad is open):
+         the wager rows sit in a box (.pw-box.pw-scroll)
          sized to fill the space between the cards and the keypad, so the
          keypad stays above the bottom bar. If the rows don't all fit, the
          box scrolls, with a fade at the edge that has more rows past it.
@@ -177,9 +197,11 @@
                     var screen = box.closest('.sp-screen');
                     var pad = screen ? screen.querySelector('.sp-keypad') : null;
                     var bar = document.querySelector('.game-bar');
-                    var phone = window.matchMedia('(max-width: 768px)').matches;
+                    // Phones: the pad is always shown. Desktop: only while
+                    // it's open (123 or opened automatically)
+                    var padShown = pad && pad.getBoundingClientRect().height > 0;
 
-                    if (!phone || !box.classList.contains('pw-scroll') || !pad || !bar) {
+                    if (!box.classList.contains('pw-scroll') || !padShown || !bar) {
                         box.style.maxHeight = '';
                         shade(box);
                         return;

@@ -5066,34 +5066,36 @@ body {
     margin: 0;
 }
 
+/* Phones, and desktop while the number pad is open (all sizes, since
+   dstFitWagerBox only sets a height when the pad is showing) */
+.pw-box.pw-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.pw-wrap.pw-more-below::after,
+.pw-wrap.pw-more-above::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    height: 22px;
+    pointer-events: none;
+}
+
+.pw-wrap.pw-more-below::after {
+    bottom: 0;
+    background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95));
+}
+
+.pw-wrap.pw-more-above::before {
+    top: 0;
+    background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+}
+
 @media (max-width: 768px) {
-    .pw-box.pw-scroll {
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .pw-wrap.pw-more-below::after,
-    .pw-wrap.pw-more-above::before {
-        content: "";
-        position: absolute;
-        left: 0;
-        right: 0;
-        z-index: 2;
-        height: 22px;
-        pointer-events: none;
-    }
-
-    .pw-wrap.pw-more-below::after {
-        bottom: 0;
-        background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95));
-    }
-
-    .pw-wrap.pw-more-above::before {
-        top: 0;
-        background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
-    }
-
     /* Standard row: 48px -- 36px chip, name with the wager under it,
        40px payout box, then Push / Lose */
     .sp-screen .sp-wagers {
