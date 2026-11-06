@@ -444,26 +444,26 @@ else
 
         <GameStatus Title="Side Wagers" Correct="_swTotalCorrect" Played="_swTotalAnswered" />
 
-        @* One player hand. The felt is laid out from the dealer's side of
-           the table: the player's cards across the top, the dealer's up-card
-           at the bottom (nearest the dealer), all at the Blackjack Payouts
-           card size. Then one row per wager (21 + 3, Lucky Ladies) with its
-           chip and a Call button. *@
-        <div class="felt cr-felt">
+        @* One player hand, on the same felt as Side Wager Payouts: the
+           dealer's up-card on the left, the player's two cards on the right,
+           at the same card size. Then one row per wager (21 + 3, Lucky
+           Ladies) with its chip and a Call button. *@
+        <div class="felt sp-felt">
+            <div class="sp-col">
+                <div class="sp-cap">DEALER</div>
+                <img src="images/cards/@(_swDealerCard?.Code).png" alt="Up-card: @_swDealerCard?.Name" class="sp-card" />
+            </div>
             @if (_swHands.Count > 0)
             {
                 SwHandState player = _swHands[0];
-                <div class="cr-cap">PLAYER</div>
-                <div class="cr-lane cr-big">
-                    <img src="images/cards/@(player.Card1.Code).png" alt="@player.Card1.Name" />
-                    <img src="images/cards/@(player.Card2.Code).png" alt="@player.Card2.Name" />
+                <div class="sp-col">
+                    <div class="sp-cap">PLAYER</div>
+                    <div class="sp-cards">
+                        <img src="images/cards/@(player.Card1.Code).png" alt="@player.Card1.Name" class="sp-card" />
+                        <img src="images/cards/@(player.Card2.Code).png" alt="@player.Card2.Name" class="sp-card" />
+                    </div>
                 </div>
             }
-            <div class="cr-sep"></div>
-            <div class="cr-cap">DEALER</div>
-            <div class="cr-lane cr-big">
-                <img src="images/cards/@(_swDealerCard?.Code).png" alt="@_swDealerCard?.Name" />
-            </div>
         </div>
 
         <div class="sp-wagers">
