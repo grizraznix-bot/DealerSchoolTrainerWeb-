@@ -13,7 +13,11 @@
    the payout modes: "✓ Win", or "✗ Win · Ans: Lose". *@
 @implements IDisposable
 
-<div class="sp-wrow cr-row @(_open ? "sp-wrow-on" : "") @RowCss">
+<div class="sp-wrow cr-row @(_open ? "sp-wrow-on" : "") @RowCss @ExtraCss">
+    @if (Badge is not null)
+    {
+        <div class="cr-badge">@Badge</div>
+    }
     @if (Chip is int chip)
     {
         <div class="sp-chip @ChipCss(chip)">$@chip</div>
@@ -73,6 +77,10 @@
     /// <summary>Small line under the name, e.g. "wager $5".</summary>
     [Parameter] public string? Sub { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Small round badge before the chip, e.g. the hand number.</summary>
+    [Parameter] public string? Badge { get; set; }
+    /// <summary>Extra classes on the row, e.g. "cr-hand cr-hand-2".</summary>
+    [Parameter] public string ExtraCss { get; set; } = "";
 
     [Parameter] public IReadOnlyList<WagerPickOption> Options { get; set; } = WagerPick.WinLose;
     /// <summary>Key of the current pick (null = not called yet).</summary>

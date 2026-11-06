@@ -455,7 +455,14 @@ else
                 {
                     SwHandState hand = _swHands[h];
                     <div class="sp-col">
-                        <div class="sp-cap">@(_swHands.Count > 1 ? $"HAND {h + 1}" : "PLAYER")</div>
+                        @if (_swHands.Count > 1)
+                        {
+                            <div class="sp-cap"><span class="cr-hand-tag cr-hand-@(h + 1)">HAND @(h + 1)</span></div>
+                        }
+                        else
+                        {
+                            <div class="sp-cap">PLAYER</div>
+                        }
                         <div class="sp-cards">
                             <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" class="sp-card" />
                             <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" class="sp-card" />
@@ -465,16 +472,24 @@ else
             </div>
         </div>
 
+        @* Several hands: each hand has its own color -- its tag on the felt,
+           and a numbered badge and colored left edge on its two rows -- with
+           a gap between hands *@
         <div class="sp-wagers">
             @for (int h = 0; h < _swHands.Count; h++)
             {
                 SwHandState hand = _swHands[h];
-                <CallRow Chip="hand.LuckyLadiesWager" Name="Lucky Ladies" Sub="@(_swHands.Count > 1 ? $"Hand {h + 1} · ${hand.LuckyLadiesWager}" : $"wager ${hand.LuckyLadiesWager}")"
+                bool many = _swHands.Count > 1;
+                string handCss = many ? $"cr-hand cr-hand-{h + 1}" : "";
+                string? badge = many ? $"{h + 1}" : null;
+                <CallRow Badge="@badge" ExtraCss="@(handCss + (h > 0 ? " cr-group-start" : ""))"
+                         Chip="hand.LuckyLadiesWager" Name="Lucky Ladies" Sub="@(_swHands.Count > 1 ? $"Hand {h + 1} · ${hand.LuckyLadiesWager}" : $"wager ${hand.LuckyLadiesWager}")"
                          Value="@hand.LuckyLadiesSelection?.ToString()"
                          OnPick="k => { hand.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); hand.LuckyLadiesWrong = false; }"
                          Locked="_swRoundScored" Wrong="hand.LuckyLadiesWrong"
                          AnswerText="@(SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2) ? "Win" : "Lose")" />
-                <CallRow Chip="hand.TwentyOnePlus3Wager" Name="21 + 3" Sub="@(_swHands.Count > 1 ? $"Hand {h + 1} · ${hand.TwentyOnePlus3Wager}" : $"wager ${hand.TwentyOnePlus3Wager}")"
+                <CallRow Badge="@badge" ExtraCss="@handCss"
+                         Chip="hand.TwentyOnePlus3Wager" Name="21 + 3" Sub="@(_swHands.Count > 1 ? $"Hand {h + 1} · ${hand.TwentyOnePlus3Wager}" : $"wager ${hand.TwentyOnePlus3Wager}")"
                          Value="@hand.TwentyOnePlus3Selection?.ToString()"
                          OnPick="k => { hand.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); hand.TwentyOnePlus3Wrong = false; }"
                          Locked="_swRoundScored" Wrong="hand.TwentyOnePlus3Wrong"

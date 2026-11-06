@@ -5651,6 +5651,49 @@ body {
     transform: translateY(6px);
 }
 
+/* Several player hands (Side Wagers): each hand's color -- its tag on
+   the felt, and a numbered badge and colored left edge on its rows.
+   Colors kept clear of Win blue, Lose red and Push gold. */
+.cr-hand-1 { --hc: #0a7d8c; }
+.cr-hand-2 { --hc: #7a3fb5; }
+.cr-hand-3 { --hc: #d0680b; }
+.cr-hand-4 { --hc: #b0287a; }
+.cr-hand-5 { --hc: #5b7f1a; }
+.cr-hand-6 { --hc: #6d4c3d; }
+
+.cr-hand-tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 99px;
+    background-color: var(--hc);
+    color: white;
+    opacity: 1;
+}
+
+.sp-wrow.cr-hand,
+.sp-wrow.cr-hand.sp-wrow-on {
+    border-left: 7px solid var(--hc);
+}
+
+.cr-badge {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--hc);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* A gap before each new hand's rows */
+.sp-wagers .cr-row.cr-group-start {
+    margin-top: 10px;
+}
+
 /* Short how-to line under the rows (first round) */
 .cr-howto {
     align-self: stretch;
