@@ -5279,8 +5279,8 @@ body {
 
 /* ------------------------------------------------------------------
    End-of-session summary (Shared/SessionSummary): friendly headline,
-   score, what went well, what's worth another look, latest misses and
-   the student's step in the mode. Replaces the old gray box.
+   score, what went well, what's worth another look and the latest
+   misses. Replaces the old gray box.
    ------------------------------------------------------------------ */
 .session-summary.ss {
     max-width: 520px;
@@ -5384,41 +5384,6 @@ body {
 .ss-ans {
     color: var(--c-muted);
     margin-top: 2px;
-}
-
-.ss-stage {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.88rem;
-}
-
-.ss-dots {
-    display: flex;
-    gap: 4px;
-}
-
-.ss-dots i {
-    display: block;
-    width: 30px;
-    height: 8px;
-    border-radius: 4px;
-    background-color: #d6dce4;
-}
-
-.ss-dots i.on {
-    background-color: var(--c-primary);
-}
-
-.ss-dots i.gold {
-    background-color: #d4a017;
-}
-
-.ss-key {
-    margin-top: 0.3rem;
-    font-size: 0.8rem;
-    color: var(--c-muted);
-    line-height: 1.4;
 }
 
 .ss-btns {
