@@ -502,7 +502,7 @@ else
 
         @* Pinned bottom bar: Help | Submit (once every wager is called),
            then Next | End Session *@
-        <GameBar HelpTitle="Side Wager Rules" OnEnd="EndSession">
+        <GameBar HelpTitle="Side Wager Pay Tables" OnEnd="EndSession">
             <ChildContent>
                 @if (!_swRoundScored)
                 {
@@ -513,8 +513,22 @@ else
                     <button class="game-bar-main" @onclick="SwNextHandTop" disabled="@(!_swDealEnabled)">Next</button>
                 }
             </ChildContent>
+            @* Same pay tables as Side Wager Payouts *@
             <HelpContent>
-                <img src="images/cards/SideWagerRules.png" alt="Side Wager Rules" class="help-image" />
+                <table class="help-table sp-help-table">
+                    <tr class="sp-pt-hd"><td>21 + 3 (your 2 cards + dealer up-card)</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>30 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>20 to 1</td></tr>
+                    <tr><td>Straight</td><td>10 to 1</td></tr>
+                    <tr><td>Flush</td><td>5 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Lucky Ladies (your 2 cards total 20)</td><td></td></tr>
+                    <tr><td>Q&hearts; pair + dealer Blackjack</td><td>1000 to 1</td></tr>
+                    <tr><td>Queen of Hearts pair</td><td>125 to 1</td></tr>
+                    <tr><td>Matched 20 (identical cards)</td><td>19 to 1</td></tr>
+                    <tr><td>Suited 20</td><td>9 to 1</td></tr>
+                    <tr><td>Any 20</td><td>4 to 1</td></tr>
+                </table>
+                <p>A wager wins with any hand on its table; otherwise it loses.</p>
             </HelpContent>
         </GameBar>
     </div>
