@@ -3574,6 +3574,56 @@ label,
     font-weight: bold;
 }
 
+/* Pai Gow House Ways Help: numbered rules, left-aligned plain text
+   (not a pay table), lettered sub-rules indented */
+.hw-key {
+    margin: 0 0 0.25rem 0;
+    color: var(--c-muted);
+    font-size: 0.85rem;
+}
+
+.help-table.hw-table {
+    font-size: 0.95rem;
+}
+
+.help-table.hw-table td {
+    vertical-align: top;
+    line-height: 1.35;
+}
+
+.help-table.hw-table td:first-child {
+    width: 1.6rem;
+    padding-right: 0.35rem;
+    color: var(--c-primary-dark);
+    font-weight: 800;
+    text-align: right;
+}
+
+.help-table.hw-table td:last-child {
+    text-align: left;
+    font-weight: normal;
+}
+
+.help-table.hw-table .sp-pt-hd td {
+    width: auto;
+    padding-right: 0;
+    text-align: left;
+    font-weight: 800;
+}
+
+/* Lettered sub-rule: indented under its rule, letter hanging */
+.help-table.hw-table tr.hw-sub td:last-child {
+    padding-left: 1.5rem;
+    text-indent: -1.1rem;
+}
+
+.help-table.hw-table tr.hw-sub b {
+    display: inline-block;
+    width: 1.1rem;
+    text-indent: 0;
+    color: var(--c-primary-dark);
+}
+
 /* One-line "what to do" shown on a game's first round only */
 .first-hint {
     align-self: stretch;
