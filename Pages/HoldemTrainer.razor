@@ -287,21 +287,32 @@ else if (_mode == TrainerMode.SettleBets)
             </div>
         </div>
 
-        <div class="sp-wagers">
+        @* One box per player: their two cards, then a Call row. Several
+           players: each box gets its own color on the left edge and a
+           numbered badge (same as Blackjack Side Wagers). *@
+        <div class="cr-hands">
             @for (int h = 0; h < _hands.Count; h++)
             {
                 int handIndex = h;
                 HandState hand = _hands[handIndex];
-                <CallRow Name="@($"Player {handIndex + 1}")" Options="WagerPick.WinLosePush"
-                         Value="@hand.WagerSelection?.ToString()"
-                         OnPick="k => PickOutcome(handIndex, Enum.Parse<WagerOutcome>(k))"
-                         Locked="_roundScored" Wrong="hand.WagerWrong"
-                         AnswerText="@($"{hand.ActualOutcome}")">
-                    <div class="cr-pcards">
+                bool many = _hands.Count > 1;
+                <div class="cr-hbox @(many ? $"cr-hand cr-hand-{handIndex + 1}" : "")">
+                    @if (many)
+                    {
+                        <div class="cr-badge">@(handIndex + 1)</div>
+                    }
+                    <div class="cr-hcards">
                         <img src="images/cards/@(hand.Card1.Code).png" alt="@hand.Card1.Name" />
                         <img src="images/cards/@(hand.Card2.Code).png" alt="@hand.Card2.Name" />
                     </div>
-                </CallRow>
+                    <div class="cr-hrows">
+                        <CallRow Name="@(many ? "" : "Player")" Options="WagerPick.WinLosePush"
+                                 Value="@hand.WagerSelection?.ToString()"
+                                 OnPick="k => PickOutcome(handIndex, Enum.Parse<WagerOutcome>(k))"
+                                 Locked="_roundScored" Wrong="hand.WagerWrong"
+                                 AnswerText="@($"{hand.ActualOutcome}")" />
+                    </div>
+                </div>
             }
         </div>
 

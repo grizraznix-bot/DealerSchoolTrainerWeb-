@@ -5574,19 +5574,6 @@ body {
     margin-left: 6px;
 }
 
-/* Side Wagers: dealer up-card, then the player hands (wrapping when
-   there are several; smaller cards from 3 hands on) */
-.cr-sw-hands {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem 1rem;
-}
-
-.cr-sw-many .sp-card {
-    width: 42px;
-    height: 59px;
-}
-
 .cr-ans.cr-ans-plain {
     border-color: var(--c-border);
     background-color: #f2f2f2;
@@ -5602,29 +5589,6 @@ body {
     font-weight: 700;
     text-align: center;
     color: #223;
-}
-
-/* Hold'em Settle the Bets: each player's two cards in their row, and
-   the dealer's 2 unused cards on the felt dropped and darkened */
-.cr-pcards {
-    display: flex;
-    flex: none;
-    gap: 3px;
-}
-
-.cr-pcards img {
-    width: 30px;
-    height: 42px;
-    border-radius: 3px;
-    background-color: white;
-    box-shadow: 0 0 0 1px #ccc;
-}
-
-@media (min-width: 769px) {
-    .cr-pcards img {
-        width: 36px;
-        height: 50px;
-    }
 }
 
 /* Dealer's two cards and the board side by side */
@@ -5646,34 +5610,22 @@ body {
     opacity: 0.85;
 }
 
+/* Hold'em Settle the Bets: the dealer's 2 unused cards dropped and darkened */
 .hp-card.cr-unused {
     filter: brightness(0.5);
     transform: translateY(6px);
 }
 
-/* Several player hands (Side Wagers): each hand's color -- its tag on
-   the felt, and a numbered badge and colored left edge on its rows.
-   Colors kept clear of Win blue, Lose red and Push gold. */
+/* Player hands (Side Wagers, Hold'em Settle the Bets): one box per hand
+   -- its cards once, then its Call rows. Several hands: each box has the
+   hand's color on its left edge and a numbered badge, with a gap between
+   hands. Colors kept clear of Win blue, Lose red and Push gold. */
 .cr-hand-1 { --hc: #0a7d8c; }
 .cr-hand-2 { --hc: #7a3fb5; }
 .cr-hand-3 { --hc: #d0680b; }
 .cr-hand-4 { --hc: #b0287a; }
 .cr-hand-5 { --hc: #5b7f1a; }
 .cr-hand-6 { --hc: #6d4c3d; }
-
-.cr-hand-tag {
-    display: inline-block;
-    padding: 1px 7px;
-    border-radius: 99px;
-    background-color: var(--hc);
-    color: white;
-    opacity: 1;
-}
-
-.sp-wrow.cr-hand,
-.sp-wrow.cr-hand.sp-wrow-on {
-    border-left: 7px solid var(--hc);
-}
 
 .cr-badge {
     flex: none;
@@ -5689,9 +5641,133 @@ body {
     justify-content: center;
 }
 
-/* A gap before each new hand's rows */
-.sp-wagers .cr-row.cr-group-start {
-    margin-top: 10px;
+.cr-hands {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-self: stretch;
+}
+
+.cr-hbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    background-color: white;
+}
+
+.cr-hbox.cr-hand {
+    border-left: 7px solid var(--hc);
+}
+
+.cr-hcards {
+    display: flex;
+    flex: none;
+}
+
+.cr-hcards img {
+    width: 50px;
+    height: 70px;
+    border-radius: 4px;
+    background-color: white;
+    box-shadow: 0 0 0 1px #bbb;
+}
+
+.cr-hcards img + img {
+    margin-left: -12px;
+}
+
+.cr-hrows {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* The rows inside a hand box: no borders of their own, a thin line
+   between the two wagers */
+.cr-hrows .sp-wrow,
+.sp-screen .cr-hrows .sp-wrow,
+.cr-hrows .sp-wrow.sp-wrow-on,
+.sp-screen .cr-hrows .sp-wrow.sp-wrow-on {
+    gap: 6px;
+    min-height: 0;
+    padding: 2px 0;
+    border: 0;
+    border-radius: 6px;
+    background-color: transparent;
+}
+
+.cr-hrows .sp-wrow + .sp-wrow,
+.sp-screen .cr-hrows .sp-wrow + .sp-wrow {
+    border-top: 1px solid #e3e3e3;
+    border-radius: 0;
+}
+
+.cr-hrows .sp-wrow.sp-wrow-on { background-color: #f3f8ff; }
+.cr-hrows .sp-wrow.cr-row-win { background-color: #f1f6ff; }
+.cr-hrows .sp-wrow.cr-row-lose { background-color: #fdf1f1; }
+.cr-hrows .sp-wrow.cr-row-push { background-color: #fffbe3; }
+
+.cr-hrows .sp-wname,
+.sp-screen .cr-hrows .sp-wname {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+}
+
+.cr-hrows .sp-chip,
+.sp-screen .cr-hrows .sp-chip {
+    width: 32px;
+    height: 32px;
+    font-size: 0.65rem;
+}
+
+.content .cr-hrows .cr-btn {
+    width: 5.4rem;
+    height: 38px;
+    margin-left: 4px;
+}
+
+.cr-hrows .cr-pop {
+    right: calc(5.4rem + 10px);
+}
+
+.content .cr-hrows .cr-ans {
+    min-width: 5.4rem;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.cr-hrows .sp-wname,
+.sp-screen .cr-hrows .sp-wname {
+    font-size: 0.82rem;
+}
+
+/* Felt with only the dealer's card (Side Wagers), at the Blackjack
+   Payouts card size */
+.cr-dealer-felt {
+    justify-content: center;
+    padding: 0.4rem 0.75rem 0.6rem 0.75rem;
+}
+
+.cr-dealer-felt .sp-col {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.cr-dealer-felt .sp-cap {
+    margin: 0;
+}
+
+.cr-dealer-felt .sp-card.cr-dealer-card {
+    width: 75px;
+    height: 105px;
 }
 
 /* Short how-to line under the rows (first round) */
