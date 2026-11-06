@@ -302,7 +302,7 @@ else
         </div>
 
         @* Pinned bottom bar: Help | Submit, then Next | End Session *@
-        <GameBar HelpTitle="Three Card Prime Wager Rules" OnEnd="EndSession">
+        <GameBar HelpTitle="Three Card Prime Pay Tables" OnEnd="EndSession">
             <ChildContent>
                 @if (!_roundScored)
                 {
@@ -313,8 +313,36 @@ else
                     <button class="game-bar-main" @onclick="NextFromTop" disabled="@(!_dealEnabled)">Next</button>
                 }
             </ChildContent>
+            @* Same pay tables as Three Card Prime Payouts *@
             <HelpContent>
-                <img src="images/cards/ThreeCardWagerRules.png" alt="Three Card Prime Wager Rules" class="help-image" />
+                <table class="help-table sp-help-table">
+                    <tr class="sp-pt-hd"><td>Play &amp; Ante (dealer qualifies with Queen high or better)</td><td></td></tr>
+                    <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
+                    <tr><td>Dealer doesn't qualify</td><td>Ante 1 to 1, Play push</td></tr>
+                    <tr><td>Tie</td><td>Both push</td></tr>
+                    <tr class="sp-pt-hd"><td>Ante Bonus (paid with the Ante, win or lose)</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>5 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
+                    <tr><td>Straight</td><td>1 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Pair Bonus (player's 3 cards)</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
+                    <tr><td>Straight</td><td>6 to 1</td></tr>
+                    <tr><td>Flush</td><td>3 to 1</td></tr>
+                    <tr><td>Any Pair</td><td>1 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Prime (color)</td><td></td></tr>
+                    <tr><td>Player AND dealer cards same color</td><td>4 to 1</td></tr>
+                    <tr><td>Player's cards same color</td><td>3 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>All 6 (best 5 of all 6 cards)</td><td></td></tr>
+                    <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
+                    <tr><td>Straight Flush</td><td>200 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
+                    <tr><td>Full House</td><td>25 to 1</td></tr>
+                    <tr><td>Flush</td><td>20 to 1</td></tr>
+                    <tr><td>Straight</td><td>10 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
+                </table>
+                <p>A wager wins with any hand on its table; otherwise it loses (Play and Ante can also push, as above). Tap + Bonus when the Ante Bonus pays.</p>
             </HelpContent>
         </GameBar>
     </div>
