@@ -1,0 +1,214 @@
+@* End-of-session summary, shared by every practice mode (not Challenge
+   Mode, which keeps its top-5 list). Friendly and short: a headline,
+   "17 of 20 paid right", time spent, better-than-last-time, the wager or
+   hand types that went well and the ones worth another look, the latest
+   misses, and the student's step in this mode:
+   Learning -> Building consistency -> Audition ready.
+
+   Each mode's last result and step are saved in this browser
+   (localStorage "dst-progress"), only for sessions of 3+ rounds.
+   Step rules:
+     - Building consistency: a session at 75% or better
+     - Audition ready: 3 sessions in a row of 10+ rounds at 90% or better
+     - Once reached, a step is kept; only a session under 75% moves
+       Audition ready back to Building consistency *@
+
+@using System.Text.Json
+@using DealerSchoolTrainerWeb.Core
+@inject IJSRuntime JS
+
+<div class="session-summary ss">
+    <div class="ss-hero">
+        <div class="ss-msg">@Headline</div>
+        <div class="ss-big">@Correct <small>of @Rounds @RightText</small></div>
+        <div class="ss-line">@MinutesText</div>
+        @if (_upFrom is not null)
+        {
+            <div class="ss-up">▲ Up from @_upFrom last time</div>
+        }
+    </div>
+
+    @if (Log.PartCount > 1 && Log.StrongParts.Any())
+    {
+        <div class="ss-sec">
+            <h4>@ConfidentText</h4>
+            <div class="ss-pills">
+                @foreach (string p in Log.StrongParts)
+                {
+                    <span class="ss-pill ss-good">✓ @p</span>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Log.PartCount > 1 && Log.WeakParts.Any())
+    {
+        <div class="ss-sec">
+            <h4>Worth another look</h4>
+            <div class="ss-pills">
+                @foreach (var (name, misses) in Log.WeakParts)
+                {
+                    <span class="ss-pill ss-look">@name · @misses @(misses == 1 ? "miss" : "misses")</span>
+                }
+            </div>
+        </div>
+    }
+
+    @if (Log.MissCount > 0)
+    {
+        <div class="ss-sec">
+            <h4>@(Log.MissCount > SessionLog.MaxMisses ? $"Your last {SessionLog.MaxMisses} misses" : "Your misses")</h4>
+            @foreach (SessionMiss m in Log.RecentMisses)
+            {
+                <div class="ss-miss">
+                    <b>@m.Title</b>@(m.Why.Length > 0 ? " — " + m.Why : "")
+                    <div class="ss-ans">@MissLine(m)</div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="ss-sec">
+        <h4>Your progress in this mode</h4>
+        @if (Rounds < 3)
+        {
+            <div class="ss-key">Play 3 or more rounds for a session to count toward your progress.</div>
+        }
+        else if (_level is not null)
+        {
+            <div class="ss-stage">
+                <div class="ss-dots">
+                    <i class="@(_level >= 0 ? (_level == 2 ? "gold" : "on") : "")"></i>
+                    <i class="@(_level >= 1 ? (_level == 2 ? "gold" : "on") : "")"></i>
+                    <i class="@(_level == 2 ? "gold" : "")"></i>
+                </div>
+                <b>@StepName</b>
+            </div>
+            <div class="ss-key">@StepHint</div>
+        }
+    </div>
+
+    <div class="ss-btns">
+        <button class="ss-again" @onclick="OnAgain">Practice Again</button>
+        <button class="ss-done" @onclick="OnDone">Done</button>
+    </div>
+</div>
+
+@code {
+    /// <summary>Saves progress under this name, e.g. "tc-payouts".</summary>
+    [Parameter, EditorRequired] public string ModeKey { get; set; } = "";
+    [Parameter] public int Rounds { get; set; }
+    [Parameter] public int Correct { get; set; }
+    [Parameter, EditorRequired] public SessionLog Log { get; set; } = new();
+    /// <summary>"paid right", "right", ...</summary>
+    [Parameter] public string RightText { get; set; } = "right";
+    /// <summary>Heading over the parts with no misses.</summary>
+    [Parameter] public string ConfidentText { get; set; } = "You're getting these right";
+    /// <summary>Verb in a miss line: "You paid $45 · correct $60".</summary>
+    [Parameter] public string YouVerb { get; set; } = "said";
+    [Parameter] public EventCallback OnAgain { get; set; }
+    [Parameter] public EventCallback OnDone { get; set; }
+
+    private const string StorageKey = "dst-progress";
+
+    private string? _upFrom;   // "14 of 20" when this session beat the last one
+    private int? _level;       // 0 Learning, 1 Building consistency, 2 Audition ready
+    private int _streak;       // sessions in a row of 10+ rounds at 90%+
+
+    private double Pct => Rounds == 0 ? 0 : (double)Correct / Rounds;
+
+    private string Headline =>
+        Rounds > 0 && Correct == Rounds ? (Rounds >= 3 ? "Perfect session!" : "Nice start!")
+        : Pct >= 0.9 ? "Sharp work!"
+        : Pct >= 0.75 ? "Solid session!"
+        : Pct >= 0.5 ? "Good practice. Every round builds the habit."
+        : "Tough round. That's what practice is for.";
+
+    private string MinutesText
+    {
+        get
+        {
+            int min = (int)Math.Round((DateTime.Now - Log.Started).TotalMinutes);
+            return min < 1 ? "Under a minute of practice"
+                 : min == 1 ? "1 minute of practice"
+                 : $"{min} minutes of practice";
+        }
+    }
+
+    private string StepName => _level switch
+    {
+        2 => "★ Audition ready",
+        1 => "Building consistency",
+        _ => "Learning"
+    };
+
+    private string StepHint
+    {
+        get
+        {
+            if (_level == 2) return "You're there. A session now and then keeps it sharp.";
+            if (_level == 0) return "Get 3 out of every 4 right in a session to move up to Building consistency.";
+            int need = Math.Max(1, 3 - _streak);
+            string sessions = need == 1 ? "1 more session" : $"{need} more sessions";
+            return _streak > 0
+                ? $"Get 9 out of every 10 right in {sessions} in a row (10+ rounds each) to reach Audition ready."
+                : $"Get 9 out of every 10 right in 3 sessions in a row (10+ rounds each) to reach Audition ready.";
+        }
+    }
+
+    private string MissLine(SessionMiss m)
+    {
+        bool noAnswer = m.You.Length == 0 || m.You == "—" || m.You.StartsWith("Reveal");
+        if (noAnswer) return $"Answer: {m.Answer}";
+        // A payout mode where Lose / Push was marked instead of an amount
+        string verb = YouVerb == "paid" && !m.You.StartsWith("$") ? "marked" : YouVerb;
+        return $"You {verb} {m.You} · correct {m.Answer}";
+    }
+
+    private sealed class ModeProgress
+    {
+        public int R { get; set; }       // last counted session: rounds
+        public int C { get; set; }       //   and correct
+        public int Streak { get; set; }
+        public int Level { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Rounds < 3) return;
+
+        Dictionary<string, ModeProgress> all;
+        try
+        {
+            string? json = await JS.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+            all = string.IsNullOrEmpty(json)
+                ? new()
+                : JsonSerializer.Deserialize<Dictionary<string, ModeProgress>>(json) ?? new();
+        }
+        catch
+        {
+            all = new();
+        }
+
+        all.TryGetValue(ModeKey, out ModeProgress? last);
+        ModeProgress p = last ?? new ModeProgress();
+
+        if (last is not null && last.R > 0 && Pct > (double)last.C / last.R)
+            _upFrom = $"{last.C} of {last.R}";
+
+        bool qualifies = Rounds >= 10 && Pct >= 0.9;
+        p.Streak = qualifies ? p.Streak + 1 : 0;
+        if (Pct >= 0.75) p.Level = Math.Max(p.Level, 1);
+        if (p.Streak >= 3) p.Level = 2;
+        else if (p.Level == 2 && Pct < 0.75) p.Level = 1;
+        p.R = Rounds;
+        p.C = Correct;
+
+        _level = p.Level;
+        _streak = p.Streak;
+
+        all[ModeKey] = p;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", StorageKey, JsonSerializer.Serialize(all)); }
+        catch { }
+    }
+}

@@ -472,22 +472,24 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary">
-        <h3>Session Summary</h3>
-        @if (_mode == TrainerMode.Payouts)
-        {
-            <p>Rounds Played: @_hpPlayed</p>
-            <p>Correct: @_hpCorrect</p>
-            <p>Incorrect: @(_hpPlayed - _hpCorrect)</p>
-        }
-        else
-        {
-            <p>Rounds Played: @_totalRounds</p>
-            <p>Correct: @_correctCount</p>
-            <p>Incorrect: @(_totalRounds - _correctCount)</p>
-        }
-        <button @onclick="CloseSummary">OK</button>
-    </div>
+    @switch (_mode)
+    {
+        case TrainerMode.Payouts:
+            <SessionSummary ModeKey="hd-payouts" Rounds="_hpPlayed" Correct="_hpCorrect" Log="_log"
+                            RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+        case TrainerMode.SettleBets:
+            <SessionSummary ModeKey="hd-settle" Rounds="_totalRounds" Correct="_correctCount" Log="_log"
+                            RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+        default:
+            <SessionSummary ModeKey="hd-identify" Rounds="_totalRounds" Correct="_correctCount" Log="_log"
+                            RightText="read right" ConfidentText="You're reading these with confidence" YouVerb="picked"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+    }
 }
 
 @code {
@@ -706,8 +708,21 @@ else
     private int SbRotatedCount =>
         (_dealerCard1Rotated ? 1 : 0) + (_dealerCard2Rotated ? 1 : 0) + _communityRotated.Count(r => r);
 
+    // What happened this session, for the summary (Shared/SessionSummary)
+    private SessionLog _log = new();
+
+    // End-of-session summary's Practice Again: a fresh session of the same
+    // mode, back at the top of the page (as if started from the start screen)
+    private void PracticeAgain()
+    {
+        _showSessionSummary = false;
+        StartGame();
+        _lastRenderedStarted = false;
+    }
+
     private void StartGame()
     {
+        _log = new SessionLog();
         if (_mode == TrainerMode.Payouts)
         {
             _started = true;
@@ -887,6 +902,7 @@ else
         _rows.Clear();
         _handRankLines.Add(($"Dealer: {HandEvaluator.DescribeHand(DealerPool())}", "txt-bad"));
         _rows.Add(new BreakdownRow("Dealer's hand", "Revealed", HandEvaluator.HandRankName(_revealRank), false, DealerHandWhy()));
+        _log.AddRows(_rows, r => r.Answer);
 
         string pct = ((double)_correctCount / _totalRounds).ToString("0.0%");
         _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
@@ -984,6 +1000,7 @@ else
         _rows.Add(new BreakdownRow("Dealer's hand", RankComboItems[_dealerRankIndex], HandEvaluator.HandRankName(bestRank), rankCorrect, DealerHandWhy()));
 
         bool allCorrect = rankCorrect;
+        _log.AddRows(_rows, r => r.Answer);
 
         _totalRounds++;
         if (allCorrect) _correctCount++;
@@ -1071,6 +1088,7 @@ else
             _rows.Add(new BreakdownRow($"Hand {h + 1}", $"{hand.WagerSelection}", $"{actualOutcome}", !hand.WagerWrong, hand.Reason));
         }
         _handRankLines.Insert(0, ($"Dealer: {dealerDesc}", "txt-ok"));
+        _log.AddRows(_rows, r => r.Answer switch { "Win" => "Player wins", "Lose" => "Dealer wins", _ => "Pushes" });
         // The per-hand lines below already say who won and why
         _mistakesText = string.Empty;
 
@@ -1311,6 +1329,7 @@ else
             _hpRows.Add(new BreakdownRow(HdPayoutRound.Names[i], HpEnteredMoney(i), HpPayMoney(pay), _hpOk[i], _hpRound.Why[i]));
         }
 
+        _log.AddRows(_hpRows);
         _hpPlayed++;
         if (_hpOk.All(o => o)) _hpCorrect++;
 

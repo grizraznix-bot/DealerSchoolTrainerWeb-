@@ -540,34 +540,29 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary">
-        <h3>Session Summary</h3>
-        @if (_mode == BlackjackMode.FlashCards)
-        {
-            <p>Rounds Played: @_fcRoundsPlayed</p>
-            <p>Correct: @_fcRoundsCorrect</p>
-            <p>Incorrect: @(_fcRoundsPlayed - _fcRoundsCorrect)</p>
-        }
-        else if (_mode == BlackjackMode.Payouts)
-        {
-            <p>Rounds Played: @_poTotalRounds</p>
-            <p>Correct: @_poCorrectCount</p>
-            <p>Incorrect: @(_poTotalRounds - _poCorrectCount)</p>
-        }
-        else if (_mode == BlackjackMode.SidePayouts)
-        {
-            <p>Rounds Played: @_spPlayed</p>
-            <p>Correct: @_spCorrect</p>
-            <p>Incorrect: @(_spPlayed - _spCorrect)</p>
-        }
-        else
-        {
-            <p>Rounds Played: @_swTotalAnswered</p>
-            <p>Correct: @_swTotalCorrect</p>
-            <p>Incorrect: @(_swTotalAnswered - _swTotalCorrect)</p>
-        }
-        <button @onclick="CloseSummary">OK</button>
-    </div>
+    @switch (_mode)
+    {
+        case BlackjackMode.FlashCards:
+            <SessionSummary ModeKey="bj-flashcards" Rounds="_fcRoundsPlayed" Correct="_fcRoundsCorrect" Log="_log"
+                            RightText="right" ConfidentText="You're counting these with confidence" YouVerb="said"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+        case BlackjackMode.Payouts:
+            <SessionSummary ModeKey="bj-payouts" Rounds="_poTotalRounds" Correct="_poCorrectCount" Log="_log"
+                            RightText="paid right" YouVerb="paid"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+        case BlackjackMode.SidePayouts:
+            <SessionSummary ModeKey="bj-sidepayouts" Rounds="_spPlayed" Correct="_spCorrect" Log="_log"
+                            RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+        default:
+            <SessionSummary ModeKey="bj-sidewagers" Rounds="_swTotalAnswered" Correct="_swTotalCorrect" Log="_log"
+                            RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+    }
 }
 
 @code {
@@ -620,9 +615,22 @@ else
         _started = false;
     }
 
+    // End-of-session summary's Practice Again: a fresh session of the same
+    // mode, back at the top of the page (as if started from the start screen)
+    private void PracticeAgain()
+    {
+        _showSessionSummary = false;
+        StartGame();
+        _lastRenderedStarted = false;
+    }
+
+    // What happened this session, for the summary (Shared/SessionSummary)
+    private SessionLog _log = new();
+
     private void StartGame()
     {
         _started = true;
+        _log = new SessionLog();
 
         switch (_mode)
         {
@@ -705,6 +713,7 @@ else
 
         _fcRoundHasMistake = false;
         _fcMissCount = 0;
+        _fcCardLogged = false;
         _fcShowReveal = false;
         _fcFeedbackText = string.Empty;
         _fcNewRoundEnabled = false;
@@ -753,6 +762,7 @@ else
         }
         else
         {
+            FcLog(false, "BUST");
             _fcRoundHasMistake = true;
             _fcAnswerText = string.Empty;
             _fcFeedbackText = "INCORRECT \u2014 not a bust. Try again.";
@@ -805,6 +815,8 @@ else
             isCorrect = enteredValue == actualTotal;
         }
 
+        FcLog(isCorrect, enteredValue.ToString());
+
         if (!isCorrect)
         {
             _fcRoundHasMistake = true;
@@ -839,8 +851,31 @@ else
     private void FcReveal()
     {
         if (!_fcSubmitEnabled) return;
+        FcLog(false, "Revealed");
         _fcRoundHasMistake = true;
         _fcShowReveal = true;
+    }
+
+    // Session summary: the first answer on each card counts -- by type
+    // (hard / soft / bust), and a miss shows the cards and the total
+    private bool _fcCardLogged;
+
+    private void FcLog(bool ok, string you)
+    {
+        if (_fcCardLogged) return;
+        _fcCardLogged = true;
+
+        string part = _fcHand.IsBust ? "Busts" : _fcHand.IsSoft ? "Soft totals" : "Hard totals";
+        _log.Part(part, ok);
+        if (ok) return;
+
+        var cards = string.Join(" ", Enumerable.Range(0, _fcHand.Count)
+            .Select(i => SideWagerPayouts.Short(_fcHand.CardAt(i))));
+        string answer = _fcHand.IsBlackjack ? "21 (Blackjack)"
+            : _fcHand.IsBust ? $"BUST ({_fcHand.Total})"
+            : _fcHand.IsSoft ? $"{_fcHand.Total} soft ({_fcHand.HardTotal} hard)"
+            : $"{_fcHand.Total}";
+        _log.Miss(cards, "", you, answer);
     }
 
     // Closing the pop-up moves the hand on exactly as a right answer would
@@ -891,6 +926,7 @@ else
         else if (_fcHand.MustHit(FcHitSoft17))
         {
             _fcHand.AddCard(_fcShoe.Draw());
+            _fcCardLogged = false;
             _fcShowHint = _fcHand.HasAce;
             _fcPromptText = "Dealer hits. What's the new total?";
             _fcAnswerEnabled = true;
@@ -1040,6 +1076,9 @@ else
         }
         else
         {
+            _log.Miss(_poRatio == PayoutRatio.ThreeToTwo ? "Blackjack, 3 to 2" : "Blackjack, 6 to 5",
+                PayoutWager.ExplainPayout(_poWagerCents, _poRatio),
+                PayoutWager.FormatShort(userCents), PayoutWager.FormatShort(correctCents));
             _poIsCorrect = false;
             _poPromptText = $"INCORRECT \u2014 you entered {PayoutWager.FormatShort(userCents)}";
             _poPromptDetailText = PayoutWager.ExplainPayout(_poWagerCents, _poRatio);
@@ -1211,6 +1250,7 @@ else
             SpEnteredMoney(1), SpAnswerMoney(correct[1]), _spOk[1],
             SideWagerPayouts.WhyLuckyLadies(_spRound)));
 
+        _log.AddRows(_spRows);
         _spPlayed++;
         if (_spOk[0] && _spOk[1]) _spCorrect++;
 
@@ -1443,6 +1483,9 @@ else
                 hand.TwentyOnePlus3Selection == tcActual,
                 $"With the dealer's up card: {tcName}."));
         }
+
+        // Summary parts by wager ("Hand 2 Lucky Ladies" counts as Lucky Ladies)
+        _log.AddRows(_swRows, r => r.Name.EndsWith("Lucky Ladies") ? "Lucky Ladies" : "21 + 3");
 
         if (roundCorrect == _swHandCount * 2)
         {

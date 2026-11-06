@@ -545,28 +545,24 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary">
-        <h3>Session Summary</h3>
-        @if (_mode == PaiGowMode.HandSetting)
-        {
-            <p>Rounds Played: @_hsTotalRounds</p>
-            <p>Correct: @_hsCorrectCount</p>
-            <p>Incorrect: @(_hsTotalRounds - _hsCorrectCount)</p>
-        }
-        else if (_mode == PaiGowMode.Payouts)
-        {
-            <p>Rounds Played: @_ppPlayed</p>
-            <p>Correct: @_ppCorrect</p>
-            <p>Incorrect: @(_ppPlayed - _ppCorrect)</p>
-        }
-        else
-        {
-            <p>Rounds Played: @_sbTotalRounds</p>
-            <p>Correct: @_sbCorrectCount</p>
-            <p>Incorrect: @(_sbTotalRounds - _sbCorrectCount)</p>
-        }
-        <button @onclick="CloseSummary">OK</button>
-    </div>
+    @switch (_mode)
+    {
+        case PaiGowMode.HandSetting:
+            <SessionSummary ModeKey="pg-handsetting" Rounds="_hsTotalRounds" Correct="_hsCorrectCount" Log="_log"
+                            RightText="set right" ConfidentText="You're setting these with confidence" YouVerb="set"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+        case PaiGowMode.Payouts:
+            <SessionSummary ModeKey="pg-payouts" Rounds="_ppPlayed" Correct="_ppCorrect" Log="_log"
+                            RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+        default:
+            <SessionSummary ModeKey="pg-settling" Rounds="_sbTotalRounds" Correct="_sbCorrectCount" Log="_log"
+                            RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
+                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            break;
+    }
 }
 
 @code {
@@ -718,9 +714,22 @@ else
         _started = false;
     }
 
+    // What happened this session, for the summary (Shared/SessionSummary)
+    private SessionLog _log = new();
+
+    // End-of-session summary's Practice Again: a fresh session of the same
+    // mode, back at the top of the page (as if started from the start screen)
+    private void PracticeAgain()
+    {
+        _showSessionSummary = false;
+        StartGame();
+        _lastRenderedStarted = false;
+    }
+
     private void StartGame()
     {
         _started = true;
+        _log = new SessionLog();
 
         if (_mode == PaiGowMode.HandSetting)
         {
@@ -949,6 +958,7 @@ else
         _hsRows.Add(new BreakdownRow("High hand", result.UserHighDescription, result.CorrectHighDescription, highOk,
             result.IsFoul ? "Your Low hand outranks your High hand: that's a foul." : ""));
 
+        _log.AddRows(_hsRows);
         _hsResultIsCorrect = result.IsCorrect;
         _hsResultText = result.IsCorrect ? "CORRECT"
             : result.IsFoul ? "INCORRECT \u2014 foul" : "INCORRECT";
@@ -1328,6 +1338,10 @@ else
     // Hand labels under the cards, and the buttons, once a round is scored
     private void SbFinishRound()
     {
+        // Summary: graded lines only (not the answer-only lines shown when
+        // a good hand was wrongly marked Foul)
+        _log.AddRows(_sbRows.Where(r => r.You != "\u2014"));
+
         string pct = _sbTotalRounds > 0
             ? ((double)_sbCorrectCount / _sbTotalRounds).ToString("0.0%")
             : "0.0%";
@@ -1553,6 +1567,7 @@ else
             _ppRows.Add(new BreakdownRow(PgPayoutRound.Names[i], PpEnteredMoney(i), PpPayMoney(pay), _ppOk[i], _ppRound.Why[i]));
         }
 
+        _log.AddRows(_ppRows);
         _ppPlayed++;
         if (_ppOk.All(o => o)) _ppCorrect++;
 

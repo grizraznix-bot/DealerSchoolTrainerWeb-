@@ -155,13 +155,10 @@ else
 
 @if (_showSessionSummary)
 {
-    <div class="session-summary">
-        <h3>Session Summary</h3>
-        <p>Rounds Played: @_played</p>
-        <p>Correct: @_correct</p>
-        <p>Incorrect: @(_played - _correct)</p>
-        <button @onclick="CloseSummary">OK</button>
-    </div>
+    @* Progress is kept per level (Beginner / Intermediate / Advanced) *@
+    <SessionSummary ModeKey="@($"rl-{_level.ToString().ToLowerInvariant()}")" Rounds="_played" Correct="_correct" Log="_log"
+                    RightText="paid right" YouVerb="said"
+                    OnAgain="PracticeAgain" OnDone="CloseSummary" />
 }
 
 @code {
@@ -231,8 +228,21 @@ else
         GameReset.ResetRequested -= OnResetRequested;
     }
 
+    // What happened this session, for the summary (Shared/SessionSummary)
+    private SessionLog _log = new();
+
+    // End-of-session summary's Practice Again: a fresh session at the same
+    // level, back at the top of the page (as if started from the start screen)
+    private void PracticeAgain()
+    {
+        _showSessionSummary = false;
+        StartGame();
+        _lastRenderedStarted = false;
+    }
+
     private void StartGame()
     {
+        _log = new SessionLog();
         _correct = 0;
         _played = 0;
         _showKeypad = false;
@@ -279,6 +289,14 @@ else
         _isCorrect = entered == _correctTotal;
         _played++;
         if (_isCorrect) _correct++;
+        else
+        {
+            // Summary: the board's math, e.g. "2×35 + 1×17 + 3×8 = 111"
+            var parts = _wagers.OrderByDescending(w => w.Spot.Pays).ThenBy(w => w.Spot.Order)
+                               .Select(w => $"{w.Chips}×{w.Spot.Pays}");
+            _log.Miss($"{_wagers.Count} winning wagers", $"{string.Join(" + ", parts)} = {_correctTotal}",
+                $"{entered}", $"{_correctTotal} chips");
+        }
         _answered = true;
         _focusNext = true;
     }

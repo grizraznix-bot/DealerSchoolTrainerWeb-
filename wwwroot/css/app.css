@@ -5276,3 +5276,184 @@ body {
         display: none;
     }
 }
+
+/* ------------------------------------------------------------------
+   End-of-session summary (Shared/SessionSummary): friendly headline,
+   score, what went well, what's worth another look, latest misses and
+   the student's step in the mode. Replaces the old gray box.
+   ------------------------------------------------------------------ */
+.session-summary.ss {
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+    border: 0;
+    background: none;
+}
+
+.ss-hero {
+    background-color: var(--c-info-bg);
+    border: 1px solid var(--c-info-line);
+    border-radius: 14px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.ss-msg {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.ss-big {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--c-ok);
+    line-height: 1.1;
+}
+
+.ss-big small {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #223;
+}
+
+.ss-line {
+    font-size: 0.9rem;
+    color: #334;
+    margin-top: 0.35rem;
+}
+
+.ss-up {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 3px 10px;
+    border-radius: 99px;
+    background-color: #e3f4ea;
+    color: #1e8a4c;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.ss-sec {
+    margin-top: 0.9rem;
+}
+
+.ss-sec h4 {
+    margin: 0 0 0.4rem 0;
+    font-size: 0.9rem;
+    color: #223;
+}
+
+.ss-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ss-pill {
+    border-radius: 99px;
+    padding: 4px 12px;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.ss-good {
+    background-color: #e3f4ea;
+    color: #1e8a4c;
+}
+
+.ss-look {
+    background-color: var(--c-gold-bg);
+    border: 1px solid var(--c-gold-line);
+    color: #6a5200;
+}
+
+.ss-miss {
+    border: 1px solid var(--c-line);
+    border-radius: 10px;
+    padding: 7px 10px;
+    margin-bottom: 6px;
+    font-size: 0.86rem;
+}
+
+.ss-miss b {
+    color: #223;
+}
+
+.ss-ans {
+    color: var(--c-muted);
+    margin-top: 2px;
+}
+
+.ss-stage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+}
+
+.ss-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.ss-dots i {
+    display: block;
+    width: 30px;
+    height: 8px;
+    border-radius: 4px;
+    background-color: #d6dce4;
+}
+
+.ss-dots i.on {
+    background-color: var(--c-primary);
+}
+
+.ss-dots i.gold {
+    background-color: #d4a017;
+}
+
+.ss-key {
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    color: var(--c-muted);
+    line-height: 1.4;
+}
+
+.ss-btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 1rem;
+}
+
+.content .ss-btns button {
+    flex: 1 1 0;
+    min-height: 44px;
+    padding: 0.55rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.content .ss-btns .ss-again {
+    background-color: var(--c-primary);
+    border: 1px solid var(--c-primary-dark);
+    color: white;
+}
+
+.content .ss-btns .ss-done {
+    background-color: white;
+    border: 1px solid var(--c-border);
+    color: var(--c-text);
+}
+
+/* Wide windows, payout modes: the game column is shifted left to make
+   room for the pay tables beside it; the summary follows the column so
+   the pay tables don't sit on top of it */
+@media (min-width: 1120px) {
+    .play-screen.sp-screen ~ .session-summary.ss {
+        position: relative;
+        left: calc(-1 * (220px + 1.5rem) / 2);
+    }
+}
