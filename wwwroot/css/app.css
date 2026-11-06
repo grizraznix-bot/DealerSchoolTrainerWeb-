@@ -4790,6 +4790,54 @@ body {
     }
 }
 
+/* Phones: the space under the keypad goes to the felt -- cards at the
+   desktop size (75px, the same as Side Wagers), with the dealer and the
+   player spread apart across the felt */
+@media (max-width: 768px) {
+    .sp-felt {
+        justify-content: space-around;
+    }
+
+    .sp-card {
+        width: 75px;
+        height: 105px;
+    }
+
+    .sp-dealer {
+        width: 120px;
+        height: 120px;
+    }
+
+    .sp-dealer .sp-hole {
+        left: 42px;
+        top: 12px;
+    }
+
+    .sp-holetag {
+        left: 54px;
+    }
+}
+
+/* Side Wager Payouts: the wager name takes the room it needs, so the
+   payout box can't cover "Lucky Ladies"; the minimum keeps both rows'
+   payout boxes lined up */
+.swp-screen .sp-wname {
+    width: auto;
+    min-width: 6rem;
+}
+
+@media (max-width: 768px) {
+    .swp-screen .sp-wname {
+        min-width: 5.8rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .swp-screen .sp-wname {
+        min-width: 5.2rem;
+    }
+}
+
 /* Short phones (iPhone SE and similar): smaller cards, so the wager
    box above the keypad keeps room for its rows */
 @media (max-width: 768px) and (max-height: 620px) {
