@@ -42,9 +42,9 @@ public static class HandEvaluator
     /// <summary>
     /// The best 5-card hand from a pool (5, 6 or 7 cards), described the
     /// way a dealer calls it, with the kickers that can decide a tie:
-    /// "Two Pair, Kings and 7s, A kicker", "Pair of Jacks, A-K-9
-    /// kickers", "Full House, 8s full of 3s", "Straight, 5 high" (the
-    /// wheel), "Flush, A-Q-9-6-2", "Royal Flush".
+    /// "Two Pair, K's and 7's, A kicker", "Pair of J's, A-K-9 kickers",
+    /// "Full House, 8's full of 3's", "Straight, 5 high" (the wheel),
+    /// "Flush, A-Q-9-6-2", "K high, J-8-6-2", "Royal Flush".
     /// </summary>
     public static string DescribeHand(IReadOnlyList<Card> pool)
     {
@@ -73,7 +73,7 @@ public static class HandEvaluator
             HandRank.ThreeOfAKind => $"Three {PluralRank(order[0])}, {Kickers(order.Skip(1))} kickers",
             HandRank.TwoPair => $"Two Pair, {PluralRank(order[0])} and {PluralRank(order[1])}, {ShortRank(order[2])} kicker",
             HandRank.Pair => $"Pair of {PluralRank(order[0])}, {Kickers(order.Skip(1))} kickers",
-            _ => $"{FullRank(order[0])} high, {Kickers(order.Skip(1))}"
+            _ => $"{ShortRank(order[0])} high, {Kickers(order.Skip(1))}"
         };
     }
 
@@ -86,16 +86,8 @@ public static class HandEvaluator
         _ => r.ToString()
     };
 
-    private static string FullRank(int r) => r switch
-    {
-        14 => "Ace",
-        13 => "King",
-        12 => "Queen",
-        11 => "Jack",
-        _ => r.ToString()
-    };
-
-    private static string PluralRank(int r) => FullRank(r) + "s";
+    // Ranks as dealers write them, all one style: "A's", "K's", "10's", "3's"
+    private static string PluralRank(int r) => ShortRank(r) + "'s";
 
     /// <summary>Best 5-card hand category from a 7-card set (2 hole + 5 community).</summary>
     public static HandRank BestHandRank(IReadOnlyList<Card> cards)
