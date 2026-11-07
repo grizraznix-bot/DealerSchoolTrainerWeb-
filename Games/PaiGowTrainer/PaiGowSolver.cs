@@ -264,14 +264,8 @@ public sealed class PaiGowSolver
             : $"Three {RankPlural(trip)}: keep them together in the High hand; the two highest other cards go Low.";
     }
 
-    private static string RankPlural(int rank) => rank switch
-    {
-        14 => "Aces",
-        13 => "Kings",
-        12 => "Queens",
-        11 => "Jacks",
-        _ => $"{rank}s"
-    };
+    // Ranks as dealers write them, the same style as Hold'em: "A's", "10's"
+    private static string RankPlural(int rank) => RankNamePlural(rank);
 
     /// <summary>
     /// Grades a user's submitted Low/High split against the House Way.
@@ -1667,12 +1661,12 @@ public sealed class PaiGowSolver
             10 => "Five Aces",
             9 => "Royal Flush",
             8 => "Straight Flush",
-            7 => $"Four of a Kind — {DescribeGroupRank(indexes, 4)}",
+            7 => $"Four of a Kind, {DescribeGroupRank(indexes, 4)}",
             6 => "Full House",
-            5 => $"Flush — {HighestFiveCardRankName(indexes)} high",
+            5 => $"Flush, {HighestFiveCardRankName(indexes)} high",
             4 => "Straight",
-            3 => $"Three of a Kind — {DescribeGroupRank(indexes, 3)}",
-            2 => $"Two Pair — {DescribeTwoPairs(indexes)}",
+            3 => $"Three of a Kind, {DescribeGroupRank(indexes, 3)}",
+            2 => $"Two Pair, {DescribeTwoPairs(indexes)}",
             1 => $"Pair of {DescribeGroupRank(indexes, 2)}",
             _ => $"{HighestFiveCardRankName(indexes)} high"
         };
@@ -1728,17 +1722,12 @@ public sealed class PaiGowSolver
         return RankNameSingular(highest);
     }
 
-    private static string RankNamePlural(int rank) => rank switch
-    {
-        14 => "Aces", 13 => "Kings", 12 => "Queens", 11 => "Jacks", 10 => "Tens",
-        9 => "Nines", 8 => "Eights", 7 => "Sevens", 6 => "Sixes", 5 => "Fives",
-        4 => "Fours", 3 => "Threes", 2 => "Twos", _ => "Unknown"
-    };
+    // "A's", "K's", "10's", "7's" -- the same style as the Hold'em hand calls
+    private static string RankNamePlural(int rank) => RankNameSingular(rank) + "'s";
 
     private static string RankNameSingular(int rank) => rank switch
     {
-        14 => "Ace", 13 => "King", 12 => "Queen", 11 => "Jack", 10 => "Ten",
-        9 => "Nine", 8 => "Eight", 7 => "Seven", 6 => "Six", 5 => "Five",
-        4 => "Four", 3 => "Three", 2 => "Two", _ => "Unknown"
+        14 => "A", 13 => "K", 12 => "Q", 11 => "J",
+        >= 2 and <= 10 => rank.ToString(), _ => "?"
     };
 }

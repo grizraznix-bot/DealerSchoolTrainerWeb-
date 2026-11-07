@@ -126,10 +126,10 @@ public static class PaiGowPayouts
             int top = hasJoker ? 14 : playerCards.Max(c => c.RankOrder);
             (int to1, string name) = top switch
             {
-                14 => (3, "Ace high"),
-                13 => (5, "King high"),
-                12 => (6, "Queen high"),
-                11 => (15, "Jack high"),
+                14 => (3, "A high"),
+                13 => (5, "K high"),
+                12 => (6, "Q high"),
+                11 => (15, "J high"),
                 10 => (25, "10 high"),
                 _ => (100, "9 high")
             };
