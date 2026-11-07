@@ -5837,6 +5837,55 @@ body {
     transform: translateY(6px);
 }
 
+/* Hold'em Identify the Hands: larger cards (board up to 66px, fitting 5
+   across any phone; dealer 80px; desktop 75 / 90), tappable to mark the
+   2 the dealer doesn't use; after a miss, a red outline on the cards that
+   should have played */
+.id-felt .cr-board img {
+    width: min(66px, calc((100vw - 74px) / 5));
+    height: auto;
+    aspect-ratio: 5 / 7;
+}
+
+.id-felt .cr-mid img {
+    width: 80px;
+    height: 112px;
+}
+
+@media (min-width: 769px) {
+    .id-felt .cr-board img {
+        width: 75px;
+    }
+
+    .id-felt .cr-mid img {
+        width: 90px;
+        height: 126px;
+    }
+}
+
+.felt.id-felt {
+    gap: 8px;
+    padding-top: 10px;
+    padding-bottom: 16px;
+}
+
+.id-felt img.id-tap {
+    cursor: pointer;
+}
+
+.id-felt img.id-wrong {
+    outline: 3px solid #c80000;
+    outline-offset: 1px;
+}
+
+.id-caption {
+    margin: 0.5rem 0 0 0;
+    text-align: center;
+    color: #555;
+    font-style: italic;
+    font-size: 0.95rem;
+}
+
 /* Pai Gow Settling Bets felt: player on top, dealer at the bottom, Low
    beside High. Card width fits Low (2 cards) + High (5 cards) at 25%
    overlap across the felt: 56px on most phones, smaller on narrow ones,

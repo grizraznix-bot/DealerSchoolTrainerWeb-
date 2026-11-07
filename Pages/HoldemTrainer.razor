@@ -17,7 +17,7 @@
            Settle the Bets allows 1-6 player hands, defaulting to 1. *@
         <div class="mode-list">
             <ModeCard Title="Identify the Hands"
-                      Description="The 5 community cards and the dealer's 2 cards are dealt. Set the hand by tapping the 2 cards that are NOT part of the dealer's best 5-card hand. Once it's right, pick the hand's rank, then Submit."
+                      Description="The board and the dealer's 2 cards are dealt. Tap the 2 cards that are NOT part of the dealer's best 5-card hand, then Submit."
                       Expanded="@IsModeOpen(TrainerMode.IdentifyHands)"
                       OnToggle="() => ToggleMode(TrainerMode.IdentifyHands)"
                       OnStart="StartGame" />
@@ -409,102 +409,54 @@ else
 
         <GameStatus Title="Identify the Hands" Correct="_correctCount" Played="_totalRounds" />
 
-        @* On phones (see app.css, "Heads-Up Hold'em") this table becomes a
-           single column: the current player hand (Settle the Bets only),
-           community cards, dealer cards, the rank picker (Identify the
-           Hands only), Submit/Deal/End Session, then the feedback. The
-           fixed 900px width and the side-positioned feedback apply on
-           desktop only. *@
-        <div class="hd-table hd-settle @(_mode == TrainerMode.IdentifyHands ? "hd-identify" : "")">
-
-        <!-- Community cards are centered within a fixed 900px-wide
-             reference (the width of a full 6-hand row), so their
-             position stays stable regardless of how many hands are
-             dealt. The dealer's two cards sit in a second row below. A
-             card marked unused by the dealer is turned 45 degrees on
-             desktop, dropped and darkened on phones. Identify the Hands:
-             the trainee taps to mark the 2 unused cards. Settle the Bets:
-             the dealer's best hand comes already marked. -->
-        <div class="hd-center">
-            @* On the felt: the community cards and the dealer's cards *@
-            <div class="hd-board felt">
-            <h3 class="hd-community-title">Community Cards</h3>
-            <div class="hd-community hd-community-settle">
+        @* One stage: the board on top, the dealer's 2 cards below (the
+           same felt as the other Hold'em modes). Tap the 2 cards the dealer
+           doesn't use -- they dim and drop; tap again to un-mark -- then
+           Submit. Graded on the cards: a wrong pair is a miss. After a miss
+           the right 2 are dimmed and any card that should have played is
+           outlined red. The feedback gives the hand the way a dealer calls
+           it, e.g. "Two Pair, Aces and 4s, K kicker". *@
+        <div class="felt cr-felt id-felt">
+            <div class="cr-cap">BOARD</div>
+            <div class="cr-lane cr-board">
                 @for (int i = 0; i < _community.Length; i++)
                 {
                     int communityIndex = i;
                     Card? c = _community[communityIndex];
-                    bool unused = _communityRotated[communityIndex];
-
-                    <div class="hd-community-slot">
-                        <img src="images/cards/@(c?.Code).png" alt="@c?.Name"
-                             @onclick="() => ToggleCommunityRotation(communityIndex)"
-                             class="pai-gow-card hd-card @(unused ? "hd-card-unused" : "") @(CanMarkCards ? "hd-tappable" : "")" />
-                    </div>
+                    <img src="images/cards/@(c?.Code).png" alt="@c?.Name"
+                         @onclick="() => ToggleCommunityRotation(communityIndex)"
+                         class="@(_communityRotated[communityIndex] ? "cr-unused" : "") @(IdWrongDrop(c) ? "id-wrong" : "") @(CanMarkCards ? "id-tap" : "")" />
                 }
             </div>
-
-            <h3 class="hd-dealer-title">Dealer</h3>
-            <div class="hd-dealer">
+            <div class="cr-sep"></div>
+            <div class="cr-cap">DEALER</div>
+            <div class="cr-lane cr-mid">
                 <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Name"
                      @onclick="() => ToggleDealerCard(1)"
-                     class="pai-gow-card hd-card @(_dealerCard1Rotated ? "hd-card-unused" : "") @(CanMarkCards ? "hd-tappable" : "")" />
+                     class="@(_dealerCard1Rotated ? "cr-unused" : "") @(IdWrongDrop(_dealerCard1) ? "id-wrong" : "") @(CanMarkCards ? "id-tap" : "")" />
                 <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Name"
                      @onclick="() => ToggleDealerCard(2)"
-                     class="pai-gow-card hd-card @(_dealerCard2Rotated ? "hd-card-unused" : "") @(CanMarkCards ? "hd-tappable" : "")" />
+                     class="@(_dealerCard2Rotated ? "cr-unused" : "") @(IdWrongDrop(_dealerCard2) ? "id-wrong" : "") @(CanMarkCards ? "id-tap" : "")" />
             </div>
-            </div>
-
-            @* Identify the Hands: until the right 2 cards are marked, a
-               caption in place of the rank picker; once they are, the cards
-               lock and the rank picker appears. *@
-            @if (_mode == TrainerMode.IdentifyHands && !_dealerHandSet)
-            {
-                <p class="hd-set-caption @(SbRotatedCount == 2 ? "hd-set-caption-wrong" : "")">
-                    @(SbRotatedCount == 2
-                        ? "Not the dealer's best hand -- adjust your cards."
-                        : "Set the Hand to continue: tap the 2 cards that are NOT part of the dealer's best hand.")
-                </p>
-            }
-            else if (_mode == TrainerMode.IdentifyHands)
-            {
-                <div class="hd-rank-row">
-                    <label for="hd-rank">Dealer's hand:</label>
-                    <select id="hd-rank" @bind="_dealerRankIndex" disabled="@_roundScored"
-                            class="@(_dealerRankWrong ? "rank-wrong" : (_dealerRankIndex > 0 ? "rank-picked" : ""))">
-                        @for (int i = 0; i < RankComboItems.Length; i++)
-                        {
-                            <option value="@i">@RankComboItems[i]</option>
-                        }
-                    </select>
-                </div>
-            }
         </div>
 
-        <!-- Desktop: with player hands showing, the feedback sits at the
-             "next" hand slot to the right of the hands (each hand column
-             is 130px wide plus a 24px gap, so N hands take N*154px), top
-             aligned with the player cards (~36px down). With no player
-             hands (Identify the Hands) it sits below the rank picker instead
-             (hd-feedback-inline). Phones always show it below. -->
-        <div class="feedback-area hd-feedback @(PlayersVisible ? "" : "hd-feedback-inline")" style="--hd-feedback-left: @(_hands.Count * 154)px;">
+        <div class="feedback-area">
             @if (_roundScored)
             {
-                @* After Submit: the dealer's hand / each player hand with the
-                   right answer and why *@
                 <ResultBreakdown ResultText="@_resultText" IsCorrect="_isCorrect" Rows="_rows" />
             }
-            else if (_resultText.Length > 0)
+            else
             {
-                <div class="result-line txt-bad">@_resultText</div>
+                <p class="id-caption">@(SbRotatedCount == 2
+                    ? "2 cards marked. Tap a card again to change it, or Submit."
+                    : "Tap the 2 cards the dealer doesn't use, then Submit.")</p>
             }
-        </div>
         </div>
 
         @if (_showReveal)
         {
             <RevealPopup Title="Dealer's Hand" OnClose="() => _showReveal = false">
-                <p class="reveal-answer">@HandEvaluator.HandRankName(_revealRank)</p>
+                <p class="reveal-answer">@HandEvaluator.DescribeHand(DealerPool())</p>
                 <p><strong>Best 5 cards:</strong>
                     @foreach (Card c in OrderForShow(_revealBest))
                     {
@@ -535,7 +487,7 @@ else
                         <button class="reveal-button" @onclick="RevealIdentify">Reveal</button>
                     }
                     <button class="game-bar-main" @onclick="SubmitAndShow"
-                            disabled="@(!(_submitEnabled && (_mode == TrainerMode.IdentifyHands ? _dealerHandSet : AllHandsAnswered)))">Submit</button>
+                            disabled="@(!(_submitEnabled && (_mode == TrainerMode.IdentifyHands ? SbRotatedCount == 2 : AllHandsAnswered)))">Submit</button>
                 }
                 else
                 {
@@ -698,21 +650,6 @@ else
 
     private enum TrainerMode { IdentifyHands, SettleBets, Payouts }
 
-    private static readonly string[] RankComboItems =
-    {
-        "Select Rank",
-        "High Card",
-        "Pair",
-        "Two Pair",
-        "Three of a Kind",
-        "Straight",
-        "Flush",
-        "Full House",
-        "Four of a Kind",
-        "Straight Flush",
-        "Royal Flush"
-    };
-
     private sealed class HandState
     {
         public Card Card1 = null!;
@@ -777,22 +714,12 @@ else
     private bool _dealerCard2Rotated;
     private readonly bool[] _communityRotated = new bool[CommunityCount];
 
-    // Identify the Hands: the rank picked for the dealer hand (0 =
-    // unselected, 1-10 matches HandRank) and whether it was wrong.
-    private int _dealerRankIndex;
-    private bool _dealerRankWrong;
-
     // Player hands show in Settle the Bets only.
     private bool PlayersVisible => _mode == TrainerMode.SettleBets;
 
-    // Identify the Hands: set once the trainee's 2 marked cards leave the
-    // dealer's best hand (checked after every tap -- no Submit needed).
-    // The cards then lock and the rank picker appears.
-    private bool _dealerHandSet;
-
-    // Only Identify the Hands lets the trainee mark cards, until the hand
-    // is set. Settle the Bets deals the dealer hand already set.
-    private bool CanMarkCards => _mode == TrainerMode.IdentifyHands && !_dealerHandSet && !_roundScored;
+    // Only Identify the Hands lets the trainee mark cards, until Submit.
+    // Settle the Bets deals the dealer hand already set.
+    private bool CanMarkCards => _mode == TrainerMode.IdentifyHands && !_roundScored;
 
     // How many of the 7 dealer cards (2 dealer + 5 community) are marked
     // unused. Identify the Hands can only be submitted with exactly 2.
@@ -859,9 +786,7 @@ else
         Array.Clear(_communityRotated);
         _dealerCard1Rotated = false;
         _dealerCard2Rotated = false;
-        _dealerRankIndex = 0;
-        _dealerRankWrong = false;
-        _dealerHandSet = false;
+        _idWrongDrops.Clear();
 
         _dealerCard1 = _deck.Draw();
         _dealerCard2 = _deck.Draw();
@@ -899,31 +824,38 @@ else
         hand.WagerWrong = false;
     }
 
+    // Identify the Hands: tap marks / un-marks a card; at most 2 marked
     private void ToggleCommunityRotation(int index)
     {
         if (!CanMarkCards) return;
+        if (!_communityRotated[index] && SbRotatedCount >= 2) return;
         _communityRotated[index] = !_communityRotated[index];
-        CheckHandSet();
     }
 
     private void ToggleDealerCard(int which)
     {
         if (!CanMarkCards) return;
+        bool marked = which == 1 ? _dealerCard1Rotated : _dealerCard2Rotated;
+        if (!marked && SbRotatedCount >= 2) return;
         if (which == 1) _dealerCard1Rotated = !_dealerCard1Rotated;
         else _dealerCard2Rotated = !_dealerCard2Rotated;
-        CheckHandSet();
     }
 
-    // Identify the Hands: after each tap, lock in the hand as soon as the
-    // 2 marked cards are the right ones. A wrong pair just shows a hint
-    // (no penalty) until the trainee adjusts it.
-    private void CheckHandSet()
+    // After a wrong Submit: the cards the trainee dropped that the dealer's
+    // best hand uses (outlined red on the felt)
+    private readonly List<Card> _idWrongDrops = new();
+
+    private bool IdWrongDrop(Card? c) => c is not null && _idWrongDrops.Contains(c);
+
+    // The cards the trainee marked unused
+    private List<Card> MarkedCards()
     {
-        if (_mode == TrainerMode.IdentifyHands && SbRotatedCount == 2 && DeclaredHandIsBest())
-        {
-            _dealerHandSet = true;
-            _resultText = string.Empty;
-        }
+        List<Card> marked = new();
+        if (_dealerCard1Rotated) marked.Add(_dealerCard1!);
+        if (_dealerCard2Rotated) marked.Add(_dealerCard2!);
+        for (int i = 0; i < CommunityCount; i++)
+            if (_communityRotated[i]) marked.Add(_community[i]!);
+        return marked;
     }
 
     // The 7 cards the dealer's hand is made from: 2 dealer + 5 community.
@@ -970,9 +902,7 @@ else
         _revealRank = HandEvaluator.BestHandRank(DealerPool());
 
         MarkCorrectUnusedCards();
-        _dealerHandSet = true;
-        _dealerRankIndex = (int)_revealRank;
-        _dealerRankWrong = false;
+        _idWrongDrops.Clear();
 
         _totalRounds++;
         _isCorrect = false;
@@ -981,8 +911,8 @@ else
         _handRankLines.Clear();
         _rows.Clear();
         _handRankLines.Add(($"Dealer: {HandEvaluator.DescribeHand(DealerPool())}", "txt-bad"));
-        _rows.Add(new BreakdownRow("Dealer's hand", "Revealed", HandEvaluator.HandRankName(_revealRank), false, DealerHandWhy()));
-        _log.AddRows(_rows, r => r.Answer);
+        _rows.Add(new BreakdownRow("Dealer's hand", "Revealed", HandEvaluator.DescribeHand(DealerPool()), false, DealerHandWhy()));
+        _log.AddRows(_rows, r => HandEvaluator.HandRankName(_revealRank));
 
         string pct = ((double)_correctCount / _totalRounds).ToString("0.0%");
         _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
@@ -993,14 +923,13 @@ else
         _showReveal = true;
     }
 
-    // Identify the Hands feedback: the dealer's hand spelled out, and the
-    // 5 cards that make it, e.g. "Two Pair, Kings and 7s, A kicker.
-    // Best 5: K♠ K♥ 7♦ 7♣ A♠"
+    // Identify the Hands feedback under the call: the 5 cards that make
+    // the dealer's hand, e.g. "Best 5: K♠ K♥ 7♦ 7♣ A♠"
     private string DealerHandWhy()
     {
         List<Card> pool = DealerPool();
         string cards = string.Join(" ", OrderForShow(HandEvaluator.BestFiveCards(pool)).Select(CardLabel));
-        return $"{HandEvaluator.DescribeHand(pool)}. Best 5: {cards}";
+        return $"Best 5: {cards}";
     }
 
     // Pairs/trips first, then high to low (e.g. Q Q 5 5 A)
@@ -1057,40 +986,44 @@ else
         }
     }
 
-    // Identify the Hands: the hand itself is already set correctly (the
-    // rank picker only appears then), so only the rank is scored.
+    // Identify the Hands: graded on the 2 marked cards. Right when the 5
+    // left standing are the dealer's best hand (any equal-scoring set of 5
+    // counts). A miss shows the right 2 dimmed, outlines in red the cards
+    // that should have played, and compares the trainee's 5 with the best.
     private void SubmitIdentifyHands()
     {
-        if (_roundScored || !_dealerHandSet) return;
+        if (_roundScored || SbRotatedCount != 2) return;
 
-        if (_dealerRankIndex <= 0)
-        {
-            _isCorrect = false;
-            _resultText = "Pick the dealer hand's rank before submitting.";
-            return;
-        }
+        List<Card> pool = DealerPool();
+        List<Card> best = HandEvaluator.BestFiveCards(pool);
+        List<Card> declared = DeclaredDealerHand();
+        bool ok = DeclaredHandIsBest();
+        string call = HandEvaluator.DescribeHand(pool);
 
-        HandRank bestRank = HandEvaluator.BestHandRank(DealerPool());
-        bool rankCorrect = _dealerRankIndex == (int)bestRank;
-
-        _dealerRankWrong = !rankCorrect;
-        _mistakesText = string.Empty;
-        _handRankLines.Add(($"Dealer: {HandEvaluator.DescribeHand(DealerPool())}", rankCorrect ? "txt-ok" : "txt-bad"));
+        _idWrongDrops.Clear();
         _rows.Clear();
-        _rows.Add(new BreakdownRow("Dealer's hand", RankComboItems[_dealerRankIndex], HandEvaluator.HandRankName(bestRank), rankCorrect, DealerHandWhy()));
-
-        bool allCorrect = rankCorrect;
-        _log.AddRows(_rows, r => r.Answer);
+        if (ok)
+        {
+            _rows.Add(new BreakdownRow("Dealer's hand", call, call, true, DealerHandWhy()));
+        }
+        else
+        {
+            _idWrongDrops.AddRange(MarkedCards().Where(best.Contains));
+            string dropped = string.Join(" and ", OrderForShow(_idWrongDrops).Select(CardLabel));
+            string bestCards = string.Join(" ", OrderForShow(best).Select(CardLabel));
+            _rows.Add(new BreakdownRow("Dealer's hand", $"dropped the {dropped}", call, false,
+                $"Your 5 make {HandEvaluator.DescribeHand(declared)}. Best 5: {bestCards}"));
+            MarkCorrectUnusedCards();
+        }
+        _log.AddRows(_rows, r => HandEvaluator.HandRankName(HandEvaluator.BestHandRank(pool)));
 
         _totalRounds++;
-        if (allCorrect) _correctCount++;
+        if (ok) _correctCount++;
 
-        _isCorrect = allCorrect;
-        _resultText = BreakdownRow.Summary(_rows);
+        _isCorrect = ok;
+        _resultText = ok ? "CORRECT" : "INCORRECT";
 
-        string pct = _totalRounds > 0
-            ? ((double)_correctCount / _totalRounds).ToString("0.0%")
-            : "0.0%";
+        string pct = ((double)_correctCount / _totalRounds).ToString("0.0%");
         _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
 
         _roundScored = true;
