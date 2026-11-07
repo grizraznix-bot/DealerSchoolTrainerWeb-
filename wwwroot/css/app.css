@@ -4940,6 +4940,19 @@ body {
    ------------------------------------------------------------------ */
 .sp-chip-100 { background-color: #222; }
 
+/* Win / Lose modes (CallRow): one chip color, "$" only -- no amount,
+   since nothing is paid in these modes */
+.sp-wrow .sp-chip.cr-chip {
+    background-color: #c8102e;
+    font-size: 1rem;
+}
+
+/* Pai Gow Payouts: "Emperor's Treasure" on two lines (name, then
+   Treasure), so the full name fits beside the payout box */
+.sp-screen .sp-wname.pp-wname-2 {
+    white-space: normal;
+}
+
 .tp-felt {
     display: flex;
     align-items: flex-start;

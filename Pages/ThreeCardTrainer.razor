@@ -265,7 +265,7 @@ else
             {
                 WagerState wager = w;
                 bool isAnte = wager == _ante;
-                <CallRow Chip="wager.Wager" Name="@wager.Name" Sub="@($"wager ${wager.Wager}")"
+                <CallRow Chip="true" Name="@wager.Name"
                          Options="@(wager.AllowPush ? WagerPick.WinLosePush : WagerPick.WinLose)"
                          Value="@wager.Selection?.ToString()"
                          OnPick="key => PickWager(wager, Enum.Parse<WagerOutcome>(key))"
@@ -615,7 +615,7 @@ else
         // Chips on the rows, as the payout mode bets them (Ante = Play)
         _ante.Wager = _play.Wager = ThreeCardPayouts.AntePlayWager(Random.Shared);
         _pairBonus.Wager = ThreeCardPayouts.SideWager(Random.Shared);
-        _prime.Wager = ThreeCardPayouts.SideWager(Random.Shared);
+        _prime.Wager = ThreeCardPayouts.PrimeWager(Random.Shared);
         _allSix.Wager = ThreeCardPayouts.AllSixWager(Random.Shared);
 
         _anteBonusChecked = false;

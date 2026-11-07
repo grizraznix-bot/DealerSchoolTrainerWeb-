@@ -60,7 +60,7 @@ public static class ThreeCardPayouts
         SortForDisplay(dealer);
 
         int antePlay = AntePlayWager(rng);
-        int[] wagers = { antePlay, antePlay, SideWager(rng), SideWager(rng), AllSixWager(rng) };
+        int[] wagers = { antePlay, antePlay, SideWager(rng), PrimeWager(rng), AllSixWager(rng) };
         return Settle(player, dealer, wagers);
     }
 
@@ -213,33 +213,37 @@ public static class ThreeCardPayouts
     // ---- Real-world betting patterns ----------------------------------
     // (also used for the chips in Three Card Prime's Win / Lose / Push mode)
 
-    // Ante/Play $5-$300: mostly $5-$15, then $20-$25, then $30-$100
-    // (mostly $50/$75/$100), rarely $105-$300 (mostly $150/$200/$300)
-    internal static int AntePlayWager(Random rng)
+    // The amounts seen most on the floor (also the chips in the Win / Lose
+    // / Push mode).
+    // Ante/Play: $5, 10, 15, 20, 25, 50, 75, 100, then $25 steps to $300 --
+    // mostly $5-$15, then $20-$25, then $50-$100, rarely $125-$300
+    internal static int AntePlayWager(Random rng) =>
+        Weighted(rng, (5, 17), (10, 17), (15, 16), (20, 13), (25, 12), (50, 8), (75, 6), (100, 6),
+                      (125, 1), (150, 1), (175, 1), (200, 1), (225, 1), (250, 1), (275, 1), (300, 1));
+
+    // Pair Bonus: $5, 10, 15, 20, 25, 50, 75, 100 -- mostly $5-$10,
+    // sometimes $15-$25, rarely $50-$100
+    internal static int SideWager(Random rng) =>
+        Weighted(rng, (5, 35), (10, 35), (15, 9), (20, 8), (25, 8), (50, 2), (75, 1), (100, 2));
+
+    // Prime: $5, 10, 15, 20, 25, 50, 100 -- same pattern, no $75
+    internal static int PrimeWager(Random rng) =>
+        Weighted(rng, (5, 35), (10, 35), (15, 9), (20, 8), (25, 8), (50, 3), (100, 2));
+
+    // All 6: $1 or $5
+    internal static int AllSixWager(Random rng) => rng.Next(2) == 0 ? 1 : 5;
+
+    // Weighted pick: (value, weight) pairs; weights are relative
+    private static int Weighted(Random rng, params (int Value, int Weight)[] table)
     {
-        double r = rng.NextDouble();
-        if (r < 0.50) return Pick(rng, 5, 10, 15);
-        if (r < 0.75) return Pick(rng, 20, 25);
-        if (r < 0.95) return rng.NextDouble() < 0.6 ? Pick(rng, 50, 75, 100) : FivesBetween(rng, 30, 100);
-        return rng.NextDouble() < 0.6 ? Pick(rng, 150, 200, 300) : FivesBetween(rng, 105, 300);
+        int roll = rng.Next(table.Sum(t => t.Weight));
+        foreach (var (value, weight) in table)
+        {
+            if (roll < weight) return value;
+            roll -= weight;
+        }
+        return table[^1].Value;
     }
-
-    // Pair Bonus / Prime $5-$100: mostly $5-$10, sometimes $15-$25, rarely $50/$100
-    internal static int SideWager(Random rng)
-    {
-        double r = rng.NextDouble();
-        if (r < 0.70) return Pick(rng, 5, 10);
-        if (r < 0.95) return Pick(rng, 15, 20, 25);
-        return Pick(rng, 50, 100);
-    }
-
-    // All 6 $1-$5: mostly $1 or $5, sometimes $2-$4
-    internal static int AllSixWager(Random rng) =>
-        rng.NextDouble() < 0.75 ? Pick(rng, 1, 5) : Pick(rng, 2, 3, 4);
-
-    private static int Pick(Random rng, params int[] values) => values[rng.Next(values.Length)];
-
-    private static int FivesBetween(Random rng, int low, int high) => low + 5 * rng.Next((high - low) / 5 + 1);
 
     // ---- Helpers ----------------------------------------------------------
 

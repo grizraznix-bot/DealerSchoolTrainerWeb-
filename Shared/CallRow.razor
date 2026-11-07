@@ -10,13 +10,16 @@
    anywhere else closes it unchanged.
 
    After Submit (Locked) the button becomes the answer box, the same as
-   the payout modes: "✓ Win", or "✗ Win · Ans: Lose". *@
+   the payout modes: "✓ Win", or "✗ Win · Ans: Lose".
+
+   The chip shows only "$" (one color): these modes don't pay anything,
+   and a dollar value would suggest a payout. *@
 @implements IDisposable
 
 <div class="sp-wrow cr-row @(_open ? "sp-wrow-on" : "") @RowCss">
-    @if (Chip is int chip)
+    @if (Chip)
     {
-        <div class="sp-chip @ChipCss(chip)">$@chip</div>
+        <div class="sp-chip cr-chip">$</div>
     }
     <div class="sp-wname">@Name@if (Sub is not null)
         {
@@ -67,10 +70,10 @@
 }
 
 @code {
-    /// <summary>Wager amount for the chip; null = no chip (e.g. a player row).</summary>
-    [Parameter] public int? Chip { get; set; }
+    /// <summary>Show a wager chip ("$", no amount); false = no chip (e.g. a player row).</summary>
+    [Parameter] public bool Chip { get; set; }
     [Parameter] public string Name { get; set; } = "";
-    /// <summary>Small line under the name, e.g. "wager $5".</summary>
+    /// <summary>Small line under the name, e.g. "player's hand".</summary>
     [Parameter] public string? Sub { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 

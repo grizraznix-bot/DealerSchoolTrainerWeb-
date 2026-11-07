@@ -470,12 +470,12 @@ else
             @foreach (SwHandState hand in _swHands)
             {
                 SwHandState h = hand;
-                <CallRow Chip="h.TwentyOnePlus3Wager" Name="21 + 3" Sub="@($"wager ${h.TwentyOnePlus3Wager}")"
+                <CallRow Chip="true" Name="21 + 3"
                          Value="@h.TwentyOnePlus3Selection?.ToString()"
                          OnPick="k => { h.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); h.TwentyOnePlus3Wrong = false; }"
                          Locked="_swRoundScored" Wrong="h.TwentyOnePlus3Wrong"
                          AnswerText="@(SideWagerRules.Qualifies21Plus3(h.Card1, h.Card2, _swDealerCard!) ? "Win" : "Lose")" />
-                <CallRow Chip="h.LuckyLadiesWager" Name="Lucky Ladies" Sub="@($"wager ${h.LuckyLadiesWager}")"
+                <CallRow Chip="true" Name="Lucky Ladies"
                          Value="@h.LuckyLadiesSelection?.ToString()"
                          OnPick="k => { h.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); h.LuckyLadiesWrong = false; }"
                          Locked="_swRoundScored" Wrong="h.LuckyLadiesWrong"

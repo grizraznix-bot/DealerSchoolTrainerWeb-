@@ -229,24 +229,27 @@ public static class HoldemPayouts
 
     // ---- Real-world betting patterns ------------------------------------
 
-    // Ante (and Odds) $5-$50 in $5 steps: mostly $5-$10, then $15-$25,
-    // then $30-$50 (mostly $50)
-    private static int AnteWager(Random rng)
-    {
-        double r = rng.NextDouble();
-        if (r < 0.45) return Pick(rng, 5, 10);
-        if (r < 0.80) return Pick(rng, 15, 20, 25);
-        return rng.NextDouble() < 0.5 ? 50 : Pick(rng, 30, 35, 40, 45);
-    }
+    // The amounts seen most on the floor.
+    // Ante (and Odds): $5, 10, 15, 20, 25, 50 -- mostly $5-$10, then
+    // $15-$25, then $50
+    private static int AnteWager(Random rng) =>
+        Weighted(rng, (5, 23), (10, 22), (15, 12), (20, 12), (25, 11), (50, 20));
 
-    // Trips Plus / Pocket Bonus $5-$100: mostly $5-$10, sometimes $15-$25,
-    // rarely $50 / $100
-    private static int SideWager(Random rng)
+    // Trips Plus / Pocket Bonus: $5, 10, 15, 20, 25, 50, 75, 100 -- mostly
+    // $5-$10, sometimes $15-$25, rarely $50-$100
+    private static int SideWager(Random rng) =>
+        Weighted(rng, (5, 35), (10, 35), (15, 9), (20, 8), (25, 8), (50, 2), (75, 1), (100, 2));
+
+    // Weighted pick: (value, weight) pairs; weights are relative
+    private static int Weighted(Random rng, params (int Value, int Weight)[] table)
     {
-        double r = rng.NextDouble();
-        if (r < 0.70) return Pick(rng, 5, 10);
-        if (r < 0.95) return Pick(rng, 15, 20, 25);
-        return Pick(rng, 50, 100);
+        int roll = rng.Next(table.Sum(t => t.Weight));
+        foreach (var (value, weight) in table)
+        {
+            if (roll < weight) return value;
+            roll -= weight;
+        }
+        return table[^1].Value;
     }
 
     // Raise: 3x before the flop, 2x after the flop, 1x after the river
@@ -257,8 +260,6 @@ public static class HoldemPayouts
         if (r < 0.80) return (2, "2x after the flop");
         return (1, "1x after the river");
     }
-
-    private static int Pick(Random rng, params int[] values) => values[rng.Next(values.Length)];
 
     // ---- Helpers ----------------------------------------------------------
 

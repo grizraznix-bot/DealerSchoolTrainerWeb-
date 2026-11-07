@@ -67,20 +67,23 @@ public static class SideWagerPayouts
         }
     }
 
-    // Real-world betting pattern, each wager on its own ($1-$50: $1-$5,
-    // then $5 steps): mostly $1 or $5, sometimes $2-$4 or $10, now and
-    // then $15-$25, rarely $30-$50 (mostly $50). Also the chips in Side
-    // Wagers (Win / Lose).
-    internal static int SideWager(Random rng)
-    {
-        double r = rng.NextDouble();
-        if (r < 0.60) return Pick(rng, 1, 5);
-        if (r < 0.85) return Pick(rng, 2, 3, 4, 10);
-        if (r < 0.96) return Pick(rng, 15, 20, 25);
-        return rng.NextDouble() < 0.5 ? 50 : Pick(rng, 30, 35, 40, 45);
-    }
+    // The amounts seen most on the floor, each wager on its own: $1, 5,
+    // 10, 15, 20, 25, 50 -- mostly $1 or $5, then $10, now and then
+    // $15-$25, rarely $50. Also the chips in Side Wagers (Win / Lose).
+    internal static int SideWager(Random rng) =>
+        Weighted(rng, (1, 30), (5, 30), (10, 15), (15, 7), (20, 6), (25, 7), (50, 5));
 
-    private static int Pick(Random rng, params int[] values) => values[rng.Next(values.Length)];
+    // Weighted pick: (value, weight) pairs; weights are relative
+    private static int Weighted(Random rng, params (int Value, int Weight)[] table)
+    {
+        int roll = rng.Next(table.Sum(t => t.Weight));
+        foreach (var (value, weight) in table)
+        {
+            if (roll < weight) return value;
+            roll -= weight;
+        }
+        return table[^1].Value;
+    }
 
     // 21 + 3: Straight Flush 30, Three of a Kind 20, Straight 10, Flush 5
     public static (int Pays, string Hand) Score21Plus3(Card p1, Card p2, Card up) =>

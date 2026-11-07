@@ -341,7 +341,7 @@ else if (_mode == PaiGowMode.Payouts)
                     bool canPush = wi == PgPayoutRound.Main;
                     <div class="sp-wrow @(!_ppScored && _ppActive == wi ? "sp-wrow-on" : "")" @onclick="() => PpSelect(wi)">
                         <div class="sp-chip @PpChipClass(wager)">$@wager</div>
-                        <div class="sp-wname">@PgPayoutRound.ShortNames[wi]<small>wager $@wager</small></div>
+                        <div class="sp-wname @(wi == 2 ? "pp-wname-2" : "")">@PgPayoutRound.ShortNames[wi]<small>wager $@wager</small></div>
                         @if (_ppScored)
                         {
                             <div class="sp-ans @(_ppOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
@@ -525,7 +525,7 @@ else
             @foreach (var (name, wager, options) in SbRowOrder)
             {
                 SbWagerState w = wager;
-                <CallRow Chip="w.Wager" Name="@name" Sub="@($"wager ${w.Wager}")" Options="options"
+                <CallRow Chip="true" Name="@name" Options="options"
                          Value="@w.Selection?.ToString()"
                          OnPick="k => { w.Selection = Enum.Parse<WagerOutcome>(k); w.Wrong = false; SbResetFoul(); }"
                          Locked="_sbRoundScored" Wrong="w.Wrong"

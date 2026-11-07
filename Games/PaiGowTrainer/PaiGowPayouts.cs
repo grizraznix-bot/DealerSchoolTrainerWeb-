@@ -20,7 +20,7 @@ public sealed class PgPayoutRound
 {
     public const int Insurance = 0, Main = 1, Emperors = 2;
     public static readonly string[] Names = { "Pai Gow Insurance", "Main Wager", "Emperor's Treasure" };
-    public static readonly string[] ShortNames = { "Insurance", "Main Wager", "Emperor's" };
+    public static readonly string[] ShortNames = { "Insurance", "Main Wager", "Emperor's Treasure" };
 
     public required List<PaiGowCard> DealerLow { get; init; }
     public required List<PaiGowCard> DealerHigh { get; init; }
@@ -203,31 +203,28 @@ public static class PaiGowPayouts
 
     // ---- Real-world betting patterns ------------------------------------
 
-    // Main Wager $10-$300 in $5 steps: mostly $10-$25, then $30-$50
-    // (mostly $50), then $55-$100 (mostly $75/$100), rarely $105-$300
-    // (mostly $150/$200/$300)
-    internal static int MainWager(Random rng)
+    // The amounts seen most on the floor (also the chips in Settling Bets).
+    // Main Wager: $10, 15, 20, 25, 50, 100, 200, 300 -- mostly $10-$25,
+    // then $50, then $100, rarely $200 / $300
+    internal static int MainWager(Random rng) =>
+        Weighted(rng, (10, 14), (15, 14), (20, 14), (25, 13), (50, 25), (100, 15), (200, 3), (300, 2));
+
+    // Pai Gow Insurance / Emperor's Treasure: $1, 5, 10, 15, 20, 25, 30 --
+    // mostly $1 or $5, then $10, rarely $15-$30
+    internal static int SideWager(Random rng) =>
+        Weighted(rng, (1, 32), (5, 33), (10, 18), (15, 5), (20, 4), (25, 5), (30, 3));
+
+    // Weighted pick: (value, weight) pairs; weights are relative
+    private static int Weighted(Random rng, params (int Value, int Weight)[] table)
     {
-        double r = rng.NextDouble();
-        if (r < 0.55) return Pick(rng, 10, 15, 20, 25);
-        if (r < 0.80) return rng.NextDouble() < 0.6 ? 50 : Pick(rng, 30, 35, 40, 45);
-        if (r < 0.95) return rng.NextDouble() < 0.6 ? Pick(rng, 75, 100) : FivesBetween(rng, 55, 100);
-        return rng.NextDouble() < 0.6 ? Pick(rng, 150, 200, 300) : FivesBetween(rng, 105, 300);
+        int roll = rng.Next(table.Sum(t => t.Weight));
+        foreach (var (value, weight) in table)
+        {
+            if (roll < weight) return value;
+            roll -= weight;
+        }
+        return table[^1].Value;
     }
-
-    // Insurance / Emperor's Treasure $1-$30 ($1-$5, then $5 steps): mostly
-    // $1 or $5, sometimes $2-$4 or $10, rarely $15-$30
-    internal static int SideWager(Random rng)
-    {
-        double r = rng.NextDouble();
-        if (r < 0.65) return Pick(rng, 1, 5);
-        if (r < 0.93) return Pick(rng, 2, 3, 4, 10);
-        return Pick(rng, 15, 20, 25, 30);
-    }
-
-    private static int Pick(Random rng, params int[] values) => values[rng.Next(values.Length)];
-
-    private static int FivesBetween(Random rng, int low, int high) => low + 5 * rng.Next((high - low) / 5 + 1);
 
     // ---- Helpers ----------------------------------------------------------
 
