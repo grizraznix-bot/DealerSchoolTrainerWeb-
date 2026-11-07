@@ -4472,6 +4472,7 @@ body {
 .sp-felt {
     display: flex;
     gap: 1rem;
+    justify-content: space-around;  /* dealer and player spread across the felt */
     align-items: flex-start;
     padding: 0.5rem 0.75rem 1.1rem 0.75rem;
 }
@@ -5864,6 +5865,21 @@ body {
     justify-content: center;
     align-items: flex-end;
     gap: 12px;
+}
+
+/* Desktop: Low toward the left edge of the felt, High toward the right,
+   for a clear gap between them */
+@media (min-width: 769px) {
+    .pg-hand {
+        justify-content: space-between;
+        padding: 0 14px;
+    }
+
+    /* Pai Gow Payouts' tappable hand (3px padding for its outline):
+       cards end up the same distance from the edges */
+    .pg-felt .pg-hand.pp-tap {
+        padding: 3px 14px;
+    }
 }
 
 .pg-group {
