@@ -84,27 +84,31 @@ public static class HoldemPayouts
 
         string playerDesc = HandEvaluator.DescribeHand(player7);
         string dealerDesc = HandEvaluator.DescribeHand(dealer7);
-        string versus = cmp > 0 ? $"The player's {playerDesc} beats the dealer's {dealerDesc}"
-                      : cmp < 0 ? $"The dealer's {dealerDesc} beats the player's {playerDesc}"
-                      : $"The player and dealer tie ({playerDesc})";
+        // Short reasons for the feedback: hand names only, with the full
+        // call (kickers) when both hands are the same rank
+        string pShort = pr != dr ? HandEvaluator.HandRankName(pr) : playerDesc;
+        string dShort = pr != dr ? HandEvaluator.HandRankName(dr) : dealerDesc;
+        string versus = cmp > 0 ? $"Player's {pShort} beats dealer's {dShort}"
+                      : cmp < 0 ? $"Dealer's {dShort} beats player's {pShort}"
+                      : $"Tie, {playerDesc}";
 
         HdPay[] pays = new HdPay[5];
         string[] why = new string[5];
 
         // ---- Raise: 1 to 1; a tie pushes -----------------------------------
         int w = wagers[HdPayoutRound.Raise];
-        if (cmp == 0) { pays[0] = HdPay.Push; why[0] = $"{versus}: the Raise pushes."; }
-        else if (cmp > 0) { pays[0] = HdPay.Win(w * 100); why[0] = $"{versus}: 1 to 1. {Money(w)} × 1 = {Money(w)}."; }
-        else { pays[0] = HdPay.Lose; why[0] = $"{versus}: the Raise loses."; }
+        if (cmp == 0) { pays[0] = HdPay.Push; why[0] = $"{versus}: pushes."; }
+        else if (cmp > 0) { pays[0] = HdPay.Win(w * 100); why[0] = $"{versus}: pays even."; }
+        else { pays[0] = HdPay.Lose; why[0] = $"{versus}."; }
 
         // ---- Ante: 1 to 1 when the dealer opens; pushes when the dealer
         // doesn't open (pair or better needed) and on a tie ---------------
         w = wagers[HdPayoutRound.Ante];
-        string openText = opens ? "The dealer opens (pair or better)" : $"The dealer doesn't open ({HandEvaluator.HandRankName(dr)}, needs a pair or better)";
-        if (cmp == 0) { pays[1] = HdPay.Push; why[1] = $"{versus}: the Ante pushes."; }
-        else if (!opens) { pays[1] = HdPay.Push; why[1] = $"{openText}: the Ante pushes."; }
-        else if (cmp > 0) { pays[1] = HdPay.Win(w * 100); why[1] = $"{openText} and the player wins: 1 to 1. {Money(w)} × 1 = {Money(w)}."; }
-        else { pays[1] = HdPay.Lose; why[1] = $"{openText} and the player loses: the Ante loses."; }
+        string openText = opens ? "Dealer opens" : $"Dealer doesn't open ({HandEvaluator.HandRankName(dr)})";
+        if (cmp == 0) { pays[1] = HdPay.Push; why[1] = "Tie: pushes."; }
+        else if (!opens) { pays[1] = HdPay.Push; why[1] = $"{openText}: pushes."; }
+        else if (cmp > 0) { pays[1] = HdPay.Win(w * 100); why[1] = $"{openText}, player wins: pays even."; }
+        else { pays[1] = HdPay.Lose; why[1] = $"{openText} and wins."; }
 
         // ---- Odds: pays only when the player wins with a Straight or
         // better (less pushes); a loss with a Straight or better pays the
@@ -113,7 +117,7 @@ public static class HoldemPayouts
         string handName = HandEvaluator.HandRankName(pr);
         if (cmp == 0)
         {
-            pays[2] = HdPay.Push; why[2] = $"{versus}: the Odds pushes.";
+            pays[2] = HdPay.Push; why[2] = "Tie: pushes.";
         }
         else if (cmp > 0)
         {
@@ -130,14 +134,13 @@ public static class HoldemPayouts
             if (num == 0)
             {
                 pays[2] = HdPay.Push;
-                why[2] = $"The player wins with {WithArticle(handName)} (the Odds pays on a Straight or better): the Odds pushes.";
+                why[2] = $"Player wins with {WithArticle(handName)}: pushes (pays on a Straight or better).";
             }
             else
             {
                 int cents = w * 100 * num / den;
                 pays[2] = HdPay.Win(cents);
-                string math = den == 1 ? $"{Money(w)} × {num} = {MoneyCents(cents)}" : $"{Money(w)} ÷ {den} × {num} = {MoneyCents(cents)}";
-                why[2] = $"The player wins with {WithArticle(handName)}: {num} to {den}. {math}.";
+                why[2] = $"Player wins with {WithArticle(handName)}: {num} to {den}.";
             }
         }
         else
@@ -154,12 +157,12 @@ public static class HoldemPayouts
             if (bad > 0)
             {
                 pays[2] = HdPay.Win(w * 100 * bad);
-                why[2] = $"Bad Beat: the player loses holding {WithArticle(handName)}: {bad} to 1. {Money(w)} × {bad} = {Money(w * bad)}.";
+                why[2] = $"Bad Beat, player loses with {WithArticle(handName)}: {bad} to 1.";
             }
             else
             {
                 pays[2] = HdPay.Lose;
-                why[2] = $"The player loses with {WithArticle(handName)} (no Bad Beat below a Straight): the Odds loses.";
+                why[2] = $"Player loses with {WithArticle(handName)}: loses (no Bad Beat below a Straight).";
             }
         }
 
@@ -179,8 +182,8 @@ public static class HoldemPayouts
         string best5 = string.Join(" ", HandEvaluator.BestFiveCards(player7).OrderByDescending(c => (int)c.Rank).Select(Short));
         pays[3] = trips > 0 ? HdPay.Win(w * 100 * trips) : HdPay.Lose;
         why[3] = trips > 0
-            ? $"Best 5 of the player's 7 cards: {best5}, {WithArticle(handName)}: {trips} to 1. {Money(w)} × {trips} = {Money(w * trips)}."
-            : $"Best 5 of the player's 7 cards: {playerDesc} (needs Three of a Kind or better): the wager loses.";
+            ? $"{best5}, {handName}: {trips} to 1."
+            : $"Player's {HandEvaluator.HandRankName(pr)}: loses (needs Three of a Kind or better).";
 
         // ---- Pocket Bonus: player's 2 hole cards --------------------------
         w = wagers[HdPayoutRound.Pocket];
@@ -188,8 +191,8 @@ public static class HoldemPayouts
         string two = $"{Short(player[0])} {Short(player[1])}";
         pays[4] = pocket > 0 ? HdPay.Win(w * 100 * pocket) : HdPay.Lose;
         why[4] = pocket > 0
-            ? $"{two} is {pocketName}: {pocket} to 1. {Money(w)} × {pocket} = {Money(w * pocket)}."
-            : $"{two} isn't a pair or Ace-Face (A-K, A-Q, A-J): the wager loses.";
+            ? $"{two}, {(pocketName.StartsWith("a ") ? pocketName[2..] : pocketName)}: {pocket} to 1."
+            : $"{two}: loses (not a pair or Ace-Face).";
 
         return new HdPayoutRound
         {

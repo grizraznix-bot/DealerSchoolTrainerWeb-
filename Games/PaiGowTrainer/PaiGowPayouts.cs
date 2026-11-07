@@ -89,7 +89,7 @@ public static class PaiGowPayouts
         if (aceHighPaiGow)
         {
             pays[PgPayoutRound.Main] = PgPay.Push;
-            why[PgPayoutRound.Main] = "The dealer has an Ace-high Pai Gow, so all hands push.";
+            why[PgPayoutRound.Main] = "Dealer has an Ace-high Pai Gow: all hands push.";
         }
         else
         {
@@ -97,24 +97,23 @@ public static class PaiGowPayouts
             double dl = dealer.ScoreLowHand(dLow1, dLow2), dh = dealer.ScoreHighHand(dHigh);
             bool winsHigh = ph > dh, winsLow = pl > dl;
 
-            string high = $"High: player's {player.HighHandDescription(pHigh)} {Versus(winsHigh, ph == dh)} the dealer's {dealer.HighHandDescription(dHigh)}";
-            string low = $"Low: player's {LowText(playerCards[pLow1 - 1], playerCards[pLow2 - 1], player.LowHandLabel(pLow1, pLow2))} {Versus(winsLow, pl == dl)} the dealer's {LowText(dealerCards[dLow1 - 1], dealerCards[dLow2 - 1], dealer.LowHandLabel(dLow1, dLow2))}";
+
 
             if (winsHigh && winsLow)
             {
                 pays[PgPayoutRound.Main] = PgPay.Win(w);
-                why[PgPayoutRound.Main] = $"{high}. {low}. The player wins both hands: 1 to 1, no commission. {Money(w)} × 1 = {Money(w)}.";
+                why[PgPayoutRound.Main] = "Player wins High and Low: pays even (no commission).";
             }
             else if (winsHigh || winsLow)
             {
                 pays[PgPayoutRound.Main] = PgPay.Push;
-                why[PgPayoutRound.Main] = $"{high}. {low}. One hand each: the Main Wager pushes.";
+                why[PgPayoutRound.Main] = $"Player wins the {(winsHigh ? "High" : "Low")}, dealer the {(winsHigh ? "Low" : "High")}: pushes.";
             }
             else
             {
                 pays[PgPayoutRound.Main] = PgPay.Lose;
                 string copy = ph == dh || pl == dl ? " (a copy goes to the dealer)" : "";
-                why[PgPayoutRound.Main] = $"{high}. {low}. The dealer wins both hands{copy}: the Main Wager loses.";
+                why[PgPayoutRound.Main] = $"Dealer wins High and Low{copy}.";
             }
         }
 
@@ -135,12 +134,12 @@ public static class PaiGowPayouts
             };
             string jokerNote = hasJoker ? " (the Joker counts as an Ace)" : "";
             pays[PgPayoutRound.Insurance] = PgPay.Win(w * to1);
-            why[PgPayoutRound.Insurance] = $"The player's 7 cards are {(top == 14 ? "an" : "a")} {name} Pai Gow{jokerNote}: {to1} to 1. {Money(w)} × {to1} = {Money(w * to1)}.";
+            why[PgPayoutRound.Insurance] = $"{name} Pai Gow{jokerNote}: {to1} to 1.";
         }
         else
         {
             pays[PgPayoutRound.Insurance] = PgPay.Lose;
-            why[PgPayoutRound.Insurance] = $"The player's 7 cards aren't a Pai Gow ({player.BestSevenCardCategoryName()}): the wager loses.";
+            why[PgPayoutRound.Insurance] = $"Not a Pai Gow ({player.BestSevenCardCategoryName()}): loses.";
         }
 
         // ---- Emperor's Treasure: player's 7 cards -----------------------
@@ -149,12 +148,12 @@ public static class PaiGowPayouts
         if (etTo1 > 0)
         {
             pays[PgPayoutRound.Emperors] = PgPay.Win(w * etTo1);
-            why[PgPayoutRound.Emperors] = $"The player's 7 cards make {WithArticle(etName)}: {etTo1:N0} to 1. {Money(w)} × {etTo1:N0} = {Money(w * etTo1)}.";
+            why[PgPayoutRound.Emperors] = $"{etName}: {etTo1:N0} to 1.";
         }
         else
         {
             pays[PgPayoutRound.Emperors] = PgPay.Lose;
-            why[PgPayoutRound.Emperors] = $"The player's 7 cards make {WithArticle(etName)} (needs Three of a Kind or better): the wager loses.";
+            why[PgPayoutRound.Emperors] = $"{etName}: loses (needs Three of a Kind or better).";
         }
 
         string envyTip = envy > 0
@@ -230,25 +229,6 @@ public static class PaiGowPayouts
 
     public static string Money(int dollars) => $"${dollars:N0}";
 
-    private static string Versus(bool playerWins, bool tie) =>
-        playerWins ? "beats" : tie ? "ties (copy, dealer wins)" : "loses to";
-
-    private static string WithArticle(string hand) =>
-        hand.StartsWith("Three") || hand.StartsWith("Four") || hand.StartsWith("Five") || hand.StartsWith("Two")
-            || hand.StartsWith("7-Card") || hand.StartsWith("High")
-            ? hand
-            : "a " + hand;
-
-    // A Low hand that's just high cards reads as its ranks, e.g. "K-Q"
-    // (so K-Q vs K-J shows why it wins); a pair keeps its name
-    private static string LowText(PaiGowCard a, PaiGowCard b, string label)
-    {
-        if (!label.EndsWith("high")) return label;
-        PaiGowCard[] two = new[] { a, b }.OrderByDescending(SortValue).ToArray();
-        return $"{RankText(two[0])}-{RankText(two[1])}";
-    }
-
-    private static string RankText(PaiGowCard c) => c.IsJoker ? "A" : c.Rank == "T" ? "10" : c.Rank;
 
     private static int SortValue(PaiGowCard c) => c.IsJoker ? 14 : c.RankOrder;
 

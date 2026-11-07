@@ -30,6 +30,12 @@
                         <td colspan="2"><SuitText Text="@row.Why" /></td>
                     </tr>
                 }
+                @if (row.Tip.Length > 0)
+                {
+                    <tr class="bd-why bd-tip-row">
+                        <td colspan="2"><span class="bd-tip">@row.Tip</span></td>
+                    </tr>
+                }
             }
         </table>
         @if (Note.Length > 0)

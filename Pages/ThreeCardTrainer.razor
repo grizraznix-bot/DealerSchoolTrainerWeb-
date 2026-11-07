@@ -23,7 +23,7 @@
                       OnStart="StartGame" />
 
             <ModeCard Title="Three Card Prime Payouts"
-                      Description="Pay every wager. Enter the winnings for each (the Ante includes any Ante Bonus), or tap Push / Lose, then Submit."
+                      Description="Call the Play (Win / Lose / Push), then pay the other wagers: enter the winnings (the Ante includes any Ante Bonus), or tap Push / Lose, then Submit."
                       Expanded="@(_openMode == TcMode.Payouts)"
                       OnToggle="() => ToggleMode(TcMode.Payouts)"
                       OnStart="StartGame" />
@@ -64,7 +64,10 @@ else if (_tcMode == TcMode.Payouts)
         </div>
 
         @* The five wagers in settling order: chip, name, payout box, then
-           Push (Play and Ante only) and Lose. Tap a row to key into it. *@
+           Push (Ante only) and Lose. Tap a row to key into it. The Play only
+           pays even money, so it's called (Win / Lose / Push with the Call
+           button) instead of typed. The Ante stays typed: its payout
+           includes any Ante Bonus. *@
         <div class="pw-wrap">
             <div class="pw-box @(!_tpScored ? "pw-scroll" : "")">
             <div class="sp-wagers">
@@ -73,6 +76,14 @@ else if (_tcMode == TcMode.Payouts)
                     int wi = w;
                     int wager = _tpRound.Wagers[wi];
                     bool canPush = wi <= TcpPayoutRound.Ante;
+                    @if (TpCall[wi])
+                    {
+                        <CallRow ChipAmount="wager" Name="@TcpPayoutRound.Names[wi]" Sub="@($"wager ${wager}")" Options="WagerPick.WinLosePush"
+                                 Value="@(_tpMark[wi] == TpMark.None ? null : _tpMark[wi].ToString())"
+                                 OnPick="k => TpPickCall(wi, k)"
+                                 Locked="_tpScored" Wrong="!_tpOk[wi]" AnswerText="@TpCallText(_tpRound.Pays[wi])" />
+                        continue;
+                    }
                     <div class="sp-wrow @(!_tpScored && _tpActive == wi ? "sp-wrow-on" : "")" @onclick="() => TpSelect(wi)">
                         <div class="sp-chip @TpChipClass(wager)">$@wager</div>
                         <div class="sp-wname">@TcpPayoutRound.Names[wi]<small>wager $@wager</small></div>
@@ -132,7 +143,7 @@ else if (_tcMode == TcMode.Payouts)
         @if (!_tpScored)
         {
             <div class="keypad-wrap sp-keypad @(_tpShowKeypad ? "keypad-open" : "")">
-                <NumericKeypad AllowDecimal="false" @bind-Value="TpActiveText" OnEnter="TpKeypadEnter" EnterLabel="@(_tpActive < 4 ? "Next ↓" : "Enter")" />
+                <NumericKeypad AllowDecimal="false" @bind-Value="TpActiveText" OnEnter="TpKeypadEnter" EnterLabel="@(TpNextTyped(_tpActive) >= 0 ? "Next ↓" : "Enter")" />
             </div>
         }
 
@@ -220,7 +231,7 @@ else if (_tcMode == TcMode.Payouts)
                     <tr><td>Straight</td><td>10 to 1</td></tr>
                     <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
                 </table>
-                <p>Enter the winnings only. The Ante's payout includes any Ante Bonus. For a losing or pushed wager, tap Lose or Push (0 also counts as Lose).</p>
+                <p>Call the Play Win, Lose or Push (it pays even money). For the other wagers, enter the winnings only; the Ante's payout includes any Ante Bonus. For a losing or pushed wager, tap Lose or Push (0 also counts as Lose).</p>
             </HelpContent>
         </GameBar>
     </div>
@@ -831,7 +842,29 @@ else
     // PAYOUTS (Tp prefix)
     // ============================================================
 
-    private enum TpMark { None, Lose, Push }
+    private enum TpMark { None, Lose, Push, Win }
+
+    // Wagers that only pay even money (Play): called Win / Lose / Push
+    // instead of typed
+    private static readonly bool[] TpCall = { true, false, false, false, false };
+
+    // The next typed (keypad) wager after index, or -1
+    private static int TpNextTyped(int index)
+    {
+        for (int i = index + 1; i < 5; i++)
+            if (!TpCall[i]) return i;
+        return -1;
+    }
+
+    private void TpPickCall(int index, string key)
+    {
+        if (_tpScored) return;
+        _tpMark[index] = Enum.Parse<TpMark>(key);
+        _tpMessage = string.Empty;
+    }
+
+    // The right call for an even-money wager: "Win", "Lose" or "Push"
+    private static string TpCallText(TcpPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
 
     private TcpPayoutRound _tpRound = ThreeCardPayouts.Deal(Random.Shared);
     private readonly string[] _tpAnswer = new string[5];
@@ -879,17 +912,17 @@ else
             _tpMark[i] = TpMark.None;
             _tpOk[i] = false;
         }
-        _tpActive = 0;
+        _tpActive = TpNextTyped(-1);
         _tpScored = false;
         _tpMessage = string.Empty;
         _tpResultText = string.Empty;
         _tpRows.Clear();
-        _tpFocusInput = 0;
+        _tpFocusInput = _tpActive;
     }
 
     private void TpSelect(int index)
     {
-        if (_tpScored || _tpActive == index) return;
+        if (_tpScored || TpCall[index] || _tpActive == index) return;
         _tpActive = index;
         _tpFocusInput = index;
     }
@@ -932,10 +965,11 @@ else
     {
         if (_tpScored) return;
 
-        if (_tpActive < 4)
+        int next = TpNextTyped(_tpActive);
+        if (next >= 0)
         {
-            _tpActive++;
-            _tpFocusInput = _tpActive;
+            _tpActive = next;
+            _tpFocusInput = next;
         }
         else
         {
@@ -960,7 +994,8 @@ else
 
         _tpMark[index] = mark;
         _tpAnswer[index] = string.Empty;
-        int next = index < 4 ? index + 1 : index;
+        int next = TpNextTyped(index);
+        if (next < 0) next = index;
         _tpActive = next;
         _tpFocusInput = next;
     }
@@ -985,6 +1020,11 @@ else
 
         for (int i = 0; i < 5; i++)
         {
+            if (TpCall[i] && _tpMark[i] == TpMark.None)
+            {
+                _tpMessage = $"Call the {TcpPayoutRound.Names[i]}: Win, Lose or Push.";
+                return;
+            }
             if ((_tpAnswer[i] ?? "").Length == 0 && _tpMark[i] == TpMark.None)
             {
                 _tpMessage = i <= TcpPayoutRound.Ante
@@ -1004,10 +1044,15 @@ else
             {
                 TpMark.Lose => pay.IsLose,
                 TpMark.Push => pay.IsPush,
+                TpMark.Win => !pay.IsLose && !pay.IsPush,
                 _ => long.TryParse(_tpAnswer[i], out long v) && (v == 0 ? pay.IsLose : !pay.IsPush && v == pay.Amount)
             };
 
-            _tpRows.Add(new BreakdownRow(TcpPayoutRound.Names[i], TpEnteredMoney(i), TpPayMoney(pay), _tpOk[i], _tpRound.Why[i]));
+            // A missed payout gets the payout shortcut under its reason
+            string tip = !_tpOk[i] && !TpCall[i] && !pay.IsLose && !pay.IsPush
+                ? PayoutShortcut.For(_tpRound.Wagers[i] * 100L, pay.Amount * 100L) : "";
+            _tpRows.Add(new BreakdownRow(TcpPayoutRound.Names[i], TpEnteredMoney(i),
+                TpCall[i] ? TpCallText(pay) : TpPayMoney(pay), _tpOk[i], _tpRound.Why[i], tip));
         }
 
         _log.AddRows(_tpRows);
@@ -1039,6 +1084,7 @@ else
     // In the breakdown: "Lose", "Push" or "$150"
     private string TpEnteredMoney(int i) => _tpMark[i] switch
     {
+        TpMark.Win => "Win",
         TpMark.Lose => "Lose",
         TpMark.Push => "Push",
         _ => long.TryParse(_tpAnswer[i], out long v) ? $"${v:N0}" : _tpAnswer[i] ?? ""

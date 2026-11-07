@@ -92,7 +92,7 @@
             </ModeCard>
 
             <ModeCard Title="Pai Gow Payouts"
-                      Description="Both hands are dealt and set. Tap a hand to see its ranks. Pay each wager: enter the winnings, or tap Push / Lose, then Submit."
+                      Description="Both hands are dealt and set. Tap a hand to see its ranks. Call the Main Wager (Win / Lose / Push), then pay Insurance and Emperor's Treasure: enter the winnings, or tap Lose, then Submit."
                       Expanded="@IsModeOpen(PaiGowMode.Payouts)"
                       OnToggle="() => ToggleMode(PaiGowMode.Payouts)"
                       OnStart="StartGame" />
@@ -329,8 +329,9 @@ else if (_mode == PaiGowMode.Payouts)
         }
 
         @* The three wagers in settling order (Insurance, Main Wager,
-           Emperor's Treasure): chip, name, payout box, then Push (Main
-           Wager only) and Lose. Tap a row to key into it. *@
+           Emperor's Treasure): chip, name, payout box and Lose. Tap a row
+           to key into it. The Main Wager only pays even money, so it's
+           called (Win / Lose / Push with the Call button) instead of typed. *@
         <div class="pw-wrap">
             <div class="pw-box @(!_ppScored ? "pw-scroll" : "")">
             <div class="sp-wagers">
@@ -339,6 +340,14 @@ else if (_mode == PaiGowMode.Payouts)
                     int wi = w;
                     int wager = _ppRound.Wagers[wi];
                     bool canPush = wi == PgPayoutRound.Main;
+                    @if (PpCall[wi])
+                    {
+                        <CallRow ChipAmount="wager" Name="@PgPayoutRound.ShortNames[wi]" Sub="@($"wager ${wager}")" Options="WagerPick.WinLosePush"
+                                 Value="@(_ppMark[wi] == PpMark.None ? null : _ppMark[wi].ToString())"
+                                 OnPick="k => PpPickCall(wi, k)"
+                                 Locked="_ppScored" Wrong="!_ppOk[wi]" AnswerText="@PpCallText(_ppRound.Pays[wi])" />
+                        continue;
+                    }
                     <div class="sp-wrow @(!_ppScored && _ppActive == wi ? "sp-wrow-on" : "")" @onclick="() => PpSelect(wi)">
                         <div class="sp-chip @PpChipClass(wager)">$@wager</div>
                         <div class="sp-wname @(wi == 2 ? "pp-wname-2" : "")">@PgPayoutRound.ShortNames[wi]<small>wager $@wager</small></div>
@@ -398,7 +407,7 @@ else if (_mode == PaiGowMode.Payouts)
         @if (!_ppScored)
         {
             <div class="keypad-wrap sp-keypad @(_ppShowKeypad ? "keypad-open" : "")">
-                <NumericKeypad AllowDecimal="false" @bind-Value="PpActiveText" OnEnter="PpKeypadEnter" EnterLabel="@(_ppActive < 2 ? "Next ↓" : "Enter")" />
+                <NumericKeypad AllowDecimal="false" @bind-Value="PpActiveText" OnEnter="PpKeypadEnter" EnterLabel="@(PpNextTyped(_ppActive) >= 0 ? "Next ↓" : "Enter")" />
             </div>
         }
 
@@ -460,7 +469,7 @@ else if (_mode == PaiGowMode.Payouts)
             <HelpContent>
                 <p>Tap the Player or Dealer cards to see that hand's Low and High ranks.</p>
                 @PgPayTables
-                <p>Enter the winnings only. For a losing or pushed wager, tap Lose or Push (0 also counts as Lose). Envy Bonuses are shown as a tip after Submit; they are not entered.</p>
+                <p>Call the Main Wager Win, Lose or Push (it pays even money). For Insurance and Emperor's Treasure, enter the winnings only, or tap Lose (0 also counts as Lose). Envy Bonuses are shown as a tip after Submit; they are not entered.</p>
             </HelpContent>
         </GameBar>
     </div>
@@ -1500,7 +1509,29 @@ else
     // PAI GOW PAYOUTS (Pp prefix)
     // ============================================================
 
-    private enum PpMark { None, Lose, Push }
+    private enum PpMark { None, Lose, Push, Win }
+
+    // Wagers that only pay even money (Main Wager): called Win / Lose /
+    // Push instead of typed
+    private static readonly bool[] PpCall = { false, true, false };
+
+    // The next typed (keypad) wager after index, or -1
+    private static int PpNextTyped(int index)
+    {
+        for (int i = index + 1; i < 3; i++)
+            if (!PpCall[i]) return i;
+        return -1;
+    }
+
+    private void PpPickCall(int index, string key)
+    {
+        if (_ppScored) return;
+        _ppMark[index] = Enum.Parse<PpMark>(key);
+        _ppMessage = string.Empty;
+    }
+
+    // The right call for an even-money wager: "Win", "Lose" or "Push"
+    private static string PpCallText(PgPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
 
     private PgPayoutRound _ppRound = null!; // dealt by PpStartGame
     private readonly string[] _ppAnswer = new string[3];
@@ -1575,17 +1606,17 @@ else
             _ppMark[i] = PpMark.None;
             _ppOk[i] = false;
         }
-        _ppActive = 0;
+        _ppActive = PpNextTyped(-1);
         _ppScored = false;
         _ppMessage = string.Empty;
         _ppResultText = string.Empty;
         _ppRows.Clear();
-        _ppFocusInput = 0;
+        _ppFocusInput = _ppActive;
     }
 
     private void PpSelect(int index)
     {
-        if (_ppScored || _ppActive == index) return;
+        if (_ppScored || PpCall[index] || _ppActive == index) return;
         _ppActive = index;
         _ppFocusInput = index;
     }
@@ -1628,10 +1659,11 @@ else
     {
         if (_ppScored) return;
 
-        if (_ppActive < 2)
+        int next = PpNextTyped(_ppActive);
+        if (next >= 0)
         {
-            _ppActive++;
-            _ppFocusInput = _ppActive;
+            _ppActive = next;
+            _ppFocusInput = next;
         }
         else
         {
@@ -1656,7 +1688,8 @@ else
 
         _ppMark[index] = mark;
         _ppAnswer[index] = string.Empty;
-        int next = index < 2 ? index + 1 : index;
+        int next = PpNextTyped(index);
+        if (next < 0) next = index;
         _ppActive = next;
         _ppFocusInput = next;
     }
@@ -1681,6 +1714,11 @@ else
 
         for (int i = 0; i < 3; i++)
         {
+            if (PpCall[i] && _ppMark[i] == PpMark.None)
+            {
+                _ppMessage = $"Call the {PgPayoutRound.Names[i]}: Win, Lose or Push.";
+                return;
+            }
             if ((_ppAnswer[i] ?? "").Length == 0 && _ppMark[i] == PpMark.None)
             {
                 _ppMessage = i == PgPayoutRound.Main
@@ -1700,10 +1738,15 @@ else
             {
                 PpMark.Lose => pay.IsLose,
                 PpMark.Push => pay.IsPush,
+                PpMark.Win => !pay.IsLose && !pay.IsPush,
                 _ => long.TryParse(_ppAnswer[i], out long v) && (v == 0 ? pay.IsLose : !pay.IsPush && v == pay.Amount)
             };
 
-            _ppRows.Add(new BreakdownRow(PgPayoutRound.Names[i], PpEnteredMoney(i), PpPayMoney(pay), _ppOk[i], _ppRound.Why[i]));
+            // A missed payout gets the payout shortcut under its reason
+            string tip = !_ppOk[i] && !PpCall[i] && !pay.IsLose && !pay.IsPush
+                ? PayoutShortcut.For(_ppRound.Wagers[i] * 100L, pay.Amount * 100L) : "";
+            _ppRows.Add(new BreakdownRow(PgPayoutRound.Names[i], PpEnteredMoney(i),
+                PpCall[i] ? PpCallText(pay) : PpPayMoney(pay), _ppOk[i], _ppRound.Why[i], tip));
         }
 
         _log.AddRows(_ppRows);
@@ -1735,6 +1778,7 @@ else
     // In the breakdown: "Lose", "Push" or "$150"
     private string PpEnteredMoney(int i) => _ppMark[i] switch
     {
+        PpMark.Win => "Win",
         PpMark.Lose => "Lose",
         PpMark.Push => "Push",
         _ => long.TryParse(_ppAnswer[i], out long v) ? $"${v:N0}" : _ppAnswer[i] ?? ""

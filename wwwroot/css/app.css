@@ -3447,6 +3447,17 @@ label,
 
 /* Suit symbols in feedback text (Shared/SuitText): red hearts and
    diamonds, black spades and clubs, whatever the line's own color */
+/* Payout shortcut under a missed payout (BreakdownRow.Tip) */
+.bd-tip {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 2px 8px;
+    border: 1px solid #e0c060;
+    border-radius: 6px;
+    background-color: #fff4d6;
+    color: #4a3a00;
+}
+
 .suit-red,
 .suit-black {
     /* fonts that draw the plain suit symbols (not emoji) */

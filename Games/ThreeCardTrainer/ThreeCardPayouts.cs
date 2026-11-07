@@ -78,14 +78,14 @@ public static class ThreeCardPayouts
         string versus;
         if (!qualifies)
         {
-            versus = $"Dealer has {dealerHand} and doesn't qualify (needs Queen high or better)";
+            versus = $"Dealer doesn't qualify ({dealerHand})";
         }
         else
         {
             int cmp = ThreeCardEvaluator.Compare(player, dealer);
-            versus = cmp > 0 ? $"Dealer qualifies ({dealerHand}); the player's {playerHand} wins"
-                   : cmp < 0 ? $"Dealer qualifies ({dealerHand}) and beats the player's {playerHand}"
-                   : $"Dealer qualifies ({dealerHand}) and ties the player's {playerHand}";
+            versus = cmp > 0 ? $"Player's {playerHand} beats dealer's {dealerHand}"
+                   : cmp < 0 ? $"Dealer's {dealerHand} beats player's {playerHand}"
+                   : $"Tie, {playerHand}";
         }
 
         // Play: 1 to 1; pushes when the dealer doesn't qualify or on a tie
@@ -98,9 +98,9 @@ public static class ThreeCardPayouts
         };
         why[TcpPayoutRound.Play] = playOutcome switch
         {
-            WagerOutcome.Win => $"{versus}: 1 to 1. {Money(w)} × 1 = {Money(w)}.",
-            WagerOutcome.Push => $"{versus}: the Play pushes.",
-            _ => $"{versus}: the Play loses."
+            WagerOutcome.Win => $"{versus}: pays even.",
+            WagerOutcome.Push => $"{versus}: pushes.",
+            _ => $"{versus}."
         };
 
         // Ante: 1 to 1, plus the Ante Bonus (paid on the player's hand,
@@ -113,7 +113,7 @@ public static class ThreeCardPayouts
 
         string antePart = anteOutcome switch
         {
-            WagerOutcome.Win => qualifies ? $"{versus}: Ante wins 1 to 1 ({Money(w)})" : $"{versus}: Ante still wins 1 to 1 ({Money(w)})",
+            WagerOutcome.Win => qualifies ? $"{versus}: Ante pays even" : $"{versus}: Ante still pays even",
             WagerOutcome.Push => $"{versus}: Ante pushes",
             _ => $"{versus}: Ante loses"
         };
@@ -121,10 +121,10 @@ public static class ThreeCardPayouts
         if (bonus > 0)
         {
             pays[TcpPayoutRound.Ante] = TcpPay.Win(anteTotal);
-            string bonusPart = $"Ante Bonus for {bonusHand}, {bonusTo1} to 1 ({Money(bonus)})";
+            string bonusPart = $"Ante Bonus {bonusTo1} to 1 ({bonusHand})";
             why[TcpPayoutRound.Ante] = anteWin > 0
-                ? $"{antePart}, plus {bonusPart}. {Money(anteWin)} + {Money(bonus)} = {Money(anteTotal)}."
-                : $"{antePart}, but the {bonusPart} still pays. Pay {Money(bonus)}.";
+                ? $"{antePart}, plus {bonusPart}."
+                : $"{antePart}, but the {bonusPart} still pays.";
         }
         else
         {
@@ -134,8 +134,7 @@ public static class ThreeCardPayouts
                 WagerOutcome.Push => TcpPay.Push,
                 _ => TcpPay.Lose
             };
-            string pay = anteOutcome == WagerOutcome.Win ? $" {Money(w)} \u00d7 1 = {Money(w)}." : "";
-            why[TcpPayoutRound.Ante] = $"{antePart}; no Ante Bonus (needs a Straight or better).{pay}";
+            why[TcpPayoutRound.Ante] = $"{antePart}; no Ante Bonus.";
         }
 
         // Pair Bonus: player's 3 cards
@@ -152,8 +151,8 @@ public static class ThreeCardPayouts
         string cards3 = string.Join(" ", player.Select(SideWagerTrainer.SideWagerPayouts.Short));
         pays[TcpPayoutRound.PairBonus] = pbTo1 > 0 ? TcpPay.Win(w * pbTo1) : TcpPay.Lose;
         why[TcpPayoutRound.PairBonus] = pbTo1 > 0
-            ? $"{cards3} is {WithArticle(playerHand)}: {pbTo1} to 1. {Money(w)} × {pbTo1} = {Money(w * pbTo1)}."
-            : $"{cards3} is {playerHand} (needs a Pair or better): the wager loses.";
+            ? $"{cards3}, {playerHand}: {pbTo1} to 1."
+            : $"{cards3}, {playerHand}: loses (needs a Pair or better).";
 
         // Prime: all 6 cards one color 4 to 1; else the player's 3 one color 3 to 1
         w = wagers[TcpPayoutRound.Prime];
@@ -163,17 +162,17 @@ public static class ThreeCardPayouts
         if (allOne)
         {
             pays[TcpPayoutRound.Prime] = TcpPay.Win(w * 4);
-            why[TcpPayoutRound.Prime] = $"All 6 cards are {color} (player AND dealer): 4 to 1. {Money(w)} × 4 = {Money(w * 4)}.";
+            why[TcpPayoutRound.Prime] = $"All 6 cards {color}: 4 to 1.";
         }
         else if (playerOne)
         {
             pays[TcpPayoutRound.Prime] = TcpPay.Win(w * 3);
-            why[TcpPayoutRound.Prime] = $"The player's 3 cards are {color} (the dealer's aren't all {color}): 3 to 1. {Money(w)} × 3 = {Money(w * 3)}.";
+            why[TcpPayoutRound.Prime] = $"Player's 3 cards {color}: 3 to 1.";
         }
         else
         {
             pays[TcpPayoutRound.Prime] = TcpPay.Lose;
-            why[TcpPayoutRound.Prime] = "The player's cards are mixed colors: the wager loses.";
+            why[TcpPayoutRound.Prime] = "Player's cards mixed colors: loses.";
         }
 
         // All 6: best 5 of all 6 cards
@@ -194,8 +193,8 @@ public static class ThreeCardPayouts
         string sixHand = HandEvaluator.DescribeHand(six);
         pays[TcpPayoutRound.AllSix] = a6To1 > 0 ? TcpPay.Win(w * a6To1) : TcpPay.Lose;
         why[TcpPayoutRound.AllSix] = a6To1 > 0
-            ? $"Best 5 of all 6 cards: {sixHand}. {a6To1:N0} to 1. {Money(w)} × {a6To1:N0} = {Money(w * a6To1)}."
-            : $"Best 5 of all 6 cards: {sixHand} (needs Three of a Kind or better): the wager loses.";
+            ? $"All 6 cards make {WithArticle(HandEvaluator.HandRankName(best))}: {a6To1:N0} to 1."
+            : $"All 6 cards make {WithArticle(HandEvaluator.HandRankName(best))}: loses (needs Three of a Kind or better).";
 
         return new TcpPayoutRound
         {

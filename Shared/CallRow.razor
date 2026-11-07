@@ -13,11 +13,17 @@
    the payout modes: "✓ Win", or "✗ Win · Ans: Lose".
 
    The chip shows only "$" (one color): these modes don't pay anything,
-   and a dollar value would suggest a payout. *@
+   and a dollar value would suggest a payout. In the payout modes (the
+   even-money wagers called instead of typed) ChipAmount shows the bet
+   on the chip, in its chip color. *@
 @implements IDisposable
 
 <div class="sp-wrow cr-row @(_open ? "sp-wrow-on" : "") @RowCss">
-    @if (Chip)
+    @if (ChipAmount is int amount)
+    {
+        <div class="sp-chip @ChipCss(amount)">$@amount</div>
+    }
+    else if (Chip)
     {
         <div class="sp-chip cr-chip">$</div>
     }
@@ -72,6 +78,8 @@
 @code {
     /// <summary>Show a wager chip ("$", no amount); false = no chip (e.g. a player row).</summary>
     [Parameter] public bool Chip { get; set; }
+    /// <summary>Payout modes: the bet, shown on the chip in its color (instead of "$").</summary>
+    [Parameter] public int? ChipAmount { get; set; }
     [Parameter] public string Name { get; set; } = "";
     /// <summary>Small line under the name, e.g. "player's hand".</summary>
     [Parameter] public string? Sub { get; set; }

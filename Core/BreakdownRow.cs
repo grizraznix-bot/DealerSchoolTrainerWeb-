@@ -4,8 +4,10 @@ namespace DealerSchoolTrainerWeb.Core;
 /// One line of the after-Submit feedback box (Shared/ResultBreakdown):
 /// the wager or question, what the user picked, the right answer, and
 /// a short reason. Used by every game that settles several wagers.
+/// Tip: an optional highlighted line under the reason -- the payout
+/// modes put the payout shortcut there on a missed payout.
 /// </summary>
-public sealed record BreakdownRow(string Name, string You, string Answer, bool Ok, string Why)
+public sealed record BreakdownRow(string Name, string You, string Answer, bool Ok, string Why, string Tip = "")
 {
     /// <summary>
     /// Result line above the box, worded the same in every game:

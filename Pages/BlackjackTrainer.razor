@@ -1240,12 +1240,15 @@ else
         }
 
         _spRows.Clear();
+        // A missed payout gets the payout shortcut under its reason
+        int[] bets = { _spRound.TwentyOnePlus3Wager, _spRound.LuckyLadiesWager };
+        string Tip(int i) => _spOk[i] ? "" : PayoutShortcut.For(bets[i] * 100L, correct[i] * 100L);
         _spRows.Add(new BreakdownRow("21 + 3",
             SpEnteredMoney(0), SpAnswerMoney(correct[0]), _spOk[0],
-            SideWagerPayouts.Why21Plus3(_spRound)));
+            SideWagerPayouts.Why21Plus3(_spRound), Tip(0)));
         _spRows.Add(new BreakdownRow("Lucky Ladies",
             SpEnteredMoney(1), SpAnswerMoney(correct[1]), _spOk[1],
-            SideWagerPayouts.WhyLuckyLadies(_spRound)));
+            SideWagerPayouts.WhyLuckyLadies(_spRound), Tip(1)));
 
         _log.AddRows(_spRows);
         _spPlayed++;
