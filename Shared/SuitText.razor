@@ -1,0 +1,35 @@
+@* Text with its card suit symbols in color: ♥ ♦ red, ♠ ♣ black, e.g.
+   "Best 5: A♥ A♦ Q♥ J♦ 10♠". Used for the feedback and summary lines
+   that name cards. *@
+
+@foreach (var (part, suit) in Split(Text))
+{
+    @if (suit)
+    {
+        <span class="@(part is "♥" or "♦" ? "suit-red" : "suit-black")">@(part + "\uFE0E")</span>
+    }
+    else
+    {
+        @part
+    }
+}
+
+@code {
+    [Parameter] public string Text { get; set; } = "";
+
+    // The text cut into runs, each suit symbol on its own
+    private static IEnumerable<(string Part, bool Suit)> Split(string text)
+    {
+        int start = 0;
+        for (int i = 0; i < text.Length; i++)
+        {
+            if (text[i] is '♠' or '♥' or '♦' or '♣')
+            {
+                if (i > start) yield return (text[start..i], false);
+                yield return (text[i].ToString(), true);
+                start = i + 1;
+            }
+        }
+        if (start < text.Length) yield return (text[start..], false);
+    }
+}

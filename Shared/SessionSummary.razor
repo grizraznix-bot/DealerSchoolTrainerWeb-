@@ -56,8 +56,8 @@
             @foreach (SessionMiss m in Log.RecentMisses)
             {
                 <div class="ss-miss">
-                    <b>@m.Title</b>@(m.Why.Length > 0 ? " — " + m.Why : "")
-                    <div class="ss-ans">@MissLine(m)</div>
+                    <b><SuitText Text="@m.Title" /></b>@if (m.Why.Length > 0) { <text> — </text><SuitText Text="@m.Why" /> }
+                    <div class="ss-ans"><SuitText Text="@MissLine(m)" /></div>
                 </div>
             }
         </div>

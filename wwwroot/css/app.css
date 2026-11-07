@@ -3445,6 +3445,22 @@ label,
     color: var(--c-lose);
 }
 
+/* Suit symbols in feedback text (Shared/SuitText): red hearts and
+   diamonds, black spades and clubs, whatever the line's own color */
+.suit-red,
+.suit-black {
+    /* fonts that draw the plain suit symbols (not emoji) */
+    font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Noto Sans Symbols 2", sans-serif;
+}
+
+.suit-red {
+    color: #d0021b;
+}
+
+.suit-black {
+    color: #111;
+}
+
 /* ------------------------------------------------------------------
    Shared bottom bar (Shared/GameBar.razor), the same in every game:
    Help | main action(s) | End Session, pinned to the bottom of the

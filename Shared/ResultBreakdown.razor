@@ -16,25 +16,25 @@
                     <td class="@(row.Ok ? "txt-ok" : "txt-bad")">
                         @if (row.Ok)
                         {
-                            <text>&#x2713; @row.Answer</text>
+                            <text>&#x2713; <SuitText Text="@row.Answer" /></text>
                         }
                         else
                         {
-                            <text>&#x2717; You: @row.You &middot; Answer: @row.Answer</text>
+                            <text>&#x2717; You: <SuitText Text="@row.You" /> &middot; Answer: <SuitText Text="@row.Answer" /></text>
                         }
                     </td>
                 </tr>
                 @if (row.Why.Length > 0)
                 {
                     <tr class="bd-why">
-                        <td colspan="2">@row.Why</td>
+                        <td colspan="2"><SuitText Text="@row.Why" /></td>
                     </tr>
                 }
             }
         </table>
         @if (Note.Length > 0)
         {
-            <p class="bd-note"><strong>@NoteLabel</strong> @Note</p>
+            <p class="bd-note"><strong>@NoteLabel</strong> <SuitText Text="@Note" /></p>
         }
     </div>
 }
