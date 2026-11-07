@@ -38,15 +38,15 @@
                         <p class="mode-option-label">Joker Frequency</p>
                         <label class="mode-choice">
                             <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 0)" @onchange="() => _hsJokerFrequencyLevel = 0" />
-                            Default
+                            Default (about 1 in 8 hands)
                         </label>
                         <label class="mode-choice">
                             <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 1)" @onchange="() => _hsJokerFrequencyLevel = 1" />
-                            +25%
+                            1 in 5 hands
                         </label>
                         <label class="mode-choice">
                             <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 2)" @onchange="() => _hsJokerFrequencyLevel = 2" />
-                            +50%
+                            1 in 3 hands
                         </label>
                     </div>
                 </div>
@@ -62,15 +62,15 @@
                         <p class="mode-option-label">Joker Frequency</p>
                         <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 0)" @onchange="() => _sbJokerFrequencyLevel = 0" />
-                            Default
+                            Default (about 1 in 4 deals)
                         </label>
                         <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 1)" @onchange="() => _sbJokerFrequencyLevel = 1" />
-                            +25%
+                            1 in 3 deals
                         </label>
                         <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 2)" @onchange="() => _sbJokerFrequencyLevel = 2" />
-                            +50%
+                            1 in 2 deals
                         </label>
                     </div>
                     <div class="mode-option-group">
@@ -804,16 +804,23 @@ else
         }
     }
 
-    // Shared pure helper -- identical Joker-inclusion-probability
-    // formula used by both modes (natural 7/53 odds boosted by the
-    // chosen level), and identical rank-value mapping (Joker and Ace
-    // both map to 14) used by both modes' own sorting logic.
-    private static double ComputeJokerProbability(int level)
+    // Chance the Joker is dealt, by Joker Frequency level. Default is a
+    // real 53-card deck: 7 of 53 for Hand Setting's one hand (about 1 in
+    // 8), 14 of 53 for Settling Bets' two hands together (about 1 in 4).
+    // The other levels are fixed rates: Hand Setting 1 in 5 / 1 in 3,
+    // Settling Bets 1 in 3 / 1 in 2. (Advanced Hand Setting's tricky
+    // House Way hands are set hands and don't use this.)
+    // Also: identical rank-value mapping (Joker and Ace both map to 14)
+    // used by both modes' own sorting logic, below.
+    private static double ComputeJokerProbability(int level, bool twoHands) => (level, twoHands) switch
     {
-        const double naturalJokerProbability = 7.0 / 53.0;
-        double boost = level switch { 1 => 0.25, 2 => 0.50, _ => 0.0 };
-        return naturalJokerProbability * (1 + boost);
-    }
+        (1, false) => 1.0 / 5.0,
+        (2, false) => 1.0 / 3.0,
+        (_, false) => 7.0 / 53.0,
+        (1, true) => 1.0 / 3.0,
+        (2, true) => 1.0 / 2.0,
+        (_, true) => 14.0 / 53.0
+    };
 
     private static int CardSortValue(PaiGowCard card) => card.Rank switch
     {
@@ -877,7 +884,7 @@ else
 
         _hsDeck = new PaiGowDeck();
 
-        double jokerProbability = ComputeJokerProbability(_hsJokerFrequencyLevel);
+        double jokerProbability = ComputeJokerProbability(_hsJokerFrequencyLevel, twoHands: false);
 
         _hsCards = _hsAdvanced && Random.Shared.Next(3) == 0
             ? PaiGowTrickyHands.Deal(Random.Shared, out _)
@@ -1095,7 +1102,7 @@ else
     {
         _sbDealEnabled = false;
 
-        double jokerProbability = ComputeJokerProbability(_sbJokerFrequencyLevel);
+        double jokerProbability = ComputeJokerProbability(_sbJokerFrequencyLevel, twoHands: true);
 
         PaiGowDeck sharedDeck = new PaiGowDeck();
         (_sbPlayerCards, _sbDealerCards) = sharedDeck.DealTwoSevenCardHandsWithJokerBias(jokerProbability);
