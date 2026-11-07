@@ -796,7 +796,7 @@ else
                                 <td>@(i + 1)</td>
                                 <td>@s.Score</td>
                                 <td>@s.Correct</td>
-                                <td class="ch-top-date">@s.When.ToString("M/d/yy h:mm tt")</td>
+                                <td class="ch-top-date">@s.When.ToString("M/d/yy")<small>@s.When.ToString("h:mm tt")</small></td>
                             </tr>
                         }
                     </tbody>

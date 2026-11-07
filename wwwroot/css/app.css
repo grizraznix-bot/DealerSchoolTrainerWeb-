@@ -2733,6 +2733,14 @@ label,
 .ch-top-table .ch-top-date {
     font-size: 0.85rem;
     color: #555;
+    line-height: 1.15;
+}
+
+/* Time on its own line under the date, so the column fits any phone */
+.ch-top-table .ch-top-date small {
+    display: block;
+    font-size: 0.72rem;
+    color: #888;
 }
 
 /* Clear Scores, then its confirm line */
