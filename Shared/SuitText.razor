@@ -1,35 +1,52 @@
-@* Text with its card suit symbols in color: ♥ ♦ red, ♠ ♣ black, e.g.
-   "Best 5: A♥ A♦ Q♥ J♦ 10♠". Used for the feedback and summary lines
-   that name cards. *@
+@* Text with its cards drawn as small outlined tiles, suit symbols in
+   color: ♥ ♦ red, ♠ ♣ black, e.g. "Best 5: A♥ A♦ Q♥ J♦ 10♠" shows five
+   card tiles. A suit symbol with no rank in front of it is just colored.
+   Used for the feedback and summary lines that name cards. *@
 
-@foreach (var (part, suit) in Split(Text))
+@foreach (var (rank, suit, plain) in Split(Text))
 {
-    @if (suit)
+    @if (suit is null)
     {
-        <span class="@(part is "♥" or "♦" ? "suit-red" : "suit-black")">@(part + "\uFE0E")</span>
+        @plain
+    }
+    else if (rank is null)
+    {
+        <span class="@SuitClass(suit)">@(suit + "︎")</span>
     }
     else
     {
-        @part
+        <span class="card-tile">@rank<span class="@SuitClass(suit)">@(suit + "︎")</span></span>
     }
 }
 
 @code {
     [Parameter] public string Text { get; set; } = "";
 
-    // The text cut into runs, each suit symbol on its own
-    private static IEnumerable<(string Part, bool Suit)> Split(string text)
+    private static string SuitClass(string suit) => suit is "♥" or "♦" ? "suit-red" : "suit-black";
+
+    private static bool IsSuit(char c) => c is '♠' or '♥' or '♦' or '♣';
+
+    // The text cut into runs: plain text, a card (rank + suit), or a lone
+    // suit symbol. A rank is A K Q J 10 9 ... 2 directly before the suit,
+    // starting a word (so "$10♠" or "x2♥" aren't read as cards).
+    private static IEnumerable<(string? Rank, string? Suit, string Plain)> Split(string text)
     {
         int start = 0;
         for (int i = 0; i < text.Length; i++)
         {
-            if (text[i] is '♠' or '♥' or '♦' or '♣')
-            {
-                if (i > start) yield return (text[start..i], false);
-                yield return (text[i].ToString(), true);
-                start = i + 1;
-            }
+            if (!IsSuit(text[i])) continue;
+
+            int rankStart = i;
+            if (i >= 2 && text[i - 2] == '1' && text[i - 1] == '0') rankStart = i - 2;
+            else if (i >= 1 && "AKQJ23456789".IndexOf(text[i - 1]) >= 0) rankStart = i - 1;
+            bool wordStart = rankStart < i && (rankStart == 0 || !char.IsLetterOrDigit(text[rankStart - 1]) && text[rankStart - 1] != '$');
+            if (rankStart < i && !wordStart) rankStart = i;
+            if (rankStart < start) rankStart = i;
+
+            if (rankStart > start) yield return (null, null, text[start..rankStart]);
+            yield return (rankStart < i ? text[rankStart..i] : null, text[i].ToString(), "");
+            start = i + 1;
         }
-        if (start < text.Length) yield return (text[start..], false);
+        if (start < text.Length) yield return (null, null, text[start..]);
     }
 }

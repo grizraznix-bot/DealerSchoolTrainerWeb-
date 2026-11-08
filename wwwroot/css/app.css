@@ -1264,19 +1264,89 @@ h1:focus {
     font-size: 1.5rem;
 }
 
-/* Add to Home Screen page */
-.install-heading {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.1rem;
+/* Add to Home Screen page: intro, iPhone / Android tabs, then one card
+   per step -- a simple phone drawing (blue ring on what to tap) beside
+   the step number and instruction */
+.ah-intro {
+    margin: 0 0 0.75rem 0;
 }
 
-.install-list {
-    margin: 0;
-    padding-left: 1.25rem;
+.ah-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    margin-bottom: 0.8rem;
+    border-radius: 10px;
+    background-color: #e9eef5;
 }
 
-.install-list li {
-    margin-bottom: 0.4rem;
+.ah-tab {
+    flex: 1;
+    padding: 0.5rem 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #445;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ah-tab.on {
+    background-color: #fff;
+    color: #0064dc;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.ah-step {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 0.7rem;
+    margin-bottom: 0.6rem;
+    border: 1px solid #d7dde6;
+    border-radius: 12px;
+    background-color: #fff;
+}
+
+.ah-pic {
+    flex: 0 0 112px;
+    width: 112px;
+    height: 150px;
+}
+
+.ah-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    margin-bottom: 0.3rem;
+    border-radius: 50%;
+    background-color: #0064dc;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.ah-txt {
+    font-size: 0.98rem;
+    line-height: 1.35;
+    color: #222;
+}
+
+.ah-txt small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.82rem;
+    color: #666;
+}
+
+.ah-done {
+    margin: 0.4rem 0 1rem 0;
+    text-align: center;
+    font-weight: 700;
+    color: #0a7d32;
 }
 
 /* "Already using the app version" note -- only shown when the site is
@@ -2996,6 +3066,56 @@ label,
     color: #555;
 }
 
+/* About: Special Thanks as a green felt panel -- gold heading, each
+   name after a black spade on a small white circle */
+.thanks-felt {
+    margin: 0.25rem 0 0 0;
+    padding: 0.9rem 1rem;
+    border-radius: 12px;
+    background: radial-gradient(ellipse at center, #2a7f53 0%, #1d6240 100%);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.thanks-title {
+    margin-bottom: 0.45rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #f2d27a;
+}
+
+.thanks-name {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.18rem 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.thanks-spade {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    color: #111;
+    font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Noto Sans Symbols 2", sans-serif;
+    font-size: 0.95rem;
+    font-weight: normal;
+}
+
+.thanks-for {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: #d7eadf;
+}
+
 /* ------------------------------------------------------------------
    Roulette Payouts
    ------------------------------------------------------------------ */
@@ -3470,6 +3590,24 @@ label,
 
 .suit-black {
     color: #111;
+}
+
+/* Cards named in feedback ("7♣ 6♣ 2♣"): each card as a small outlined
+   tile, like a card (Shared/SuitText.razor) */
+.card-tile {
+    display: inline-block;
+    min-width: 1.9em;
+    padding: 0 0.28em;
+    margin: 1px 1px;
+    border: 1.5px solid #8a93a0;
+    border-radius: 4px;
+    background-color: #fff;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.12);
+    color: #111;
+    font-weight: 700;
+    line-height: 1.3;
+    text-align: center;
+    white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------

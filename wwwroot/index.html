@@ -60,26 +60,39 @@
     <!-- Phones (mainly iPhone): stop a quick second tap from zooming the
          page (double-tap zoom), even where touch-action: manipulation in
          app.css isn't honored. A second tap within 300 ms has its zoom
-         gesture cancelled; if it landed on something tappable (button,
-         checkbox, wager shape, card), the tap is still delivered as a
-         click, so fast tapping keeps working. Dropdowns, text boxes and
-         pinch zoom are left alone. -->
+         gesture cancelled, and the tap is delivered as a click on whatever
+         was tapped (button, Call row, card, tap-for-rank hand, backdrop),
+         so fast tapping keeps working everywhere. A finger that moved
+         (a scroll or swipe) is left alone, as are dropdowns, text boxes
+         and pinch zoom. -->
     <script>
         (function () {
-            var lastTouchEnd = 0;
+            var lastTouchEnd = 0, startX = 0, startY = 0;
+            document.addEventListener('touchstart', function (e) {
+                if (e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            }, { passive: true });
             document.addEventListener('touchend', function (e) {
                 var now = Date.now();
                 var quick = now - lastTouchEnd <= 300;
                 lastTouchEnd = now;
-                if (!quick || e.touches.length > 0) return;
+                if (!quick || e.touches.length > 0 || e.changedTouches.length !== 1) return;
+                var p = e.changedTouches[0];
+                if (Math.abs(p.clientX - startX) > 10 || Math.abs(p.clientY - startY) > 10) return;
                 var t = e.target;
                 if (!t || !t.closest) return;
-                if (t.closest('select, textarea, input[type=text], input[type=number]')) return;
+                if (t.closest('select, textarea, [contenteditable], input:not([type=checkbox]):not([type=radio])')) return;
                 e.preventDefault();
-                var tappable = t.closest('button, a, label, input[type=checkbox], input[type=radio], .wager-shape, .pai-gow-card, .menu-backdrop, .wp-backdrop');
-                if (tappable && !tappable.disabled) tappable.click();
+                var el = t.closest('button, a, label, input') || t;
+                if (el.disabled || (el.closest && el.closest('[disabled]'))) return;
+                el.click();
             }, { passive: false });
         })();
+        // Add to Home Screen page: which phone's steps to show first
+        window.dstPhoneOs = function () {
+            return /android/i.test(navigator.userAgent) ? 'android' : 'ios';
+        };
     </script>
     <!-- Wager pop-ups (Shared/WagerPick): after one opens, nudge it back
          inside the screen if its button sits near the left or right
