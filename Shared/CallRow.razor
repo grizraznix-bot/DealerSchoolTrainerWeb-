@@ -12,6 +12,10 @@
    After Submit (Locked) the button becomes the answer box, the same as
    the payout modes: "✓ Win", or "✗ Win · Ans: Lose".
 
+   PickedText replaces the pick's own text on the button and in the
+   answer box once a payout has been entered, e.g. "Win $30" (the
+   button shows it in capitals: "WIN $30").
+
    The chip shows only "$" (one color): these modes don't pay anything,
    and a dollar value would suggest a payout. In the payout modes (the
    even-money wagers called instead of typed) ChipAmount shows the bet
@@ -44,11 +48,11 @@
         <div class="sp-ans cr-ans @(Wrong ? "sp-ans-bad" : "sp-ans-ok")">
             @if (Wrong)
             {
-                <text>&#x2717; @(Selected?.Text ?? "")@YouSuffix &middot; Ans: @AnswerText</text>
+                <text>&#x2717; @(PickedText ?? Selected?.Text ?? "")@YouSuffix &middot; Ans: @AnswerText</text>
             }
             else
             {
-                <text>&#x2713; @(Selected?.Text ?? "")@YouSuffix</text>
+                <text>&#x2713; @(PickedText ?? Selected?.Text ?? "")@YouSuffix</text>
             }
         </div>
     }
@@ -66,7 +70,7 @@
             </div>
         }
         <button type="button" class="cr-btn @SelectedCss" aria-haspopup="true" aria-expanded="@(_open ? "true" : "false")"
-                @onclick="Toggle">@(Selected is null ? "Call ▾" : Selected.Text.ToUpperInvariant() + YouSuffix)</button>
+                @onclick="Toggle">@(Selected is null ? "Call ▾" : (PickedText ?? Selected.Text).ToUpperInvariant() + YouSuffix)</button>
     }
 </div>
 
@@ -89,6 +93,8 @@
     /// <summary>Key of the current pick (null = not called yet).</summary>
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string> OnPick { get; set; }
+    /// <summary>Shown instead of the pick's text once a payout is entered, e.g. "Win $30".</summary>
+    [Parameter] public string? PickedText { get; set; }
     /// <summary>Added after the pick on the button and answer box, e.g. " + Bonus".</summary>
     [Parameter] public string YouSuffix { get; set; } = "";
 

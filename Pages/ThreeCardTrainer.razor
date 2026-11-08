@@ -2,7 +2,6 @@
 @using Microsoft.AspNetCore.Components
 @using DealerSchoolTrainerWeb.Core
 @using DealerSchoolTrainerWeb.Games.ThreeCardTrainer
-@using DealerSchoolTrainerWeb.Games.HoldemTrainer
 @implements IDisposable
 @inject GameResetService GameReset
 @inject IJSRuntime JS
@@ -14,256 +13,65 @@
     <div class="start-screen">
         <h1>THREE CARD PRIME</h1>
 
-        @* Two modes, each a collapsible card (one open at a time) *@
+        @* One mode; the Payouts setting decides whether winning bonus
+           wagers are also paid (Call only is the default) *@
         <div class="mode-list">
-            <ModeCard Title="Three Card Prime"
-                      Description="Settle the outcome of each wager (Win / Lose / Push), mark Ante Bonus if it pays, then Submit."
-                      Expanded="@(_openMode == TcMode.Settle)"
-                      OnToggle="() => ToggleMode(TcMode.Settle)"
-                      OnStart="StartGame" />
-
-            <ModeCard Title="Three Card Prime Payouts"
-                      Description="Call the Play (Win / Lose / Push), then pay the other wagers: enter the winnings (the Ante includes any Ante Bonus), or tap Push / Lose, then Submit."
-                      Expanded="@(_openMode == TcMode.Payouts)"
-                      OnToggle="() => ToggleMode(TcMode.Payouts)"
-                      OnStart="StartGame" />
-        </div>
-    </div>
-}
-else if (_tcMode == TcMode.Payouts)
-{
-    <div class="play-screen sp-screen tp-screen has-game-bar">
-        <div class="button-row">
-            <button class="back-button" @onclick="BackToStart">Back</button>
-        </div>
-
-        <GameStatus Title="Three Card Prime Payouts" Correct="_tpCorrect" Played="_tpPlayed" />
-
-        @* Dealer's hand (with whether it qualifies) and the player's hand,
-           side by side, each with its hand name *@
-        <div class="felt tp-felt">
-            <div class="tp-hand">
-                <div class="sp-cap">DEALER &middot; @_tpRound.DealerHand</div>
-                <div class="tp-cards">
-                    @foreach (Card c in _tpRound.DealerCards)
-                    {
-                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
-                    }
-                </div>
-                <span class="tp-qtag @(_tpRound.DealerQualifies ? "" : "tp-qtag-no")">@(_tpRound.DealerQualifies ? "QUALIFIES" : "DOESN'T QUALIFY")</span>
-            </div>
-            <div class="tp-hand tp-hand-player">
-                <div class="sp-cap">PLAYER &middot; @_tpRound.PlayerHand</div>
-                <div class="tp-cards">
-                    @foreach (Card c in _tpRound.PlayerCards)
-                    {
-                        <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
-                    }
-                </div>
-            </div>
-        </div>
-
-        @* The five wagers in settling order: chip, name, payout box, then
-           Push (Ante only) and Lose. Tap a row to key into it. The Play only
-           pays even money, so it's called (Win / Lose / Push with the Call
-           button) instead of typed. The Ante stays typed: its payout
-           includes any Ante Bonus. *@
-        <div class="pw-wrap">
-            <div class="pw-box @(!_tpScored ? "pw-scroll" : "")">
-            <div class="sp-wagers">
-                @for (int w = 0; w < 5; w++)
-                {
-                    int wi = w;
-                    int wager = _tpRound.Wagers[wi];
-                    bool canPush = wi <= TcpPayoutRound.Ante;
-                    @if (TpCall[wi])
-                    {
-                        <CallRow ChipAmount="wager" Name="@TcpPayoutRound.Names[wi]" Sub="@($"wager ${wager}")" Options="WagerPick.WinLosePush"
-                                 Value="@(_tpMark[wi] == TpMark.None ? null : _tpMark[wi].ToString())"
-                                 OnPick="k => TpPickCall(wi, k)"
-                                 Locked="_tpScored" Wrong="!_tpOk[wi]" AnswerText="@TpCallText(_tpRound.Pays[wi])" />
-                        continue;
-                    }
-                    <div class="sp-wrow @(!_tpScored && _tpActive == wi ? "sp-wrow-on" : "")" @onclick="() => TpSelect(wi)">
-                        <div class="sp-chip @TpChipClass(wager)">$@wager</div>
-                        <div class="sp-wname">@TcpPayoutRound.Names[wi]<small>wager $@wager</small></div>
-                        @if (_tpScored)
-                        {
-                            <div class="sp-ans @(_tpOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
-                                @if (_tpOk[wi])
-                                {
-                                    <text>&#x2713; @TpEnteredText(wi)</text>
-                                }
-                                else
-                                {
-                                    <text>&#x2717; @TpEnteredText(wi) &middot; Ans: @TpPayText(_tpRound.Pays[wi])</text>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            @* inputmode="none": phones use the keypad; a PC keyboard
-                               types normally. A row marked Lose / Push shows that in
-                               its box; typing a number (or Backspace) clears it. *@
-                            <input type="text"
-                                   class="sp-input @(_tpMark[wi] == TpMark.Lose ? "sp-input-lose" : _tpMark[wi] == TpMark.Push ? "tp-input-push" : "")"
-                                   inputmode="none"
-                                   autocomplete="off"
-                                   value="@TpBoxValue(wi)"
-                                   @oninput="e => TpInput(wi, e)"
-                                   @onkeydown="e => TpKeyDown(wi, e)"
-                                   @onfocus="() => _tpActive = wi"
-                                   @ref="_tpInputRefs[wi]"
-                                   placeholder="Payout" />
-                        }
-                        @if (canPush)
-                        {
-                            <button type="button"
-                                    class="sp-lose tp-push @(_tpMark[wi] == TpMark.Push ? "tp-push-on" : "")"
-                                    disabled="@_tpScored"
-                                    @onclick="() => TpToggleMark(wi, TpMark.Push)"
-                                    @onclick:stopPropagation="true">Push</button>
-                        }
-                        <button type="button"
-                                class="sp-lose @(_tpMark[wi] == TpMark.Lose ? "sp-lose-on" : "")"
-                                disabled="@_tpScored"
-                                @onclick="() => TpToggleMark(wi, TpMark.Lose)"
-                                @onclick:stopPropagation="true">Lose</button>
+            <ModeCard Title="Three Card Prime" Collapsible="false"
+                      Description="@(_pay
+                          ? "Call each wager Win, Lose or Push. Calling Win on a bonus wager (Pay on the Ante) opens its payout box: enter the winnings (the Ante's includes any Ante Bonus), then Submit."
+                          : "Call each wager Win, Lose or Push, tap + Bonus if the Ante Bonus pays, then Submit.")"
+                      OnStart="StartGame">
+                <div class="mode-options">
+                    <div class="mode-option-group">
+                        <p class="mode-option-label">Payouts</p>
+                        <label class="mode-choice">
+                            <input type="radio" name="tcPay" checked="@(!_pay)" @onchange="() => _pay = false" />
+                            Call only (Default)
+                        </label>
+                        <label class="mode-choice">
+                            <input type="radio" name="tcPay" checked="@_pay" @onchange="() => _pay = true" />
+                            Call and pay winners
+                        </label>
                     </div>
-                }
-            </div>
-            </div>
+                </div>
+            </ModeCard>
         </div>
-
-        <div class="sp-hint-row">
-            <span class="sp-desk-hint">Type each payout; Tab or Enter moves to the next box.</span>
-            <button class="keypad-toggle" @onclick="() => _tpShowKeypad = !_tpShowKeypad">123</button>
-        </div>
-
-        @if (!_tpScored)
-        {
-            <div class="keypad-wrap sp-keypad @(_tpShowKeypad ? "keypad-open" : "")">
-                <NumericKeypad AllowDecimal="false" @bind-Value="TpActiveText" OnEnter="TpKeypadEnter" EnterLabel="@(TpNextTyped(_tpActive) >= 0 ? "Next ↓" : "Enter")" />
-            </div>
-        }
-
-        <div class="feedback-area sp-feedback">
-            @if (_tpScored)
-            {
-                <ResultBreakdown ResultText="@_tpResultText" IsCorrect="_tpOk.All(o => o)" Rows="_tpRows" />
-            }
-            else if (_tpMessage.Length > 0)
-            {
-                <p class="result-line txt-bad">@_tpMessage</p>
-            }
-        </div>
-
-        @* Desktop: pay tables always in view (phones: in Help) *@
-        <aside class="sp-paytable tp-paytable">
-            <table class="sp-pt">
-                <tr class="sp-pt-hd"><td>Play &amp; Ante</td><td></td></tr>
-                <tr><td>Player wins</td><td>1 to 1</td></tr>
-                <tr><td>Tie</td><td>Push</td></tr>
-                <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't qualify: Ante 1 to 1, Play pushes</td></tr>
-                <tr class="sp-pt-hd"><td>Ante Bonus</td><td></td></tr>
-                <tr><td>Straight Flush</td><td>5 to 1</td></tr>
-                <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
-                <tr><td>Straight</td><td>1 to 1</td></tr>
-                <tr class="sp-pt-hd"><td>Pair Bonus</td><td></td></tr>
-                <tr><td>Straight Flush</td><td>40 to 1</td></tr>
-                <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
-                <tr><td>Straight</td><td>6 to 1</td></tr>
-                <tr><td>Flush</td><td>3 to 1</td></tr>
-                <tr><td>Any Pair</td><td>1 to 1</td></tr>
-            </table>
-            <table class="sp-pt">
-                <tr class="sp-pt-hd"><td>Prime</td><td></td></tr>
-                <tr><td>All 6 cards same color</td><td>4 to 1</td></tr>
-                <tr><td>Player's 3 same color</td><td>3 to 1</td></tr>
-                <tr class="sp-pt-hd"><td>All 6</td><td></td></tr>
-                <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
-                <tr><td>Straight Flush</td><td>200 to 1</td></tr>
-                <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
-                <tr><td>Full House</td><td>25 to 1</td></tr>
-                <tr><td>Flush</td><td>20 to 1</td></tr>
-                <tr><td>Straight</td><td>10 to 1</td></tr>
-                <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
-            </table>
-            <p class="sp-pt-note">Winnings only. Ante includes any Ante Bonus.</p>
-        </aside>
-
-        <GameBar HelpTitle="Three Card Prime Pay Tables" OnEnd="EndSession">
-            <ChildContent>
-                @if (!_tpScored)
-                {
-                    <button class="game-bar-main" @onclick="TpSubmitAndShow">Submit</button>
-                }
-                else
-                {
-                    <button class="game-bar-main" @onclick="TpNextTop" @ref="_tpNextButtonRef">Next</button>
-                }
-            </ChildContent>
-            <HelpContent>
-                <table class="help-table sp-help-table">
-                    <tr class="sp-pt-hd"><td>Play &amp; Ante (dealer qualifies with Queen high or better)</td><td></td></tr>
-                    <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
-                    <tr><td>Dealer doesn't qualify</td><td>Ante 1 to 1, Play push</td></tr>
-                    <tr><td>Tie</td><td>Both push</td></tr>
-                    <tr class="sp-pt-hd"><td>Ante Bonus (paid with the Ante, win or lose)</td><td></td></tr>
-                    <tr><td>Straight Flush</td><td>5 to 1</td></tr>
-                    <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
-                    <tr><td>Straight</td><td>1 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>Pair Bonus (player's 3 cards)</td><td></td></tr>
-                    <tr><td>Straight Flush</td><td>40 to 1</td></tr>
-                    <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
-                    <tr><td>Straight</td><td>6 to 1</td></tr>
-                    <tr><td>Flush</td><td>3 to 1</td></tr>
-                    <tr><td>Any Pair</td><td>1 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>Prime (color)</td><td></td></tr>
-                    <tr><td>Player AND dealer cards same color</td><td>4 to 1</td></tr>
-                    <tr><td>Player's cards same color</td><td>3 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>All 6 (best 5 of all 6 cards)</td><td></td></tr>
-                    <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
-                    <tr><td>Straight Flush</td><td>200 to 1</td></tr>
-                    <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
-                    <tr><td>Full House</td><td>25 to 1</td></tr>
-                    <tr><td>Flush</td><td>20 to 1</td></tr>
-                    <tr><td>Straight</td><td>10 to 1</td></tr>
-                    <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
-                </table>
-                <p>Call the Play Win, Lose or Push (it pays even money). For the other wagers, enter the winnings only; the Ante's payout includes any Ante Bonus. For a losing or pushed wager, tap Lose or Push (0 also counts as Lose).</p>
-            </HelpContent>
-        </GameBar>
     </div>
 }
 else
 {
-    @* Win / Lose / Push mode, in the payout modes' layout: dealer and
-       player hands side by side (no hand names -- that's the answer), then
-       one row per wager in settling order with its chip and a Call button
-       that pops Win / Lose (/ Push) out beside it. Ante Bonus is a toggle
-       in the Ante row. *@
-    <div class="play-screen sp-screen tp-screen cr-screen has-game-bar">
+    @* Dealer and player hands, then one row per wager in settling order
+       (Play, Ante, Pair Bonus, Prime, All 6), each with a Call button.
+       Payouts on: calling Win on a bonus wager (Pay on the Ante) opens
+       that row's payout box with the number pad; the other rows hide
+       until Enter (or Cancel) closes it. *@
+    <div class="play-screen sp-screen tp-screen has-game-bar @(_pay ? "" : "cr-screen") @(_box >= 0 ? "uc-open" : "")">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Three Card Prime" Correct="_correctCount" Played="_totalRounds" />
+        <GameStatus Title="@(_pay ? "Three Card Prime Payouts" : "Three Card Prime")" Correct="_correct" Played="_played" />
 
+        @* Payouts on: hand names and whether the dealer qualifies are shown
+           (paying is the skill). Call only: no hand names -- that's the answer. *@
         <div class="felt tp-felt">
             <div class="tp-hand">
-                <div class="sp-cap">DEALER</div>
+                <div class="sp-cap">DEALER@(_pay ? $" · {_round.DealerHand}" : "")</div>
                 <div class="tp-cards">
-                    @foreach (Card c in _dealerCards)
+                    @foreach (Card c in _round.DealerCards)
                     {
                         <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
                     }
                 </div>
+                @if (_pay)
+                {
+                    <span class="tp-qtag @(_round.DealerQualifies ? "" : "tp-qtag-no")">@(_round.DealerQualifies ? "QUALIFIES" : "DOESN'T QUALIFY")</span>
+                }
             </div>
             <div class="tp-hand tp-hand-player">
-                <div class="sp-cap">PLAYER</div>
+                <div class="sp-cap">PLAYER@(_pay ? $" · {_round.PlayerHand}" : "")</div>
                 <div class="tp-cards">
-                    @foreach (Card c in _playerCards)
+                    @foreach (Card c in _round.PlayerCards)
                     {
                         <img src="images/cards/@(c.Code).png" alt="@c.Name" class="tp-card" />
                     }
@@ -272,59 +80,144 @@ else
         </div>
 
         <div class="sp-wagers">
-            @foreach (WagerState w in RailOrder)
+            @for (int w = 0; w < 5; w++)
             {
-                WagerState wager = w;
-                bool isAnte = wager == _ante;
-                <CallRow Chip="true" Name="@wager.Name"
-                         Options="@(wager.AllowPush ? WagerPick.WinLosePush : WagerPick.WinLose)"
-                         Value="@wager.Selection?.ToString()"
-                         OnPick="key => PickWager(wager, Enum.Parse<WagerOutcome>(key))"
-                         YouSuffix="@(isAnte && _anteBonusChecked ? " + Bonus" : "")"
-                         Locked="_roundScored"
-                         Wrong="@(wager.Wrong || (isAnte && _anteBonusWrong))"
-                         AnswerText="@(isAnte ? AnteAnswerText : $"{wager.Actual}")">
-                    @if (isAnte && !_roundScored)
+                int wi = w;
+                int wager = _round.Wagers[wi];
+
+                @if (_box >= 0 && wi != _box)
+                {
+                    continue;
+                }
+
+                @if (wi == _box)
+                {
+                    @* The open payout box: chip, name, amount. Phones type with
+                       the number pad below (inputmode none keeps the phone's
+                       keyboard away); a computer keyboard types straight in,
+                       Enter confirms, Esc cancels. *@
+                    <div class="sp-wrow uc-boxrow">
+                        <div class="sp-chip @CallRow.ChipCss(wager)">$@wager</div>
+                        <div class="sp-wname">@TcpPayoutRound.Names[wi]<small>wager $@wager</small></div>
+                        <label class="uc-amt">
+                            <span class="uc-dollar">$</span>
+                            <input type="text"
+                                   inputmode="none"
+                                   autocomplete="off"
+                                   aria-label="@($"{TcpPayoutRound.Names[wi]} payout")"
+                                   placeholder="Payout"
+                                   value="@_boxText"
+                                   @oninput="BoxInput"
+                                   @onkeydown="BoxKeyDown"
+                                   @ref="_boxInputRef" />
+                        </label>
+                    </div>
+                    continue;
+                }
+
+                <CallRow Chip="@(!_pay)" ChipAmount="@(_pay ? wager : null)"
+                         Name="@TcpPayoutRound.Names[wi]"
+                         Sub="@(_pay ? $"wager ${wager}" : null)"
+                         Options="@OptionsFor(wi)"
+                         Value="@_call[wi]"
+                         PickedText="@PickedText(wi)"
+                         OnPick="k => Pick(wi, k)"
+                         YouSuffix="@(!_pay && wi == TcpPayoutRound.Ante && _bonus ? " + Bonus" : "")"
+                         Locked="_scored" Wrong="!_ok[wi]" AnswerText="@AnswerText(wi)">
+                    @if (!_pay && wi == TcpPayoutRound.Ante && !_scored)
                     {
-                        <button type="button" class="cr-bonus @(_anteBonusChecked ? "cr-bonus-on" : "")"
-                                aria-pressed="@(_anteBonusChecked ? "true" : "false")"
-                                @onclick="ToggleAnteBonus">+ Bonus</button>
+                        <button type="button" class="cr-bonus @(_bonus ? "cr-bonus-on" : "")"
+                                aria-pressed="@(_bonus ? "true" : "false")"
+                                @onclick="ToggleBonus">+ Bonus</button>
                     }
                 </CallRow>
             }
         </div>
 
-        @* First round only: what to do *@
-        @if (_totalRounds == 0 && !_roundScored)
+        @if (_box >= 0)
         {
-            <p class="cr-howto">Tap Call on each wager and pick Win, Lose or Push. Tap + Bonus if the Ante Bonus pays.</p>
+            <div class="uc-keypad">
+                <NumericKeypad AllowDecimal="false" @bind-Value="BoxText" OnEnter="BoxEnter" EnterLabel="Enter" EnterDisabled="@(_boxText.Length == 0)" />
+            </div>
+        }
+        else if (_played == 0 && !_scored)
+        {
+            @* First round only: what to do *@
+            <p class="cr-howto">@(_pay
+                ? "Tap Call on each wager. Win on a bonus wager (Pay on the Ante) opens its payout box."
+                : "Tap Call on each wager and pick Win, Lose or Push. Tap + Bonus if the Ante Bonus pays.")</p>
         }
 
-        <div class="feedback-area">
-            @if (_roundScored)
+        <div class="feedback-area sp-feedback">
+            @if (_scored)
             {
-                @* After Submit: each wager with the right answer and why *@
-                <ResultBreakdown ResultText="@_resultText" IsCorrect="_isCorrect" Rows="_rows" />
-            }
-            else if (_resultText.Length > 0)
-            {
-                <p class="result-line txt-bad">@_resultText</p>
+                <ResultBreakdown ResultText="@_resultText" IsCorrect="_ok.All(o => o)" Rows="_rows" />
             }
         </div>
 
-        @* Pinned bottom bar: Help | Submit, then Next | End Session *@
-        <GameBar HelpTitle="Three Card Prime Pay Tables" OnEnd="EndSession">
+        @if (_pay)
+        {
+            @* Desktop: pay tables always in view (phones: in Help) *@
+            <aside class="sp-paytable tp-paytable">
+                <table class="sp-pt">
+                    <tr class="sp-pt-hd"><td>Play &amp; Ante</td><td></td></tr>
+                    <tr><td>Player wins</td><td>1 to 1</td></tr>
+                    <tr><td>Tie</td><td>Push</td></tr>
+                    <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't qualify: Ante 1 to 1, Play pushes</td></tr>
+                    <tr class="sp-pt-hd"><td>Ante Bonus</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>5 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
+                    <tr><td>Straight</td><td>1 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>Pair Bonus</td><td></td></tr>
+                    <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
+                    <tr><td>Straight</td><td>6 to 1</td></tr>
+                    <tr><td>Flush</td><td>3 to 1</td></tr>
+                    <tr><td>Any Pair</td><td>1 to 1</td></tr>
+                </table>
+                <table class="sp-pt">
+                    <tr class="sp-pt-hd"><td>Prime</td><td></td></tr>
+                    <tr><td>All 6 cards same color</td><td>4 to 1</td></tr>
+                    <tr><td>Player's 3 same color</td><td>3 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td>All 6</td><td></td></tr>
+                    <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
+                    <tr><td>Straight Flush</td><td>200 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
+                    <tr><td>Full House</td><td>25 to 1</td></tr>
+                    <tr><td>Flush</td><td>20 to 1</td></tr>
+                    <tr><td>Straight</td><td>10 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
+                </table>
+                <p class="sp-pt-note">Winnings only. Ante includes any Ante Bonus.</p>
+            </aside>
+        }
+
+        @* Pinned bottom bar. Until every wager is called the main button is
+           dimmed and counts the wagers left; while a payout box is open,
+           End Session becomes Cancel. *@
+        <GameBar HelpTitle="Three Card Prime Pay Tables" OnEnd="EndOrCancel"
+                 EndLabel="@(_box >= 0 ? "Cancel" : "End Session")"
+                 EndClass="@(_box >= 0 ? "game-bar-cancel" : "")">
             <ChildContent>
-                @if (!_roundScored)
+                @if (!_scored)
                 {
-                    <button class="game-bar-main" @onclick="SubmitAndShow" disabled="@(!_submitEnabled)">Submit</button>
+                    int left = WagersLeft;
+                    @if (left > 0 || _box >= 0)
+                    {
+                        <button class="game-bar-main" disabled>
+                            <span class="gb-left-long">@left @(left == 1 ? "wager" : "wagers") left</span><span class="gb-left-short">@left left</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="game-bar-main" @onclick="SubmitAndShow">Submit</button>
+                    }
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="NextFromTop" disabled="@(!_dealEnabled)">Next</button>
+                    <button class="game-bar-main" @onclick="NextFromTop">Next</button>
                 }
             </ChildContent>
-            @* Same pay tables as Three Card Prime Payouts *@
             <HelpContent>
                 <table class="help-table sp-help-table">
                     <tr class="sp-pt-hd"><td>Play &amp; Ante (dealer qualifies with Queen high or better)</td><td></td></tr>
@@ -353,7 +246,14 @@ else
                     <tr><td>Straight</td><td>10 to 1</td></tr>
                     <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
                 </table>
-                <p>A wager wins with any hand on its table; otherwise it loses (Play and Ante can also push, as above). Tap + Bonus when the Ante Bonus pays.</p>
+                @if (_pay)
+                {
+                    <p>Call the Play Win, Lose or Push (it pays even money). Calling Win on Pair Bonus, Prime or All 6, or Pay on the Ante, opens its payout box: enter the winnings only, then Enter. The Ante's payout includes any Ante Bonus. Entering 0 counts as Lose; Cancel puts the wager back to Call.</p>
+                }
+                else
+                {
+                    <p>A wager wins with any hand on its table; otherwise it loses (Play and Ante can also push, as above). Tap + Bonus when the Ante Bonus pays.</p>
+                }
             </HelpContent>
         </GameBar>
     </div>
@@ -361,15 +261,16 @@ else
 
 @if (_showSessionSummary)
 {
-    @if (_tcMode == TcMode.Payouts)
+    @* Each Payouts setting keeps its own "last time" progress *@
+    @if (_pay)
     {
-        <SessionSummary ModeKey="tc-payouts" Rounds="_tpPlayed" Correct="_tpCorrect" Log="_log"
+        <SessionSummary ModeKey="tc-payouts" Rounds="_played" Correct="_correct" Log="_log"
                         RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
                         OnAgain="PracticeAgain" OnDone="CloseSummary" />
     }
     else
     {
-        <SessionSummary ModeKey="tc-settle" Rounds="_totalRounds" Correct="_correctCount" Log="_log"
+        <SessionSummary ModeKey="tc-settle" Rounds="_played" Correct="_correct" Log="_log"
                         RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
                         OnAgain="PracticeAgain" OnDone="CloseSummary" />
     }
@@ -395,433 +296,305 @@ else
         GameReset.ResetRequested -= OnResetRequested;
     }
 
-    // Scroll back to the top whenever this game switches between its
-    // start screen and its play screen (Start, Back, menu, End Session).
-    // Without this the browser keeps the old scroll position -- after
-    // scrolling down to reach Start, the game would open scrolled down.
-    private bool _lastRenderedStarted;
-
-    private bool _scrollToSummary;
-
-    // Bar buttons: Submit also scrolls to the feedback; Next also
-    // scrolls back to the top
-    private void SubmitAndShow()
-    {
-        SubmitRound();
-        if (_roundScored) _scrollToFeedback = true;
-    }
-
-    private void NextFromTop()
-    {
-        DealAgain();
-        _scrollToTopAfterNext = true;
-    }
-
-    private bool _scrollToFeedback;
-    private bool _scrollToTopAfterNext;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        // Submit: bring the feedback box into view (if it isn't already).
-        // Next: back to the top for the new hand.
-        if (_scrollToFeedback)
-        {
-            _scrollToFeedback = false;
-            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
-        }
-
-        if (_scrollToTopAfterNext)
-        {
-            _scrollToTopAfterNext = false;
-            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
-        }
-
-        // End Session: bring the Session Summary into view (it's at the
-        // bottom of the page, often below the screen on a phone)
-        if (_scrollToSummary && _showSessionSummary)
-        {
-            _scrollToSummary = false;
-            try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
-        }
-
-        if (_started != _lastRenderedStarted)
-        {
-            _lastRenderedStarted = _started;
-            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
-
-            // Payouts on desktop: open the number pad straight away when
-            // the window is tall enough for it (123 still hides / shows it)
-            if (_started && _tcMode == TcMode.Payouts)
-            {
-                bool fits = false;
-                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", 315); } catch { }
-                _tpShowKeypad = fits;
-                if (fits) StateHasChanged();
-            }
-        }
-
-        // Payouts: cursor into the active payout box, or onto Next once
-        // the round is scored (so Enter deals the next round)
-        // Payouts, phones: size the wager box to the space above the keypad
-        if (_started && _tcMode == TcMode.Payouts)
-        {
-            try { await JS.InvokeVoidAsync("dstFitWagerBox"); } catch { }
-        }
-
-        if (_tpFocusInput >= 0)
-        {
-            int i = _tpFocusInput;
-            _tpFocusInput = -1;
-            try { await _tpInputRefs[i].FocusAsync(preventScroll: true); } catch { }
-            try { await JS.InvokeVoidAsync("dstWagerRowIntoView", i); } catch { }
-        }
-
-        if (_tpFocusNext)
-        {
-            _tpFocusNext = false;
-            try { await _tpNextButtonRef.FocusAsync(preventScroll: true); } catch { }
-        }
-    }
-
-    private sealed class WagerState
-    {
-        public required string Name;
-        public int Wager;           // chip amount shown on the row (real-world betting pattern)
-        public bool AllowPush;
-        public WagerOutcome? Selection;
-        public bool Wrong;
-        public WagerOutcome? Actual; // set at Submit, to outline the right answer when the call was wrong
-    }
+    // ---- State ---------------------------------------------------------
 
     private bool _started;
+    // Start screen setting: false = Call only, true = Call and pay winners
+    private bool _pay;
 
-    // Two modes: Settle (Win / Lose / Push calls) and Payouts. Start
-    // screen: which mode card is open (null = all closed); opening a card
-    // also selects its mode.
-    private enum TcMode { Settle, Payouts }
-    private TcMode _tcMode = TcMode.Settle;
-    private TcMode? _openMode;
+    private TcpPayoutRound _round = ThreeCardPayouts.Deal(Random.Shared);
 
-    private void ToggleMode(TcMode mode)
-    {
-        _openMode = _openMode == mode ? null : mode;
-        if (_openMode is not null) _tcMode = mode;
-    }
+    // Per wager (settling order): the call ("Win", "Lose", "Push", "Pay"
+    // or null = not called yet) and, Payouts on, the payout entered
+    private readonly string?[] _call = new string?[5];
+    private readonly int?[] _paid = new int?[5];
+    private bool _bonus;                 // Call only: + Bonus on the Ante
 
-    private Deck _deck = new();
-    private Card[] _playerCards = Array.Empty<Card>();
-    private Card[] _dealerCards = Array.Empty<Card>();
+    private int _box = -1;               // row whose payout box is open (-1 = none)
+    private string _boxText = string.Empty;
+    private ElementReference _boxInputRef;
 
-    private readonly WagerState _play = new() { Name = "Play", AllowPush = true };
-    private readonly WagerState _ante = new() { Name = "Ante", AllowPush = true };
-    private readonly WagerState _pairBonus = new() { Name = "Pair Bonus", AllowPush = false };
-    private readonly WagerState _prime = new() { Name = "Prime", AllowPush = false };
-    private readonly WagerState _allSix = new() { Name = "All 6", AllowPush = false };
-
-    private int _correctCount;
-    private int _totalRounds;
-    private bool _roundScored;
-    private bool _anteBonusChecked;
-    private bool _anteBonusWrong;
-
-    private bool _submitEnabled;
-    private bool _dealEnabled;
+    private bool _scored;
+    private readonly bool[] _ok = new bool[5];
+    private readonly List<BreakdownRow> _rows = new();
     private string _resultText = string.Empty;
-    private bool _isCorrect;
-    private string _scoreText = "Score: 0 / 0 (0.0%)";
+    private int _played;
+    private int _correct;
+
+    // After a payout box closes, End Session ignores taps for a moment so
+    // a quick second tap on Cancel doesn't end the session
+    private DateTime _endBlockedUntil;
+
     private bool _showSessionSummary;
-
-    // Wager rows in settling order, top to bottom
-    private WagerState[] RailOrder => new[] { _play, _ante, _pairBonus, _prime, _allSix };
-
-    // A wager row's Call pick (locked after Submit)
-    private void PickWager(WagerState w, WagerOutcome choice)
-    {
-        if (_roundScored) return;
-        w.Selection = choice;
-        w.Wrong = false;
-    }
-
-    // Ante row after Submit: the right call, with "+ Bonus" when it pays
-    private string AnteAnswerText =>
-        $"{_ante.Actual}{(ThreeCardEvaluator.QualifiesAnteBonus(_playerCards) ? " + Bonus" : "")}";
-
-    // Ante Bonus toggle in the Ante row
-    private void ToggleAnteBonus()
-    {
-        if (_roundScored) return;
-        _anteBonusChecked = !_anteBonusChecked;
-        _anteBonusWrong = false;
-    }
-
-    // What happened this session, for the summary (Shared/SessionSummary)
     private SessionLog _log = new();
 
-    // End-of-session summary's Practice Again: a fresh session of the same
-    // mode, back at the top of the page (as if started from the start screen)
-    private void PracticeAgain()
+    // Scrolling after render
+    private bool _lastRenderedStarted;
+    private bool _scrollToFeedback;
+    private bool _scrollToTop;
+    private bool _scrollToSummary;
+    private bool _focusBox;
+
+    // ---- Rows ----------------------------------------------------------
+
+    // Play and Ante can push; the bonus wagers win or lose. Payouts on, the
+    // Ante is Pay / Push / Lose (Pay covers the Ante, Ante Bonus or both).
+    private IReadOnlyList<WagerPickOption> OptionsFor(int i) => i switch
     {
-        _showSessionSummary = false;
-        StartGame();
-        _lastRenderedStarted = false;
+        TcpPayoutRound.Play => WagerPick.WinLosePush,
+        TcpPayoutRound.Ante => _pay ? WagerPick.PayPushLose : WagerPick.WinLosePush,
+        _ => WagerPick.WinLose
+    };
+
+    // Payouts on: wagers paid through the payout box (everything but the Play)
+    private bool Paid(int i) => _pay && i != TcpPayoutRound.Play;
+
+    // Button / answer-box text once a payout is in, e.g. "Win $30"
+    private string? PickedText(int i) =>
+        _paid[i] is int v && (_call[i] is "Win" or "Pay") ? $"{_call[i]} ${v:N0}" : null;
+
+    private int WagersLeft => _call.Count(c => c is null);
+
+    private void Pick(int i, string key)
+    {
+        if (_scored) return;
+
+        // Payouts on: Win (Pay on the Ante) opens the payout box
+        if (Paid(i) && key is "Win" or "Pay")
+        {
+            _call[i] = null;
+            _paid[i] = null;
+            _box = i;
+            _boxText = string.Empty;
+            _focusBox = true;
+            _scrollToTop = true;
+            return;
+        }
+
+        _call[i] = key;
+        _paid[i] = null;
     }
+
+    private void ToggleBonus()
+    {
+        if (!_scored) _bonus = !_bonus;
+    }
+
+    // ---- Payout box ----------------------------------------------------
+
+    // The number pad types into the open box
+    private string BoxText
+    {
+        get => _boxText;
+        set => _boxText = DigitsOnly(value);
+    }
+
+    // Whole dollars, at most 5 digits (the top pay is $5,000)
+    private static string DigitsOnly(string? raw)
+    {
+        System.Text.StringBuilder sb = new();
+        foreach (char c in raw ?? string.Empty)
+        {
+            if (char.IsDigit(c) && sb.Length < 5) sb.Append(c);
+        }
+        // No leading zeros ("05" is 5), but a lone 0 stays (0 = Lose)
+        string digits = sb.ToString().TrimStart('0');
+        return digits.Length == 0 && sb.Length > 0 ? "0" : digits;
+    }
+
+    private void BoxInput(ChangeEventArgs e) => _boxText = DigitsOnly(e.Value?.ToString());
+
+    private void BoxKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") BoxEnter();
+        else if (e.Key == "Escape") BoxCancel();
+    }
+
+    // Enter: the amount goes on the row and the box closes; 0 counts as Lose
+    private void BoxEnter()
+    {
+        if (_box < 0 || _boxText.Length == 0) return;
+
+        int i = _box;
+        int amount = int.Parse(_boxText);
+        if (amount == 0)
+        {
+            _call[i] = "Lose";
+            _paid[i] = null;
+        }
+        else
+        {
+            _call[i] = i == TcpPayoutRound.Ante ? "Pay" : "Win";
+            _paid[i] = amount;
+        }
+        CloseBox();
+    }
+
+    // Cancel: the row goes back to Call (no penalty)
+    private void BoxCancel()
+    {
+        if (_box < 0) return;
+        _call[_box] = null;
+        _paid[_box] = null;
+        CloseBox();
+    }
+
+    private void CloseBox()
+    {
+        _box = -1;
+        _boxText = string.Empty;
+        _endBlockedUntil = DateTime.UtcNow.AddMilliseconds(500);
+    }
+
+    // ---- Start / deal --------------------------------------------------
 
     private void StartGame()
     {
         _started = true;
         _log = new SessionLog();
-        if (_tcMode == TcMode.Payouts)
+        _played = 0;
+        _correct = 0;
+        NewRound();
+    }
+
+    private void BackToStart()
+    {
+        _box = -1;
+        _started = false;
+    }
+
+    // Both settings deal the same way: every wager placed every hand, in
+    // real-world amounts, with the All 6 training boost (ThreeCardPayouts)
+    private void NewRound()
+    {
+        _round = ThreeCardPayouts.Deal(Random.Shared);
+        for (int i = 0; i < 5; i++)
         {
-            TpStartGame();
+            _call[i] = null;
+            _paid[i] = null;
+            _ok[i] = false;
+        }
+        _bonus = false;
+        _box = -1;
+        _boxText = string.Empty;
+        _scored = false;
+        _rows.Clear();
+        _resultText = string.Empty;
+    }
+
+    private void NextFromTop()
+    {
+        NewRound();
+        _scrollToTop = true;
+    }
+
+    // ---- Submit --------------------------------------------------------
+
+    private void SubmitAndShow()
+    {
+        Submit();
+        if (_scored) _scrollToFeedback = true;
+    }
+
+    private void Submit()
+    {
+        if (_scored || _box >= 0 || WagersLeft > 0) return;
+
+        _rows.Clear();
+        for (int i = 0; i < 5; i++)
+        {
+            _rows.Add(_pay ? PayRow(i) : CallRowResult(i));
+        }
+
+        _log.AddRows(_rows);
+        _played++;
+        if (_ok.All(o => o)) _correct++;
+        _resultText = BreakdownRow.Summary(_rows);
+        _scored = true;
+    }
+
+    // The right call for a wager, before any payout: "Win", "Lose" or "Push"
+    private static string Outcome(TcpPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
+
+    private string ActualCall(int i) =>
+        i == TcpPayoutRound.Ante ? _round.AnteOutcome.ToString() : Outcome(_round.Pays[i]);
+
+    // Call only: the call (and + Bonus on the Ante) against the hand
+    private BreakdownRow CallRowResult(int i)
+    {
+        string actual = ActualCall(i);
+        bool ok = _call[i] == actual;
+        string you = _call[i] ?? "";
+        string answer = actual;
+
+        if (i == TcpPayoutRound.Ante)
+        {
+            ok &= _bonus == _round.AnteBonusPays;
+            if (_bonus) you += " + Bonus";
+            if (_round.AnteBonusPays) answer += " + Bonus";
+        }
+
+        _ok[i] = ok;
+        return new BreakdownRow(TcpPayoutRound.Names[i], you, answer, ok, _round.Why[i]);
+    }
+
+    // Payouts on: the Play's call, and every other wager's payout (or
+    // Lose / Push); a missed payout gets its shortcut
+    private BreakdownRow PayRow(int i)
+    {
+        TcpPay pay = _round.Pays[i];
+        bool wins = !pay.IsLose && !pay.IsPush;
+        bool ok = _call[i] switch
+        {
+            "Lose" => pay.IsLose,
+            "Push" => pay.IsPush,
+            "Win" when i == TcpPayoutRound.Play => wins,
+            "Win" or "Pay" => wins && _paid[i] == pay.Amount,
+            _ => false
+        };
+        _ok[i] = ok;
+
+        string tip = !ok && i != TcpPayoutRound.Play && wins
+            ? PayoutShortcut.For(_round.Wagers[i] * 100L, pay.Amount * 100L) : "";
+        return new BreakdownRow(TcpPayoutRound.Names[i], YouText(i), AnswerText(i), ok, _round.Why[i], tip);
+    }
+
+    // In the breakdown: "Lose", "Push", "Win" (the Play) or "$150"
+    private string YouText(int i) =>
+        _paid[i] is int v && (_call[i] is "Win" or "Pay") ? $"${v:N0}" : _call[i] ?? "";
+
+    // The right answer shown on a missed row
+    private string AnswerText(int i)
+    {
+        if (!_pay)
+        {
+            string a = ActualCall(i);
+            return i == TcpPayoutRound.Ante && _round.AnteBonusPays ? a + " + Bonus" : a;
+        }
+
+        TcpPay pay = _round.Pays[i];
+        if (i == TcpPayoutRound.Play || pay.IsLose || pay.IsPush) return Outcome(pay);
+        return ThreeCardPayouts.Money(pay.Amount);
+    }
+
+    // ---- End Session ---------------------------------------------------
+
+    // The bar's right button: Cancel while a payout box is open, otherwise
+    // End Session (ignored for a moment right after a box closes)
+    private void EndOrCancel()
+    {
+        if (_box >= 0)
+        {
+            BoxCancel();
             return;
         }
-
-        _correctCount = 0;
-        _totalRounds = 0;
-        _scoreText = "Score: 0 / 0 (0.0%)";
-
-        DealNewRound();
-    }
-
-    private void BackToStart() => _started = false;
-
-    // Share of hands dealt so All 6 wins (see DealNewRound). 19% forced,
-    // plus the ~7% the other 81% of plain deals win on their own, makes
-    // All 6 win on about 25% of hands overall.
-    private const double AllSixBoostRate = 0.19;
-
-    private void DealNewRound()
-    {
-        _rows.Clear();
-        _dealEnabled = false;
-
-        // Training boost: All 6 (Three of a Kind or better from all six
-        // cards) wins on about 1 hand in 4 overall, vs about 1 in 14 with
-        // plain random deals. AllSixBoostRate of hands are forced winners. On those hands the cards are simply
-        // re-dealt until the six qualify, so the winners still come in
-        // their natural mix (trips, straights, flushes, full houses...).
-        // Not shown or adjustable anywhere; every other hand is a plain
-        // random deal.
-        bool forceAllSix = Random.Shared.NextDouble() < AllSixBoostRate;
-        do
-        {
-            _deck = new Deck();
-            _deck.Shuffle();
-
-            _playerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
-            _dealerCards = new[] { _deck.Draw(), _deck.Draw(), _deck.Draw() };
-        }
-        while (forceAllSix && ThreeCardEvaluator.ResolveAllSix(_playerCards, _dealerCards) != WagerOutcome.Win);
-
-        SortDescending(_playerCards);
-        SortDescending(_dealerCards);
-
-        foreach (WagerState w in new[] { _play, _ante, _pairBonus, _prime, _allSix })
-        {
-            w.Selection = null;
-            w.Wrong = false;
-            w.Actual = null;
-        }
-
-        // Chips on the rows, as the payout mode bets them (Ante = Play)
-        _ante.Wager = _play.Wager = ThreeCardPayouts.AntePlayWager(Random.Shared);
-        _pairBonus.Wager = ThreeCardPayouts.SideWager(Random.Shared);
-        _prime.Wager = ThreeCardPayouts.PrimeWager(Random.Shared);
-        _allSix.Wager = ThreeCardPayouts.AllSixWager(Random.Shared);
-
-        _anteBonusChecked = false;
-        _anteBonusWrong = false;
-
-        _resultText = string.Empty;
-        _roundScored = false;
-        _submitEnabled = true;
-    }
-
-    private void DealAgain() => DealNewRound();
-
-    // Groups a pair or trips together ahead of an unrelated kicker, e.g.
-    // a pair of 7s with a Ten kicker displays as 7,7,T -- not the Ten
-    // first, even though a Ten outranks a 7 in plain high-to-low order.
-    // Applies to both the player's and dealer's cards, since this same
-    // method sorts both.
-    private static void SortDescending(Card[] cards)
-    {
-        Dictionary<int, int> rankCounts = new();
-        foreach (Card c in cards)
-        {
-            int rank = (int)c.Rank;
-            rankCounts[rank] = rankCounts.GetValueOrDefault(rank) + 1;
-        }
-
-        Array.Sort(cards, (a, b) =>
-        {
-            int countA = rankCounts[(int)a.Rank];
-            int countB = rankCounts[(int)b.Rank];
-            if (countA != countB) return countB.CompareTo(countA); // higher count (pair/trips) first
-
-            return ((int)b.Rank).CompareTo((int)a.Rank); // then higher rank first
-        });
-    }
-
-    private void SubmitRound()
-    {
-
-        WagerState[] all = { _play, _ante, _pairBonus, _prime, _allSix };
-
-        foreach (WagerState w in all)
-        {
-            if (w.Selection is null)
-            {
-                _resultText = "Tap every wager to select an outcome before submitting.";
-                _isCorrect = false;
-                return;
-            }
-        }
-
-        if (_roundScored) return;
-
-        (WagerOutcome anteOutcome, WagerOutcome playOutcome) = ThreeCardEvaluator.ResolveAntePlay(_playerCards, _dealerCards);
-        WagerOutcome pairPlusOutcome = ThreeCardEvaluator.ResolvePairPlus(_playerCards);
-        WagerOutcome primeOutcome = ThreeCardEvaluator.ResolvePrime(_playerCards, _dealerCards);
-        WagerOutcome allSixOutcome = ThreeCardEvaluator.ResolveAllSix(_playerCards, _dealerCards);
-
-        bool allCorrect = true;
-        allCorrect &= GradeWager(_play, playOutcome);
-        allCorrect &= GradeWager(_ante, anteOutcome);
-        allCorrect &= GradeWager(_pairBonus, pairPlusOutcome);
-        allCorrect &= GradeWager(_prime, primeOutcome);
-        allCorrect &= GradeWager(_allSix, allSixOutcome);
-
-        bool anteBonusActual = ThreeCardEvaluator.QualifiesAnteBonus(_playerCards);
-        if (_anteBonusChecked == anteBonusActual)
-        {
-            _anteBonusWrong = false;
-        }
-        else
-        {
-            _anteBonusWrong = true;
-            allCorrect = false;
-        }
-
-        _totalRounds++;
-        if (allCorrect) _correctCount++;
-
-        BuildRows(anteOutcome, playOutcome, pairPlusOutcome, primeOutcome, allSixOutcome, anteBonusActual);
-        _log.AddRows(_rows);
-
-        _isCorrect = allCorrect;
-        _resultText = BreakdownRow.Summary(_rows);
-
-        string pct = _totalRounds > 0
-            ? ((double)_correctCount / _totalRounds).ToString("0.0%")
-            : "0.0%";
-        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
-
-        _roundScored = true;
-        _submitEnabled = false;
-        _dealEnabled = true;
-    }
-
-    // After Submit: one line per wager (in settling order) with the right
-    // answer and why, so a miss teaches the rule rather than just marking
-    // it wrong
-    private readonly List<BreakdownRow> _rows = new();
-
-    private void BuildRows(WagerOutcome ante, WagerOutcome play, WagerOutcome pairBonus,
-                           WagerOutcome prime, WagerOutcome allSix, bool anteBonus)
-    {
-        _rows.Clear();
-
-        string player = DescribeThree(_playerCards);
-        string dealer = DescribeThree(_dealerCards);
-        bool qualifies = ThreeCardEvaluator.DealerQualifies(_dealerCards);
-
-        string versus;
-        if (!qualifies)
-        {
-            versus = $"Dealer {dealer} doesn't qualify (needs Queen high or better)";
-        }
-        else
-        {
-            int cmp = ThreeCardEvaluator.Compare(_playerCards, _dealerCards);
-            string vs = cmp > 0 ? "beats" : cmp < 0 ? "loses to" : "ties";
-            versus = $"Dealer qualifies with {dealer}. Player {player} {vs} the dealer";
-        }
-
-        _rows.Add(Row(_play, play, qualifies ? $"{versus}." : $"{versus}: Play pushes."));
-        _rows.Add(Row(_ante, ante, qualifies ? $"{versus}." : $"{versus}: Ante wins."));
-
-        _rows.Add(new BreakdownRow("Ante Bonus",
-            _anteBonusChecked ? "Pays" : "No",
-            anteBonus ? "Pays" : "No",
-            !_anteBonusWrong,
-            anteBonus ? $"Player has {player}." : $"Player has {player} (needs a Straight or better)."));
-
-        _rows.Add(Row(_pairBonus, pairBonus,
-            $"Player has {player}{(pairBonus == WagerOutcome.Win ? "" : " (needs a Pair or better)")}."));
-
-        bool playerOneColor = _playerCards.All(IsRed) || !_playerCards.Any(IsRed);
-        _rows.Add(Row(_prime, prime, prime == WagerOutcome.Win
-            ? (playerOneColor ? "The player's 3 cards are all one color." : "All 6 cards are one color.")
-            : "The player's cards are mixed colors."));
-
-        List<Card> six = _playerCards.Concat(_dealerCards).ToList();
-        _rows.Add(Row(_allSix, allSix,
-            $"Best 5 of all 6 cards: {HandEvaluator.DescribeHand(six)}{(allSix == WagerOutcome.Win ? "" : " (needs Three of a Kind or better)")}."));
-    }
-
-    private static BreakdownRow Row(WagerState w, WagerOutcome actual, string why) =>
-        new(w.Name, $"{w.Selection}", $"{actual}", w.Selection == actual, why);
-
-    private static string Word(WagerOutcome o) => o.ToString();
-
-    private static bool IsRed(Card c) => c.Suit is Suit.Hearts or Suit.Diamonds;
-
-    // e.g. "a Pair of 7s", "King high", "a Straight"
-    private static string DescribeThree(IReadOnlyList<Card> cards)
-    {
-        ThreeCardCategory cat = ThreeCardEvaluator.GetCategory(cards);
-        switch (cat)
-        {
-            case ThreeCardCategory.StraightFlush: return "a Straight Flush";
-            case ThreeCardCategory.ThreeOfAKind: return $"Three {RankPlural(cards[0].Rank)}";
-            case ThreeCardCategory.Straight: return "a Straight";
-            case ThreeCardCategory.Flush: return "a Flush";
-            case ThreeCardCategory.Pair:
-                Rank pair = cards.GroupBy(c => c.Rank).First(g => g.Count() == 2).Key;
-                return $"a Pair of {RankPlural(pair)}";
-            default:
-                return $"{RankName(cards.Max(c => c.Rank))} high";
-        }
-    }
-
-    private static string RankName(Rank r) => r switch
-    {
-        Rank.Ace => "Ace",
-        Rank.King => "King",
-        Rank.Queen => "Queen",
-        Rank.Jack => "Jack",
-        _ => ((int)r).ToString()
-    };
-
-    private static string RankPlural(Rank r) => r == Rank.Six ? "6s" : RankName(r) + "s";
-
-    private static bool GradeWager(WagerState w, WagerOutcome actual)
-    {
-        w.Actual = actual;
-        if (w.Selection == actual)
-        {
-            w.Wrong = false;
-            return true;
-        }
-
-        w.Wrong = true;
-        return false;
+        if (DateTime.UtcNow < _endBlockedUntil) return;
+        EndSession();
     }
 
     private void EndSession()
     {
-        if (_tcMode == TcMode.Payouts ? _tpPlayed > 0 : _totalRounds > 0)
+        if (_played > 0)
         {
             _showSessionSummary = true;
             _scrollToSummary = true;
@@ -832,269 +605,59 @@ else
         }
     }
 
+    // End-of-session summary's Practice Again: a fresh session with the
+    // same setting, back at the top of the page
+    private void PracticeAgain()
+    {
+        _showSessionSummary = false;
+        StartGame();
+        _lastRenderedStarted = false;
+    }
+
     private void CloseSummary()
     {
         _showSessionSummary = false;
         _started = false;
     }
 
-    // ============================================================
-    // PAYOUTS (Tp prefix)
-    // ============================================================
+    // ---- After render: scrolling and focus -----------------------------
 
-    private enum TpMark { None, Lose, Push, Win }
-
-    // Wagers that only pay even money (Play): called Win / Lose / Push
-    // instead of typed
-    private static readonly bool[] TpCall = { true, false, false, false, false };
-
-    // The next typed (keypad) wager after index, or -1
-    private static int TpNextTyped(int index)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        for (int i = index + 1; i < 5; i++)
-            if (!TpCall[i]) return i;
-        return -1;
-    }
-
-    private void TpPickCall(int index, string key)
-    {
-        if (_tpScored) return;
-        _tpMark[index] = Enum.Parse<TpMark>(key);
-        _tpMessage = string.Empty;
-    }
-
-    // The right call for an even-money wager: "Win", "Lose" or "Push"
-    private static string TpCallText(TcpPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
-
-    private TcpPayoutRound _tpRound = ThreeCardPayouts.Deal(Random.Shared);
-    private readonly string[] _tpAnswer = new string[5];
-    private readonly TpMark[] _tpMark = new TpMark[5];
-    private readonly bool[] _tpOk = new bool[5];
-    private int _tpActive;
-    private bool _tpScored;
-    private bool _tpShowKeypad;
-    private string _tpMessage = string.Empty;
-    private string _tpResultText = string.Empty;
-    private readonly List<BreakdownRow> _tpRows = new();
-    private int _tpCorrect;
-    private int _tpPlayed;
-
-    private readonly ElementReference[] _tpInputRefs = new ElementReference[5];
-    private ElementReference _tpNextButtonRef;
-    private int _tpFocusInput = -1;
-    private bool _tpFocusNext;
-
-    // The keypad types into whichever box is active
-    private string TpActiveText
-    {
-        get => _tpAnswer[_tpActive] ?? string.Empty;
-        set
+        // Start / Back / menu / End Session: back to the top
+        if (_started != _lastRenderedStarted)
         {
-            _tpAnswer[_tpActive] = TpDigitsOnly(value);
-            _tpMark[_tpActive] = TpMark.None;
-            _tpMessage = string.Empty;
-        }
-    }
-
-    private void TpStartGame()
-    {
-        _tpCorrect = 0;
-        _tpPlayed = 0;
-        TpNewRound();
-    }
-
-    private void TpNewRound()
-    {
-        _tpRound = ThreeCardPayouts.Deal(Random.Shared);
-        for (int i = 0; i < 5; i++)
-        {
-            _tpAnswer[i] = string.Empty;
-            _tpMark[i] = TpMark.None;
-            _tpOk[i] = false;
-        }
-        _tpActive = TpNextTyped(-1);
-        _tpScored = false;
-        _tpMessage = string.Empty;
-        _tpResultText = string.Empty;
-        _tpRows.Clear();
-        _tpFocusInput = _tpActive;
-    }
-
-    private void TpSelect(int index)
-    {
-        if (_tpScored || TpCall[index] || _tpActive == index) return;
-        _tpActive = index;
-        _tpFocusInput = index;
-    }
-
-    // Whole dollars only, at most 5 digits (the top pay is $5,000)
-    private static string TpDigitsOnly(string? raw)
-    {
-        System.Text.StringBuilder sb = new();
-        foreach (char c in raw ?? string.Empty)
-        {
-            if (char.IsDigit(c) && sb.Length < 5) sb.Append(c);
-        }
-        return sb.ToString();
-    }
-
-    private string TpBoxValue(int i) => _tpMark[i] switch
-    {
-        TpMark.Lose => "LOSE",
-        TpMark.Push => "PUSH",
-        _ => _tpAnswer[i] ?? string.Empty
-    };
-
-    private void TpInput(int index, ChangeEventArgs e)
-    {
-        _tpAnswer[index] = TpDigitsOnly(e.Value?.ToString());
-        _tpMark[index] = TpMark.None;
-        _tpActive = index;
-        _tpMessage = string.Empty;
-    }
-
-    // Keyboard Enter: on to the next box; on the last box, Submit
-    private async Task TpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
-    {
-        if (e.Key != "Enter" || _tpScored) return;
-        _tpActive = index;
-        await TpKeypadEnter();
-    }
-
-    private async Task TpKeypadEnter()
-    {
-        if (_tpScored) return;
-
-        int next = TpNextTyped(_tpActive);
-        if (next >= 0)
-        {
-            _tpActive = next;
-            _tpFocusInput = next;
-        }
-        else
-        {
-            await TpSubmitAndShow();
-        }
-    }
-
-    // Lose / Push: marks the wager (clearing any amount typed) and moves
-    // on to the next wager; tapped again it's undone
-    private void TpToggleMark(int index, TpMark mark)
-    {
-        if (_tpScored) return;
-        _tpMessage = string.Empty;
-
-        if (_tpMark[index] == mark)
-        {
-            _tpMark[index] = TpMark.None;
-            _tpActive = index;
-            _tpFocusInput = index;
-            return;
+            _lastRenderedStarted = _started;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
         }
 
-        _tpMark[index] = mark;
-        _tpAnswer[index] = string.Empty;
-        int next = TpNextTyped(index);
-        if (next < 0) next = index;
-        _tpActive = next;
-        _tpFocusInput = next;
-    }
-
-    // Submit also scrolls to the feedback; the cursor moves onto Next
-    // after a short wait so the same Enter press doesn't also press Next
-    private async Task TpSubmitAndShow()
-    {
-        TpSubmit();
-        if (!_tpScored) return;
-
-        _scrollToFeedback = true;
-        StateHasChanged();
-
-        await Task.Delay(200);
-        _tpFocusNext = true;
-    }
-
-    private void TpSubmit()
-    {
-        if (_tpScored) return;
-
-        for (int i = 0; i < 5; i++)
+        // Next, or a payout box opening (the other rows just hid): top of
+        // the page, so the cards, the box and the number pad are all in view
+        if (_scrollToTop)
         {
-            if (TpCall[i] && _tpMark[i] == TpMark.None)
-            {
-                _tpMessage = $"Call the {TcpPayoutRound.Names[i]}: Win, Lose or Push.";
-                return;
-            }
-            if ((_tpAnswer[i] ?? "").Length == 0 && _tpMark[i] == TpMark.None)
-            {
-                _tpMessage = i <= TcpPayoutRound.Ante
-                    ? $"Enter the {TcpPayoutRound.Names[i]} payout, or tap Push or Lose."
-                    : $"Enter the {TcpPayoutRound.Names[i]} payout, or tap Lose.";
-                _tpActive = i;
-                _tpFocusInput = i;
-                return;
-            }
+            _scrollToTop = false;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
         }
 
-        _tpRows.Clear();
-        for (int i = 0; i < 5; i++)
+        // The cursor into the payout box (a computer keyboard types there)
+        if (_focusBox && _box >= 0)
         {
-            TcpPay pay = _tpRound.Pays[i];
-            _tpOk[i] = _tpMark[i] switch
-            {
-                TpMark.Lose => pay.IsLose,
-                TpMark.Push => pay.IsPush,
-                TpMark.Win => !pay.IsLose && !pay.IsPush,
-                _ => long.TryParse(_tpAnswer[i], out long v) && (v == 0 ? pay.IsLose : !pay.IsPush && v == pay.Amount)
-            };
-
-            // A missed payout gets the payout shortcut under its reason
-            string tip = !_tpOk[i] && !TpCall[i] && !pay.IsLose && !pay.IsPush
-                ? PayoutShortcut.For(_tpRound.Wagers[i] * 100L, pay.Amount * 100L) : "";
-            _tpRows.Add(new BreakdownRow(TcpPayoutRound.Names[i], TpEnteredMoney(i),
-                TpCall[i] ? TpCallText(pay) : TpPayMoney(pay), _tpOk[i], _tpRound.Why[i], tip));
+            _focusBox = false;
+            try { await _boxInputRef.FocusAsync(preventScroll: true); } catch { }
         }
 
-        _log.AddRows(_tpRows);
-        _tpPlayed++;
-        if (_tpOk.All(o => o)) _tpCorrect++;
+        // Submit: bring the feedback into view (if it isn't already)
+        if (_scrollToFeedback)
+        {
+            _scrollToFeedback = false;
+            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
+        }
 
-        _tpResultText = BreakdownRow.Summary(_tpRows);
-        _tpMessage = string.Empty;
-        _tpScored = true;
+        // End Session: bring the Session Summary into view
+        if (_scrollToSummary && _showSessionSummary)
+        {
+            _scrollToSummary = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
+        }
     }
-
-    private void TpNextTop()
-    {
-        TpNewRound();
-        _scrollToTopAfterNext = true;
-    }
-
-    // In the payout box after Submit: "LOSE", "PUSH" or "150"
-    private string TpEnteredText(int i) => _tpMark[i] switch
-    {
-        TpMark.Lose => "LOSE",
-        TpMark.Push => "PUSH",
-        _ => long.TryParse(_tpAnswer[i], out long v) ? v.ToString("N0") : _tpAnswer[i] ?? ""
-    };
-
-    private static string TpPayText(TcpPay pay) =>
-        pay.IsPush ? "PUSH" : pay.IsLose ? "LOSE" : pay.Amount.ToString("N0");
-
-    // In the breakdown: "Lose", "Push" or "$150"
-    private string TpEnteredMoney(int i) => _tpMark[i] switch
-    {
-        TpMark.Win => "Win",
-        TpMark.Lose => "Lose",
-        TpMark.Push => "Push",
-        _ => long.TryParse(_tpAnswer[i], out long v) ? $"${v:N0}" : _tpAnswer[i] ?? ""
-    };
-
-    private static string TpPayMoney(TcpPay pay) =>
-        pay.IsPush ? "Push" : pay.IsLose ? "Lose" : ThreeCardPayouts.Money(pay.Amount);
-
-    // Chip color by the largest chip in the wager: $100 black, $25 green,
-    // $10 blue, $5 red, $1 grey
-    private static string TpChipClass(int wager) =>
-        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
 }

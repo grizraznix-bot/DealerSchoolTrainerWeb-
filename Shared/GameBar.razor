@@ -12,7 +12,7 @@
     @ChildContent
     @* Phones: "End Session" reads just "End" so the text stays on the
        button (both labels are rendered; app.css shows one) *@
-    <button type="button" class="game-bar-end" @onclick="OnEnd" aria-label="@EndLabel">
+    <button type="button" class="game-bar-end @EndClass" @onclick="OnEnd" aria-label="@EndLabel">
         @if (EndLabel == "End Session")
         {
             <span class="game-bar-end-long">End Session</span><span class="game-bar-end-short">End</span>
@@ -42,6 +42,9 @@
     [Parameter] public RenderFragment? HelpContent { get; set; }
     [Parameter] public EventCallback OnEnd { get; set; }
     [Parameter] public string EndLabel { get; set; } = "End Session";
+    // Extra class on the End button, e.g. "game-bar-cancel" while it reads
+    // Cancel (a payout box is open)
+    [Parameter] public string EndClass { get; set; } = "";
 
     // False hides the Help button (Challenge Mode: no help during a timed run)
     [Parameter] public bool ShowHelp { get; set; } = true;

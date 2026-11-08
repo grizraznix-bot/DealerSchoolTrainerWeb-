@@ -33,6 +33,10 @@ public sealed class TcpPayoutRound
     public required string[] Why { get; init; }
 
     public required bool DealerQualifies { get; init; }
+    /// <summary>The Ante on its own (Win / Lose / Push), before any Ante Bonus.</summary>
+    public required WagerOutcome AnteOutcome { get; init; }
+    /// <summary>True when the Ante Bonus pays (Straight or better).</summary>
+    public required bool AnteBonusPays { get; init; }
     public required string PlayerHand { get; init; }  // e.g. "Straight Flush", "Pair of 7s"
     public required string DealerHand { get; init; }  // e.g. "King high"
 }
@@ -204,6 +208,8 @@ public static class ThreeCardPayouts
             Pays = pays,
             Why = why,
             DealerQualifies = qualifies,
+            AnteOutcome = anteOutcome,
+            AnteBonusPays = bonus > 0,
             PlayerHand = Capitalize(playerHand),
             DealerHand = Capitalize(dealerHand)
         };

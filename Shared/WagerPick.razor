@@ -51,6 +51,14 @@
         new WagerPickOption("Push", "Push", "wp-push")
     };
 
+    // Payouts on: the Ante's call -- Pay opens its payout box
+    public static readonly IReadOnlyList<WagerPickOption> PayPushLose = new[]
+    {
+        new WagerPickOption("Pay", "Pay", "wp-win"),
+        new WagerPickOption("Push", "Push", "wp-push"),
+        new WagerPickOption("Lose", "Lose", "wp-lose")
+    };
+
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public IReadOnlyList<WagerPickOption> Options { get; set; } = WinLose;
 

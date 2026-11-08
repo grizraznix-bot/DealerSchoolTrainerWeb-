@@ -34,7 +34,7 @@
         {
             <button type="button" @onclick="Backspace">⌫</button>
             <button type="button" @onclick="() => AppendDigit(0)">0</button>
-            <button type="button" class="numeric-keypad-enter" @onclick="PressEnter">@EnterLabel</button>
+            <button type="button" class="numeric-keypad-enter" disabled="@EnterDisabled" @onclick="PressEnter">@EnterLabel</button>
         }
         else
         {
@@ -46,7 +46,7 @@
     @if (AllowDecimal && OnEnter.HasDelegate)
     {
         <div class="numeric-keypad-row">
-            <button type="button" class="numeric-keypad-enter numeric-keypad-wide" @onclick="PressEnter">@EnterLabel</button>
+            <button type="button" class="numeric-keypad-enter numeric-keypad-wide" disabled="@EnterDisabled" @onclick="PressEnter">@EnterLabel</button>
         </div>
     }
 </div>
@@ -58,6 +58,8 @@
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public EventCallback OnEnter { get; set; }
     [Parameter] public string EnterLabel { get; set; } = "Enter";
+    // Greys out the Enter key (e.g. nothing typed yet)
+    [Parameter] public bool EnterDisabled { get; set; }
 
     private async Task AppendDigit(int digit)
     {
@@ -85,7 +87,10 @@
         }
     }
 
-    private async Task PressEnter() => await OnEnter.InvokeAsync();
+    private async Task PressEnter()
+    {
+        if (!EnterDisabled) await OnEnter.InvokeAsync();
+    }
 
     private async Task SetValue(string newValue) => await ValueChanged.InvokeAsync(newValue);
 }
