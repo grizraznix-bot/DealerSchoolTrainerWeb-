@@ -6360,14 +6360,22 @@ body {
     }
 }
 
+/* Pai Gow: the LOW / HIGH captions hide while a box is open (the
+   cards, the box and the pad fit without scrolling) */
+.pp-screen.uc-open .pg-sub {
+    display: none;
+}
+
 /* The smallest phones: the title row hides while a box is open, so the
-   board, both hands, the box and the pad fit */
+   cards, the box and the pad fit */
 @media (max-width: 768px) and (max-height: 600px) {
-    .hp-screen.uc-open .game-status {
+    .hp-screen.uc-open .game-status,
+    .pp-screen.uc-open .game-status {
         display: none;
     }
 
-    .hp-screen.uc-open .numeric-keypad-row button {
+    .hp-screen.uc-open .numeric-keypad-row button,
+    .pp-screen.uc-open .numeric-keypad-row button {
         height: 36px;
         min-height: 36px;
     }
@@ -6402,6 +6410,11 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+}
+
+/* Settings under the tiles (Pai Gow: Joker / Foul Frequency) */
+.pc-choice + .mode-options {
+    margin-top: 1rem;
 }
 
 .content .pc-tile {

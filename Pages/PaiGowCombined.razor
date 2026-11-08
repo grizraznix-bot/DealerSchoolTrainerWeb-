@@ -12,9 +12,9 @@
     <div class="start-screen">
         <h1>PAI GOW</h1>
 
-        @* Two independent trainers on one page. Each mode is a
-           collapsible card: tap its title to open its settings and its
-           own Start button (one card open at a time). Each mode keeps
+        @* Each mode is a collapsible card: tap its title to open its
+           settings and its own Start button (one card open at a time).
+           Settling Bets is played Call Only or Call & Pay. Each mode keeps
            its own Joker Frequency rather than one shared value. *@
         <div class="mode-list">
             <ModeCard Title="Hand Setting"
@@ -53,10 +53,13 @@
             </ModeCard>
 
             <ModeCard Title="Settling Bets"
-                      Description="Both dealer and player hands are already dealt and set. Judge each wager's outcome, flag the hand as Foul if it is one, then Submit."
+                      Description="Both hands are dealt and set. Settle Insurance, the Main Wager and Emperor's Treasure in order, then Submit."
                       Expanded="@IsModeOpen(PaiGowMode.SettlingBets)"
                       OnToggle="() => ToggleMode(PaiGowMode.SettlingBets)"
                       OnStart="StartGame">
+                <PayoutChoice @bind-Pay="_pgPay"
+                              CallText="Call each wager, or mark a fouled hand."
+                              PayText="Call each wager, then pay the winners." />
                 <div class="mode-options">
                     <div class="mode-option-group">
                         <p class="mode-option-label">Joker Frequency</p>
@@ -73,29 +76,27 @@
                             1 in 2 deals
                         </label>
                     </div>
-                    <div class="mode-option-group">
-                        <p class="mode-option-label">Foul Frequency</p>
-                        <label class="mode-choice">
-                            <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 0)" @onchange="() => _sbFoulFrequencyLevel = 0" />
-                            Rare (Default)
-                        </label>
-                        <label class="mode-choice">
-                            <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 1)" @onchange="() => _sbFoulFrequencyLevel = 1" />
-                            Occasional
-                        </label>
-                        <label class="mode-choice">
-                            <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 2)" @onchange="() => _sbFoulFrequencyLevel = 2" />
-                            Frequent
-                        </label>
-                    </div>
+                    @* Fouled hands are dealt in Call Only (a floor call, not a payout) *@
+                    @if (!_pgPay)
+                    {
+                        <div class="mode-option-group">
+                            <p class="mode-option-label">Foul Frequency</p>
+                            <label class="mode-choice">
+                                <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 0)" @onchange="() => _sbFoulFrequencyLevel = 0" />
+                                Rare (Default)
+                            </label>
+                            <label class="mode-choice">
+                                <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 1)" @onchange="() => _sbFoulFrequencyLevel = 1" />
+                                Occasional
+                            </label>
+                            <label class="mode-choice">
+                                <input type="radio" name="foul" checked="@(_sbFoulFrequencyLevel == 2)" @onchange="() => _sbFoulFrequencyLevel = 2" />
+                                Frequent
+                            </label>
+                        </div>
+                    }
                 </div>
             </ModeCard>
-
-            <ModeCard Title="Pai Gow Payouts"
-                      Description="Both hands are dealt and set. Tap a hand to see its ranks. Call the Main Wager (Win / Lose / Push), then pay Insurance and Emperor's Treasure: enter the winnings, or tap Lose, then Submit."
-                      Expanded="@IsModeOpen(PaiGowMode.Payouts)"
-                      OnToggle="() => ToggleMode(PaiGowMode.Payouts)"
-                      OnStart="StartGame" />
         </div>
     </div>
 }
@@ -240,23 +241,23 @@ else if (_mode == PaiGowMode.HandSetting)
         </GameBar>
     </div>
 }
-else if (_mode == PaiGowMode.Payouts)
+else if (_mode == PaiGowMode.SettlingBets && _pgPay)
 {
-    <div class="play-screen sp-screen tp-screen pp-screen has-game-bar">
+    @* Settling Bets, Call & Pay. Laid out from the dealer's side of the
+       table: the player's hand on top, the dealer's at the bottom, Low
+       beside High. Hand names are not shown on the felt: tap a hand for a
+       bubble with its Low and High names (and the dealer's Ace-high Pai
+       Gow note). Until the first tap this session, each caption fades
+       between its name and "Tap ... cards to reveal rank" every 5
+       seconds (CSS only; @key restarts it on each deal). After Submit
+       the names show on the felt. *@
+    <div class="play-screen sp-screen tp-screen pp-screen has-game-bar @(_ppBox >= 0 ? "uc-open" : "")">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Pai Gow Payouts" Correct="_ppCorrect" Played="_ppPlayed" />
+        <GameStatus Title="Settling Bets" Correct="_ppCorrect" Played="_ppPlayed" />
 
-        @* Laid out from the dealer's side of the table, like Settling Bets:
-           the player's hand on top, the dealer's at the bottom, Low beside
-           High. Hand names are not shown on the felt: tap a hand for a
-           bubble with its Low and High names (and the dealer's Ace-high Pai
-           Gow note). Until the first tap this session, each caption fades
-           between its name and "Tap ... cards to reveal rank" every 5
-           seconds (CSS only; @key restarts it on each deal). After Submit
-           the names show on the felt, as in Settling Bets. *@
         <div class="felt pg-felt">
             @foreach (bool isDealer in new[] { false, true })
             {
@@ -266,7 +267,8 @@ else if (_mode == PaiGowMode.Payouts)
                 string lowLabel = isDealer ? _ppRound.DealerLowLabel : _ppRound.PlayerLowLabel;
                 string highLabel = isDealer ? _ppRound.DealerHighLabel : _ppRound.PlayerHighLabel;
                 string who = isDealer ? "Dealer" : "Player";
-                bool peekOpen = !_ppScored && _ppPeek == (isDealer ? 2 : 1);
+                bool canPeek = !_ppScored && _ppBox < 0;
+                bool peekOpen = canPeek && _ppPeek == (isDealer ? 2 : 1);
                 @if (isDealer)
                 {
                     <div class="cr-sep"></div>
@@ -288,8 +290,8 @@ else if (_mode == PaiGowMode.Payouts)
                         <span class="pp-alt-b">Tap @who cards to reveal rank</span>
                     </div>
                 }
-                <div class="pg-hand @(!_ppScored ? "pp-tap" : "") @(peekOpen ? "pp-tap-on" : "")"
-                     role="@(!_ppScored ? "button" : null)"
+                <div class="pg-hand @(canPeek ? "pp-tap" : "") @(peekOpen ? "pp-tap-on" : "")"
+                     role="@(canPeek ? "button" : null)"
                      @onclick="() => PpTogglePeek(dealerHand)">
                     @if (peekOpen)
                     {
@@ -328,87 +330,65 @@ else if (_mode == PaiGowMode.Payouts)
             <div class="cr-backdrop" @onclick="PpClosePeek"></div>
         }
 
-        @* The three wagers in settling order (Insurance, Main Wager,
-           Emperor's Treasure): chip, name, payout box and Lose. Tap a row
-           to key into it. The Main Wager only pays even money, so it's
-           called (Win / Lose / Push with the Call button) instead of typed. *@
-        <div class="pw-wrap">
-            <div class="pw-box @(!_ppScored ? "pw-scroll" : "")">
-            <div class="sp-wagers">
-                @for (int w = 0; w < 3; w++)
+        @* The three wagers in settling order, each with a Call button. The
+           Main Wager is a plain call (even money); Win on Insurance or
+           Emperor's Treasure opens that row's payout box and hides the
+           other rows. *@
+        <div class="sp-wagers">
+            @for (int w = 0; w < 3; w++)
+            {
+                int wi = w;
+                int wager = _ppRound.Wagers[wi];
+
+                @if (_ppBox >= 0 && wi != _ppBox)
                 {
-                    int wi = w;
-                    int wager = _ppRound.Wagers[wi];
-                    bool canPush = wi == PgPayoutRound.Main;
-                    @if (PpCall[wi])
-                    {
-                        <CallRow ChipAmount="wager" Name="@PgPayoutRound.ShortNames[wi]" Sub="@($"wager ${wager}")" Options="WagerPick.WinLosePush"
-                                 Value="@(_ppMark[wi] == PpMark.None ? null : _ppMark[wi].ToString())"
-                                 OnPick="k => PpPickCall(wi, k)"
-                                 Locked="_ppScored" Wrong="!_ppOk[wi]" AnswerText="@PpCallText(_ppRound.Pays[wi])" />
-                        continue;
-                    }
-                    <div class="sp-wrow @(!_ppScored && _ppActive == wi ? "sp-wrow-on" : "")" @onclick="() => PpSelect(wi)">
-                        <div class="sp-chip @PpChipClass(wager)">$@wager</div>
+                    continue;
+                }
+
+                @if (wi == _ppBox)
+                {
+                    @* The open payout box: the number pad below; a computer
+                       keyboard types straight in, Enter confirms, Esc cancels *@
+                    <div class="sp-wrow uc-boxrow">
+                        <div class="sp-chip @CallRow.ChipCss(wager)">$@wager</div>
                         <div class="sp-wname @(wi == 2 ? "pp-wname-2" : "")">@PgPayoutRound.ShortNames[wi]<small>wager $@wager</small></div>
-                        @if (_ppScored)
-                        {
-                            <div class="sp-ans @(_ppOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
-                                @if (_ppOk[wi])
-                                {
-                                    <text>&#x2713; @PpEnteredText(wi)</text>
-                                }
-                                else
-                                {
-                                    <text>&#x2717; @PpEnteredText(wi) &middot; Ans: @PpPayText(_ppRound.Pays[wi])</text>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            @* inputmode="none": phones use the keypad; a PC keyboard
-                               types normally. A row marked Lose / Push shows that in
-                               its box; typing a number (or Backspace) clears it. *@
+                        <label class="uc-amt">
+                            <span class="uc-dollar">$</span>
                             <input type="text"
-                                   class="sp-input @(_ppMark[wi] == PpMark.Lose ? "sp-input-lose" : _ppMark[wi] == PpMark.Push ? "tp-input-push" : "")"
                                    inputmode="none"
                                    autocomplete="off"
-                                   value="@PpBoxValue(wi)"
-                                   @oninput="e => PpInput(wi, e)"
-                                   @onkeydown="e => PpKeyDown(wi, e)"
-                                   @onfocus="() => _ppActive = wi"
-                                   @ref="_ppInputRefs[wi]"
-                                   placeholder="Payout" />
-                        }
-                        @if (canPush)
-                        {
-                            <button type="button"
-                                    class="sp-lose tp-push @(_ppMark[wi] == PpMark.Push ? "tp-push-on" : "")"
-                                    disabled="@_ppScored"
-                                    @onclick="() => PpToggleMark(wi, PpMark.Push)"
-                                    @onclick:stopPropagation="true">Push</button>
-                        }
-                        <button type="button"
-                                class="sp-lose @(_ppMark[wi] == PpMark.Lose ? "sp-lose-on" : "")"
-                                disabled="@_ppScored"
-                                @onclick="() => PpToggleMark(wi, PpMark.Lose)"
-                                @onclick:stopPropagation="true">Lose</button>
+                                   aria-label="@($"{PgPayoutRound.Names[wi]} payout")"
+                                   placeholder="Payout"
+                                   value="@_ppBoxText"
+                                   @oninput="PpBoxInput"
+                                   @onkeydown="PpBoxKeyDown"
+                                   @ref="_ppBoxInputRef" />
+                        </label>
                     </div>
+                    continue;
                 }
-            </div>
-            </div>
+
+                <CallRow ChipAmount="wager"
+                         Name="@PgPayoutRound.ShortNames[wi]"
+                         Sub="@($"wager ${wager}")"
+                         Options="@(wi == PgPayoutRound.Main ? WagerPick.WinLosePush : WagerPick.WinLose)"
+                         Value="@_ppCall[wi]"
+                         PickedText="@PpPickedText(wi)"
+                         OnPick="k => PpPick(wi, k)"
+                         Locked="_ppScored" Wrong="!_ppOk[wi]" AnswerText="@PpAnswerText(wi)" />
+            }
         </div>
 
-        <div class="sp-hint-row">
-            <span class="sp-desk-hint">Type each payout; Tab or Enter moves to the next box.</span>
-            <button class="keypad-toggle" @onclick="() => _ppShowKeypad = !_ppShowKeypad">123</button>
-        </div>
-
-        @if (!_ppScored)
+        @if (_ppBox >= 0)
         {
-            <div class="keypad-wrap sp-keypad @(_ppShowKeypad ? "keypad-open" : "")">
-                <NumericKeypad AllowDecimal="false" @bind-Value="PpActiveText" OnEnter="PpKeypadEnter" EnterLabel="@(PpNextTyped(_ppActive) >= 0 ? "Next ↓" : "Enter")" />
+            <div class="uc-keypad">
+                <NumericKeypad AllowDecimal="false" @bind-Value="PpBoxText" OnEnter="PpBoxEnter" EnterLabel="Enter" EnterDisabled="@(_ppBoxText.Length == 0)" />
             </div>
+        }
+        else if (_ppPlayed == 0 && !_ppScored)
+        {
+            @* First round only: what to do *@
+            <p class="cr-howto">Tap Call on each wager. Win on Insurance or Emperor's Treasure opens its payout box.</p>
         }
 
         <div class="feedback-area sp-feedback">
@@ -416,10 +396,6 @@ else if (_mode == PaiGowMode.Payouts)
             {
                 <ResultBreakdown ResultText="@_ppResultText" IsCorrect="_ppOk.All(o => o)" Rows="_ppRows"
                                  NoteLabel="@(_ppRound.EnvyTip.Length > 0 ? "Envy tip:" : "")" Note="@_ppRound.EnvyTip" />
-            }
-            else if (_ppMessage.Length > 0)
-            {
-                <p class="result-line txt-bad">@_ppMessage</p>
             }
         </div>
 
@@ -455,28 +431,43 @@ else if (_mode == PaiGowMode.Payouts)
             <p class="sp-pt-note">Winnings only.</p>
         </aside>
 
-        <GameBar HelpTitle="Pai Gow Pay Tables" OnEnd="EndSession">
+        @* Pinned bottom bar: the main button counts the wagers left until
+           every one is called; while a payout box is open, End Session
+           becomes Cancel *@
+        <GameBar HelpTitle="Pai Gow Pay Tables" OnEnd="PpEndOrCancel"
+                 EndLabel="@(_ppBox >= 0 ? "Cancel" : "End Session")"
+                 EndClass="@(_ppBox >= 0 ? "game-bar-cancel" : "")">
             <ChildContent>
                 @if (!_ppScored)
                 {
-                    <button class="game-bar-main" @onclick="PpSubmitAndShow">Submit</button>
+                    int left = PpWagersLeft;
+                    @if (left > 0 || _ppBox >= 0)
+                    {
+                        <button class="game-bar-main" disabled>
+                            <span class="gb-left-long">@left @(left == 1 ? "wager" : "wagers") left</span><span class="gb-left-short">@left left</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="game-bar-main" @onclick="PpSubmitAndShow">Submit</button>
+                    }
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="PpNextTop" @ref="_ppNextButtonRef">Next</button>
+                    <button class="game-bar-main" @onclick="PpNextTop">Next</button>
                 }
             </ChildContent>
             <HelpContent>
                 <p>Tap the Player or Dealer cards to see that hand's Low and High ranks.</p>
                 @PgPayTables
-                <p>Call the Main Wager Win, Lose or Push (it pays even money). For Insurance and Emperor's Treasure, enter the winnings only, or tap Lose (0 also counts as Lose). Envy Bonuses are shown as a tip after Submit; they are not entered.</p>
+                <p>Call the Main Wager Win, Lose or Push (it pays even money). Win on Insurance or Emperor's Treasure opens its payout box: enter the winnings only, then Enter. Entering 0 counts as Lose; Cancel puts the wager back to Call. Envy Bonuses are shown as a tip after Submit; they are not entered.</p>
             </HelpContent>
         </GameBar>
     </div>
 }
 else
 {
-    @* Settling Bets in the payout modes' layout: dealer and player, each
+    @* Settling Bets, Call Only, in the payout modes' layout: dealer and player, each
        set into Low and High (hand names only after Submit -- they'd give
        the answer away), then one row per wager in settling order with its
        chip and a Call button that pops Win / Lose (/ Push) out beside it,
@@ -571,12 +562,23 @@ else
             }
         </div>
 
-        @* Pinned bottom bar: Help | Submit, then Next | End Session *@
+        @* Pinned bottom bar: the main button counts the wagers left until
+           every one is called (or the hand is marked Foul), then Submit *@
         <GameBar HelpTitle="Pai Gow Pay Tables" OnEnd="EndSession">
             <ChildContent>
                 @if (!_sbRoundScored)
                 {
-                    <button class="game-bar-main" @onclick="SbSubmitAndShow" disabled="@(!_sbSubmitEnabled)">Submit</button>
+                    int left = SbWagersLeft;
+                    @if (left > 0)
+                    {
+                        <button class="game-bar-main" disabled>
+                            <span class="gb-left-long">@left @(left == 1 ? "wager" : "wagers") left</span><span class="gb-left-short">@left left</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="game-bar-main" @onclick="SbSubmitAndShow" disabled="@(!_sbSubmitEnabled)">Submit</button>
+                    }
                 }
                 else
                 {
@@ -600,7 +602,9 @@ else
                             RightText="set right" ConfidentText="You're setting these with confidence" YouVerb="set"
                             OnAgain="PracticeAgain" OnDone="CloseSummary" />
             break;
-        case PaiGowMode.Payouts:
+        case PaiGowMode.SettlingBets when _pgPay:
+            @* Each way of playing keeps its own "last time" progress (the
+               keys of the old separate modes) *@
             <SessionSummary ModeKey="pg-payouts" Rounds="_ppPlayed" Correct="_ppCorrect" Log="_log"
                             RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
                             OnAgain="PracticeAgain" OnDone="CloseSummary" />
@@ -699,41 +703,21 @@ else
             _lastRenderedStarted = _started;
             try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
 
-            // Payouts on desktop: open the number pad straight away when
-            // the window is tall enough for it (123 still hides / shows it)
-            if (_started && _mode == PaiGowMode.Payouts)
-            {
-                bool fits = false;
-                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", 315); } catch { }
-                _ppShowKeypad = fits;
-                if (fits) StateHasChanged();
-            }
         }
 
-        // Payouts: cursor into the active payout box, or onto Next once
-        // the round is scored (so Enter deals the next round)
-        // Payouts, phones: size the wager box to the space above the keypad
-        if (_started && _mode == PaiGowMode.Payouts)
+        // Call & Pay: the cursor into an open payout box (a computer
+        // keyboard types there)
+        if (_ppFocusBox && _ppBox >= 0)
         {
-            try { await JS.InvokeVoidAsync("dstFitWagerBox"); } catch { }
-        }
-
-        if (_ppFocusInput >= 0)
-        {
-            int i = _ppFocusInput;
-            _ppFocusInput = -1;
-            try { await _ppInputRefs[i].FocusAsync(preventScroll: true); } catch { }
-            try { await JS.InvokeVoidAsync("dstWagerRowIntoView", i); } catch { }
-        }
-
-        if (_ppFocusNext)
-        {
-            _ppFocusNext = false;
-            try { await _ppNextButtonRef.FocusAsync(preventScroll: true); } catch { }
+            _ppFocusBox = false;
+            try { await _ppBoxInputRef.FocusAsync(preventScroll: true); } catch { }
         }
     }
 
-    private enum PaiGowMode { HandSetting, SettlingBets, Payouts }
+    private enum PaiGowMode { HandSetting, SettlingBets }
+
+    // Settling Bets start-screen setting: false = Call Only, true = Call & Pay
+    private bool _pgPay;
 
     // Shared across both modes.
     private bool _started;
@@ -783,7 +767,7 @@ else
         {
             HsStartGame();
         }
-        else if (_mode == PaiGowMode.Payouts)
+        else if (_pgPay)
         {
             PpStartGame();
         }
@@ -798,8 +782,7 @@ else
         bool anyRoundsPlayed = _mode switch
         {
             PaiGowMode.HandSetting => _hsTotalRounds > 0,
-            PaiGowMode.Payouts => _ppPlayed > 0,
-            _ => _sbTotalRounds > 0
+            _ => _pgPay ? _ppPlayed > 0 : _sbTotalRounds > 0
         };
 
         if (anyRoundsPlayed)
@@ -1275,6 +1258,10 @@ else
         _sbEmperorsTreasure.Selection = null; _sbEmperorsTreasure.Wrong = false;
     }
 
+    // Call Only: wagers still to call (none once the hand is marked Foul)
+    private int SbWagersLeft => _sbFoulFlagged ? 0
+        : new[] { _sbInsurance, _sbMainWager, _sbEmperorsTreasure }.Count(w => w.Selection is null);
+
     private void SbResetFoul()
     {
         _sbFoulFlagged = false;
@@ -1475,7 +1462,7 @@ else
         return false;
     }
 
-    // Pay tables for the Help in Pai Gow Payouts and Settling Bets
+    // Pay tables for the Help in both Settling Bets options
     private RenderFragment PgPayTables => @<text>
                 <table class="help-table sp-help-table">
                     <tr class="sp-pt-hd"><td colspan="2">Pai Gow Insurance (player's 7 cards are a Pai Gow; Joker = Ace)</td></tr>
@@ -1506,50 +1493,30 @@ else
     </text>;
 
     // ============================================================
-    // PAI GOW PAYOUTS (Pp prefix)
+    // SETTLING BETS, CALL & PAY (Pp prefix)
     // ============================================================
 
-    private enum PpMark { None, Lose, Push, Win }
-
-    // Wagers that only pay even money (Main Wager): called Win / Lose /
-    // Push instead of typed
-    private static readonly bool[] PpCall = { false, true, false };
-
-    // The next typed (keypad) wager after index, or -1
-    private static int PpNextTyped(int index)
-    {
-        for (int i = index + 1; i < 3; i++)
-            if (!PpCall[i]) return i;
-        return -1;
-    }
-
-    private void PpPickCall(int index, string key)
-    {
-        if (_ppScored) return;
-        _ppMark[index] = Enum.Parse<PpMark>(key);
-        _ppMessage = string.Empty;
-    }
-
-    // The right call for an even-money wager: "Win", "Lose" or "Push"
-    private static string PpCallText(PgPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
-
     private PgPayoutRound _ppRound = null!; // dealt by PpStartGame
-    private readonly string[] _ppAnswer = new string[3];
-    private readonly PpMark[] _ppMark = new PpMark[3];
+
+    // Per wager (Insurance, Main Wager, Emperor's Treasure): the call
+    // ("Win", "Lose", "Push"; null = not called yet) and the payout entered
+    private readonly string?[] _ppCall = new string?[3];
+    private readonly int?[] _ppPaid = new int?[3];
     private readonly bool[] _ppOk = new bool[3];
-    private int _ppActive;
+
+    private int _ppBox = -1;               // row whose payout box is open
+    private string _ppBoxText = string.Empty;
+    private ElementReference _ppBoxInputRef;
+    private bool _ppFocusBox;
+    private DateTime _ppEndBlockedUntil;
+
     private bool _ppScored;
-    private bool _ppShowKeypad;
-    private string _ppMessage = string.Empty;
     private string _ppResultText = string.Empty;
     private readonly List<BreakdownRow> _ppRows = new();
     private int _ppCorrect;
     private int _ppPlayed;
 
-    private readonly ElementReference[] _ppInputRefs = new ElementReference[3];
-    private ElementReference _ppNextButtonRef;
-    private int _ppFocusInput = -1;
-    private bool _ppFocusNext;
+    private int PpWagersLeft => _ppCall.Count(c => c is null);
 
     // Tap-a-hand rank bubble: 0 = closed, 1 = player, 2 = dealer.
     // _ppPeekUsed: tapped once this session, so the captions stop
@@ -1561,31 +1528,13 @@ else
 
     private void PpTogglePeek(bool dealer)
     {
-        if (_ppScored) return;
+        if (_ppScored || _ppBox >= 0) return;
         int which = dealer ? 2 : 1;
         _ppPeek = _ppPeek == which ? 0 : which;
         _ppPeekUsed = true;
     }
 
-    // Closing the bubble puts the cursor back in the active payout box
-    // (a PC keyboard keeps typing there)
-    private void PpClosePeek()
-    {
-        _ppPeek = 0;
-        _ppFocusInput = _ppActive;
-    }
-
-    // The keypad types into whichever box is active
-    private string PpActiveText
-    {
-        get => _ppAnswer[_ppActive] ?? string.Empty;
-        set
-        {
-            _ppAnswer[_ppActive] = PpDigitsOnly(value);
-            _ppMark[_ppActive] = PpMark.None;
-            _ppMessage = string.Empty;
-        }
-    }
+    private void PpClosePeek() => _ppPeek = 0;
 
     private void PpStartGame()
     {
@@ -1595,33 +1544,64 @@ else
         PpNewRound();
     }
 
+    // Set hands only (no fouls), with the training boost for big
+    // Emperor's Treasure hands; Joker Frequency as set on the start screen
     private void PpNewRound()
     {
-        _ppRound = PaiGowPayouts.Deal(Random.Shared);
+        _ppRound = PaiGowPayouts.Deal(Random.Shared, ComputeJokerProbability(_sbJokerFrequencyLevel, twoHands: true));
         _ppPeek = 0;
         _ppDealNo++;
         for (int i = 0; i < 3; i++)
         {
-            _ppAnswer[i] = string.Empty;
-            _ppMark[i] = PpMark.None;
+            _ppCall[i] = null;
+            _ppPaid[i] = null;
             _ppOk[i] = false;
         }
-        _ppActive = PpNextTyped(-1);
+        _ppBox = -1;
+        _ppBoxText = string.Empty;
         _ppScored = false;
-        _ppMessage = string.Empty;
         _ppResultText = string.Empty;
         _ppRows.Clear();
-        _ppFocusInput = _ppActive;
     }
 
-    private void PpSelect(int index)
+    // Insurance and Emperor's Treasure take a payout; the Main Wager is a
+    // plain call
+    private static bool PpTyped(int i) => i != PgPayoutRound.Main;
+
+    // The right call: "Win", "Lose" or "Push"
+    private static string PpCallText(PgPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
+
+    private void PpPick(int i, string key)
     {
-        if (_ppScored || PpCall[index] || _ppActive == index) return;
-        _ppActive = index;
-        _ppFocusInput = index;
+        if (_ppScored) return;
+        _ppPeek = 0;
+
+        // Win on Insurance / Emperor's Treasure opens the payout box
+        if (PpTyped(i) && key == "Win")
+        {
+            _ppCall[i] = null;
+            _ppPaid[i] = null;
+            _ppBox = i;
+            _ppBoxText = string.Empty;
+            _ppFocusBox = true;
+            _scrollToTopAfterNext = true;
+            return;
+        }
+
+        _ppCall[i] = key;
+        _ppPaid[i] = null;
     }
 
-    // Whole dollars only, at most 5 digits (the top pay is $75,000)
+    // ---- Payout box ----
+
+    private string PpBoxText
+    {
+        get => _ppBoxText;
+        set => _ppBoxText = PpDigitsOnly(value);
+    }
+
+    // Whole dollars, at most 5 digits (the top pay is $75,000); no
+    // leading zeros, but a lone 0 stays (0 = Lose)
     private static string PpDigitsOnly(string? raw)
     {
         System.Text.StringBuilder sb = new();
@@ -1629,124 +1609,90 @@ else
         {
             if (char.IsDigit(c) && sb.Length < 5) sb.Append(c);
         }
-        return sb.ToString();
+        string digits = sb.ToString().TrimStart('0');
+        return digits.Length == 0 && sb.Length > 0 ? "0" : digits;
     }
 
-    private string PpBoxValue(int i) => _ppMark[i] switch
-    {
-        PpMark.Lose => "LOSE",
-        PpMark.Push => "PUSH",
-        _ => _ppAnswer[i] ?? string.Empty
-    };
+    private void PpBoxInput(ChangeEventArgs e) => _ppBoxText = PpDigitsOnly(e.Value?.ToString());
 
-    private void PpInput(int index, ChangeEventArgs e)
+    private void PpBoxKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
-        _ppAnswer[index] = PpDigitsOnly(e.Value?.ToString());
-        _ppMark[index] = PpMark.None;
-        _ppActive = index;
-        _ppMessage = string.Empty;
+        if (e.Key == "Enter") PpBoxEnter();
+        else if (e.Key == "Escape") PpBoxCancel();
     }
 
-    // Keyboard Enter: on to the next box; on the last box, Submit
-    private async Task PpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    // Enter: the amount goes on the row and the box closes; 0 counts as Lose
+    private void PpBoxEnter()
     {
-        if (e.Key != "Enter" || _ppScored) return;
-        _ppActive = index;
-        await PpKeypadEnter();
+        if (_ppBox < 0 || _ppBoxText.Length == 0) return;
+
+        int i = _ppBox;
+        int amount = int.Parse(_ppBoxText);
+        _ppCall[i] = amount == 0 ? "Lose" : "Win";
+        _ppPaid[i] = amount == 0 ? null : amount;
+        PpCloseBox();
     }
 
-    private async Task PpKeypadEnter()
+    // Cancel: the row goes back to Call (no penalty)
+    private void PpBoxCancel()
     {
-        if (_ppScored) return;
+        if (_ppBox < 0) return;
+        _ppCall[_ppBox] = null;
+        _ppPaid[_ppBox] = null;
+        PpCloseBox();
+    }
 
-        int next = PpNextTyped(_ppActive);
-        if (next >= 0)
+    private void PpCloseBox()
+    {
+        _ppBox = -1;
+        _ppBoxText = string.Empty;
+        _ppEndBlockedUntil = DateTime.UtcNow.AddMilliseconds(500);
+    }
+
+    private void PpEndOrCancel()
+    {
+        if (_ppBox >= 0)
         {
-            _ppActive = next;
-            _ppFocusInput = next;
-        }
-        else
-        {
-            await PpSubmitAndShow();
-        }
-    }
-
-    // Lose / Push: marks the wager (clearing any amount typed) and moves
-    // on to the next wager; tapped again it's undone
-    private void PpToggleMark(int index, PpMark mark)
-    {
-        if (_ppScored) return;
-        _ppMessage = string.Empty;
-
-        if (_ppMark[index] == mark)
-        {
-            _ppMark[index] = PpMark.None;
-            _ppActive = index;
-            _ppFocusInput = index;
+            PpBoxCancel();
             return;
         }
-
-        _ppMark[index] = mark;
-        _ppAnswer[index] = string.Empty;
-        int next = PpNextTyped(index);
-        if (next < 0) next = index;
-        _ppActive = next;
-        _ppFocusInput = next;
+        if (DateTime.UtcNow < _ppEndBlockedUntil) return;
+        EndSession();
     }
 
-    // Submit also scrolls to the feedback; the cursor moves onto Next
-    // after a short wait so the same Enter press doesn't also press Next
-    private async Task PpSubmitAndShow()
+    // Button / answer text once a payout is in, e.g. "Win $30"
+    private string? PpPickedText(int i) =>
+        _ppPaid[i] is int v && _ppCall[i] == "Win" ? $"Win ${v:N0}" : null;
+
+    // ---- Submit ----
+
+    private void PpSubmitAndShow()
     {
         PpSubmit();
-        if (!_ppScored) return;
-
-        _scrollToFeedback = true;
-        StateHasChanged();
-
-        await Task.Delay(200);
-        _ppFocusNext = true;
+        if (_ppScored) _scrollToFeedback = true;
     }
 
     private void PpSubmit()
     {
-        if (_ppScored) return;
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (PpCall[i] && _ppMark[i] == PpMark.None)
-            {
-                _ppMessage = $"Call the {PgPayoutRound.Names[i]}: Win, Lose or Push.";
-                return;
-            }
-            if ((_ppAnswer[i] ?? "").Length == 0 && _ppMark[i] == PpMark.None)
-            {
-                _ppMessage = i == PgPayoutRound.Main
-                    ? $"Enter the {PgPayoutRound.Names[i]} payout, or tap Push or Lose."
-                    : $"Enter the {PgPayoutRound.Names[i]} payout, or tap Lose.";
-                _ppActive = i;
-                _ppFocusInput = i;
-                return;
-            }
-        }
+        if (_ppScored || _ppBox >= 0 || PpWagersLeft > 0) return;
 
         _ppRows.Clear();
         for (int i = 0; i < 3; i++)
         {
             PgPay pay = _ppRound.Pays[i];
-            _ppOk[i] = _ppMark[i] switch
+            bool wins = !pay.IsLose && !pay.IsPush;
+            _ppOk[i] = _ppCall[i] switch
             {
-                PpMark.Lose => pay.IsLose,
-                PpMark.Push => pay.IsPush,
-                PpMark.Win => !pay.IsLose && !pay.IsPush,
-                _ => long.TryParse(_ppAnswer[i], out long v) && (v == 0 ? pay.IsLose : !pay.IsPush && v == pay.Amount)
+                "Lose" => pay.IsLose,
+                "Push" => pay.IsPush,
+                "Win" => wins && (!PpTyped(i) || _ppPaid[i] == pay.Amount),
+                _ => false
             };
 
             // A missed payout gets the payout shortcut under its reason
-            string tip = !_ppOk[i] && !PpCall[i] && !pay.IsLose && !pay.IsPush
+            string tip = PpTyped(i) && !_ppOk[i] && wins
                 ? PayoutShortcut.For(_ppRound.Wagers[i] * 100L, pay.Amount * 100L) : "";
-            _ppRows.Add(new BreakdownRow(PgPayoutRound.Names[i], PpEnteredMoney(i),
-                PpCall[i] ? PpCallText(pay) : PpPayMoney(pay), _ppOk[i], _ppRound.Why[i], tip));
+            _ppRows.Add(new BreakdownRow(PgPayoutRound.Names[i], PpYouText(i), PpAnswerText(i), _ppOk[i], _ppRound.Why[i], tip));
         }
 
         _log.AddRows(_ppRows);
@@ -1754,8 +1700,20 @@ else
         if (_ppOk.All(o => o)) _ppCorrect++;
 
         _ppResultText = BreakdownRow.Summary(_ppRows);
-        _ppMessage = string.Empty;
         _ppScored = true;
+    }
+
+    // In the breakdown: "Win", "Lose", "Push" or "$150"
+    private string PpYouText(int i) =>
+        _ppPaid[i] is int v && _ppCall[i] == "Win" ? $"${v:N0}" : _ppCall[i] ?? "";
+
+    // The right answer on a missed row: "Win" / "Lose" / "Push", or
+    // (a winning Insurance / Emperor's Treasure) "$150"
+    private string PpAnswerText(int i)
+    {
+        PgPay pay = _ppRound.Pays[i];
+        string right = PpCallText(pay);
+        return PpTyped(i) && right == "Win" ? PaiGowPayouts.Money(pay.Amount) : right;
     }
 
     private void PpNextTop()
@@ -1763,33 +1721,4 @@ else
         PpNewRound();
         _scrollToTopAfterNext = true;
     }
-
-    // In the payout box after Submit: "LOSE", "PUSH" or "150"
-    private string PpEnteredText(int i) => _ppMark[i] switch
-    {
-        PpMark.Lose => "LOSE",
-        PpMark.Push => "PUSH",
-        _ => long.TryParse(_ppAnswer[i], out long v) ? v.ToString("N0") : _ppAnswer[i] ?? ""
-    };
-
-    private static string PpPayText(PgPay pay) =>
-        pay.IsPush ? "PUSH" : pay.IsLose ? "LOSE" : pay.Amount.ToString("N0");
-
-    // In the breakdown: "Lose", "Push" or "$150"
-    private string PpEnteredMoney(int i) => _ppMark[i] switch
-    {
-        PpMark.Win => "Win",
-        PpMark.Lose => "Lose",
-        PpMark.Push => "Push",
-        _ => long.TryParse(_ppAnswer[i], out long v) ? $"${v:N0}" : _ppAnswer[i] ?? ""
-    };
-
-    private static string PpPayMoney(PgPay pay) =>
-        pay.IsPush ? "Push" : pay.IsLose ? "Lose" : PaiGowPayouts.Money(pay.Amount);
-
-    // Chip color by the largest chip in the wager: $100 black, $25 green,
-    // $10 blue, $5 red, $1 grey
-    private static string PpChipClass(int wager) =>
-        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
-
 }

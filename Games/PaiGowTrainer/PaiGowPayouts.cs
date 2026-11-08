@@ -50,7 +50,11 @@ public static class PaiGowPayouts
     // or better for Emperor's Treasure (naturally well under 1 in 100)
     private const double BigHandBoostRate = 0.15;
 
-    public static PgPayoutRound Deal(Random rng)
+    /// <summary>
+    /// jokerProbability: chance the Joker lands in one of the two hands
+    /// (null = the natural 14 of 53, from the Joker Frequency setting).
+    /// </summary>
+    public static PgPayoutRound Deal(Random rng, double? jokerProbability = null)
     {
         bool forceBigHand = rng.NextDouble() < BigHandBoostRate;
         PaiGowSolver player = new();
@@ -61,7 +65,7 @@ public static class PaiGowPayouts
         do
         {
             PaiGowDeck deck = new();
-            (playerCards, dealerCards) = deck.DealTwoSevenCardHandsWithJokerBias(JokerProbability);
+            (playerCards, dealerCards) = deck.DealTwoSevenCardHandsWithJokerBias(jokerProbability ?? JokerProbability);
             player.SetCards(playerCards);
             tries++;
         }
