@@ -4,9 +4,9 @@ using DealerSchoolTrainerWeb.Games.ThreeCardTrainer;
 namespace DealerSchoolTrainerWeb.Games.SideWagerTrainer;
 
 /// <summary>
-/// One Side Wager Payouts round: the player's two cards, the dealer's
-/// up-card (plus the hole card when the up-card is an Ace), and a 21 + 3
-/// and a Lucky Ladies wager. Every round wins at least one of the two.
+/// One Side Wagers round: the player's two cards, the dealer's up-card
+/// (plus the hole card when the up-card is an Ace), and a 21 + 3 and a
+/// Lucky Ladies wager. Call &amp; Pay rounds win at least one of the two.
 /// </summary>
 public sealed class SideWagerPayoutRound
 {
@@ -33,10 +33,11 @@ public static class SideWagerPayouts
     private const int Decks = 6;
 
     /// <summary>
-    /// Deals from a freshly shuffled 6-deck shoe until the cards win
-    /// 21 + 3, Lucky Ladies or both.
+    /// Deals from a freshly shuffled 6-deck shoe. winnersOnly (Call &amp; Pay):
+    /// re-deals until the cards win 21 + 3, Lucky Ladies or both. Otherwise
+    /// (Call Only) the hand is kept as dealt -- the natural mix.
     /// </summary>
-    public static SideWagerPayoutRound Deal(Random rng)
+    public static SideWagerPayoutRound Deal(Random rng, bool winnersOnly = true)
     {
         while (true)
         {
@@ -49,7 +50,7 @@ public static class SideWagerPayouts
 
             (int tcPays, string tcHand) = Score21Plus3(p1, p2, up);
             (int llPays, string llHand) = ScoreLuckyLadies(p1, p2, up, hole);
-            if (tcPays == 0 && llPays == 0) continue;
+            if (winnersOnly && tcPays == 0 && llPays == 0) continue;
 
             return new SideWagerPayoutRound
             {

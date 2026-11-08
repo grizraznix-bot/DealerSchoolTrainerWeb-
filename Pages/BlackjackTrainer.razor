@@ -15,7 +15,7 @@
     <div class="start-screen">
         <h1>BLACKJACK</h1>
 
-        @* Three independent trainers on one page. Each mode is a
+        @* Three trainers on one page. Each mode is a
            collapsible card: tap its title to open its settings and its
            own Start button (one card open at a time). *@
         <div class="mode-list">
@@ -66,16 +66,14 @@
             </ModeCard>
 
             <ModeCard Title="Side Wagers"
-                      Description="Call each side wager Win or Lose with its Call button, then Submit."
+                      Description="The dealer's up-card and the player's two cards are dealt. Settle 21 + 3, then Lucky Ladies, then Submit."
                       Expanded="@IsModeOpen(BlackjackMode.SideWagers)"
                       OnToggle="() => ToggleMode(BlackjackMode.SideWagers)"
-                      OnStart="StartGame" />
-
-            <ModeCard Title="Side Wager Payouts"
-                      Description="Pay the 21 + 3 and Lucky Ladies wagers. Enter the winnings for each, then Submit."
-                      Expanded="@IsModeOpen(BlackjackMode.SidePayouts)"
-                      OnToggle="() => ToggleMode(BlackjackMode.SidePayouts)"
-                      OnStart="StartGame" />
+                      OnStart="StartGame">
+                <PayoutChoice @bind-Pay="_swPay"
+                              CallText="Call each wager Win or Lose."
+                              PayText="Call each wager, then pay the winners." />
+            </ModeCard>
         </div>
     </div>
 }
@@ -262,259 +260,164 @@ else if (_mode == BlackjackMode.Payouts)
         </GameBar>
     </div>
 }
-else if (_mode == BlackjackMode.SidePayouts)
+else
 {
-    <div class="play-screen sp-screen swp-screen has-game-bar">
+    @* Side Wagers, played Call Only or Call & Pay: the dealer's up-card
+       (on an Ace, the hole card too -- tucked behind, tilted, darker, with
+       a dashed gold outline and a HOLE CARD tag) and the player's two
+       cards, then 21 + 3 and Lucky Ladies, each with a Call button. Call
+       & Pay: calling Win opens that wager's payout box with the number
+       pad; the other row hides until Enter (or Cancel) closes it. *@
+    <div class="play-screen sp-screen swp-screen has-game-bar @(_swPay ? "" : "cr-screen") @(_swBox >= 0 ? "uc-open" : "")">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Side Wager Payouts" Correct="_spCorrect" Played="_spPlayed" />
+        <GameStatus Title="Side Wagers" Correct="_swCorrect" Played="_swPlayed" />
 
-        @* On the felt: the dealer's up-card (on an Ace, the hole card is
-           shown too -- tucked behind, tilted, darker, with a dashed gold
-           outline and a HOLE CARD tag) and the player's two cards *@
         <div class="felt sp-felt">
             <div class="sp-col">
                 <div class="sp-cap">DEALER</div>
-                @if (_spRound.DealerHole is not null)
+                @if (_swRound.DealerHole is not null)
                 {
                     <div class="sp-dealer">
-                        <img src="images/cards/@(_spRound.DealerHole.Code).png" alt="Hole card: @_spRound.DealerHole.Name" class="sp-card sp-hole" />
-                        <img src="images/cards/@(_spRound.DealerUp.Code).png" alt="Up-card: @_spRound.DealerUp.Name" class="sp-card sp-up" />
+                        <img src="images/cards/@(_swRound.DealerHole.Code).png" alt="Hole card: @_swRound.DealerHole.Name" class="sp-card sp-hole" />
+                        <img src="images/cards/@(_swRound.DealerUp.Code).png" alt="Up-card: @_swRound.DealerUp.Name" class="sp-card sp-up" />
                         <span class="sp-tag sp-uptag">UP</span>
                         <span class="sp-tag sp-holetag">HOLE CARD</span>
                     </div>
                 }
                 else
                 {
-                    <img src="images/cards/@(_spRound.DealerUp.Code).png" alt="Up-card: @_spRound.DealerUp.Name" class="sp-card" />
+                    <img src="images/cards/@(_swRound.DealerUp.Code).png" alt="Up-card: @_swRound.DealerUp.Name" class="sp-card" />
                 }
             </div>
             <div class="sp-col">
                 <div class="sp-cap">PLAYER</div>
                 <div class="sp-cards">
-                    <img src="images/cards/@(_spRound.Player1.Code).png" alt="@_spRound.Player1.Name" class="sp-card" />
-                    <img src="images/cards/@(_spRound.Player2.Code).png" alt="@_spRound.Player2.Name" class="sp-card" />
+                    <img src="images/cards/@(_swRound.Player1.Code).png" alt="@_swRound.Player1.Name" class="sp-card" />
+                    <img src="images/cards/@(_swRound.Player2.Code).png" alt="@_swRound.Player2.Name" class="sp-card" />
                 </div>
             </div>
-        </div>
-
-        @* The two wagers: chip, name and a payout box each. Tap a row (or
-           its box) to key into it; the active box has a blue outline. *@
-        <div class="pw-wrap">
-            <div class="pw-box @(!_spScored ? "pw-scroll" : "")">
-            <div class="sp-wagers">
-                @for (int w = 0; w < 2; w++)
-                {
-                    int wi = w;
-                    int wager = wi == 0 ? _spRound.TwentyOnePlus3Wager : _spRound.LuckyLadiesWager;
-                    int answer = wi == 0 ? _spRound.TwentyOnePlus3Payout : _spRound.LuckyLadiesPayout;
-                    <div class="sp-wrow @(!_spScored && _spActive == wi ? "sp-wrow-on" : "")" @onclick="() => SpSelect(wi)">
-                        <div class="sp-chip @SpChipClass(wager)">$@wager</div>
-                        <div class="sp-wname">@(wi == 0 ? "21 + 3" : "Lucky Ladies")<small>wager $@wager</small></div>
-                        @if (_spScored)
-                        {
-                            bool ok = _spOk[wi];
-                            <div class="sp-ans @(ok ? "sp-ans-ok" : "sp-ans-bad")">
-                                @if (ok)
-                                {
-                                    <text>&#x2713; @SpEnteredText(wi)</text>
-                                }
-                                else
-                                {
-                                    <text>&#x2717; @SpEnteredText(wi) &middot; Answer: @(answer == 0 ? "LOSE" : answer.ToString("N0"))</text>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            @* inputmode="none": phones use the keypad below instead
-                               of their own keyboard; a PC keyboard types normally *@
-                            @* A wager marked Lose shows LOSE in its box; typing a
-                               number (or Backspace) clears it *@
-                            <input type="text"
-                                   class="sp-input @(_spLose[wi] ? "sp-input-lose" : "")"
-                                   inputmode="none"
-                                   autocomplete="off"
-                                   value="@(_spLose[wi] ? "LOSE" : _spAnswer[wi])"
-                                   @oninput="e => SpInput(wi, e)"
-                                   @onkeydown="e => SpKeyDown(wi, e)"
-                                   @onfocus="() => _spActive = wi"
-                                   @ref="_spInputRefs[wi]"
-                                   placeholder="Payout" />
-                        }
-                        @* Lose: one tap instead of entering 0 (0 still counts).
-                           Tap again to undo. Greyed out once the round is scored. *@
-                        <button type="button"
-                                class="sp-lose @(_spLose[wi] ? "sp-lose-on" : "")"
-                                disabled="@_spScored"
-                                @onclick="() => SpToggleLose(wi)"
-                                @onclick:stopPropagation="true">Lose</button>
-                    </div>
-                }
-            </div>
-            </div>
-        </div>
-
-        <div class="sp-hint-row">
-            <span class="sp-desk-hint">Type each payout; Tab or Enter moves to the next box.</span>
-            <button class="keypad-toggle" @onclick="() => _spShowKeypad = !_spShowKeypad">123</button>
-        </div>
-
-        @if (!_spScored)
-        {
-            <div class="keypad-wrap sp-keypad @(_spShowKeypad ? "keypad-open" : "")">
-                <NumericKeypad AllowDecimal="false" @bind-Value="SpActiveText" OnEnter="SpKeypadEnter" EnterLabel="@(_spActive == 0 ? "Next ↓" : "Enter")" />
-            </div>
-        }
-
-        <div class="feedback-area sp-feedback">
-            @if (_spScored)
-            {
-                <ResultBreakdown ResultText="@_spResultText" IsCorrect="_spOk[0] && _spOk[1]" Rows="_spRows" />
-            }
-            else if (_spMessage.Length > 0)
-            {
-                <p class="result-line txt-bad">@_spMessage</p>
-            }
-        </div>
-
-        @* Desktop: both pay tables stay in view (beside the game on a wide
-           window, under it otherwise). Phones: in Help. *@
-        <aside class="sp-paytable">
-            <table class="sp-pt">
-                <tr class="sp-pt-hd"><td colspan="2">21 + 3</td></tr>
-                <tr><td>Straight Flush</td><td>30 to 1</td></tr>
-                <tr><td>Three of a Kind</td><td>20 to 1</td></tr>
-                <tr><td>Straight</td><td>10 to 1</td></tr>
-                <tr><td>Flush</td><td>5 to 1</td></tr>
-            </table>
-            <table class="sp-pt">
-                <tr class="sp-pt-hd"><td colspan="2">Lucky Ladies</td></tr>
-                <tr><td>Q&hearts; pair + dealer BJ</td><td>1000 to 1</td></tr>
-                <tr><td>Q&hearts; pair</td><td>125 to 1</td></tr>
-                <tr><td>Matched 20</td><td>19 to 1</td></tr>
-                <tr><td>Suited 20</td><td>9 to 1</td></tr>
-                <tr><td>Any 20</td><td>4 to 1</td></tr>
-            </table>
-            <p class="sp-pt-note">Winnings only.</p>
-        </aside>
-
-        <GameBar HelpTitle="Side Wager Pay Tables" OnEnd="EndSession">
-            <ChildContent>
-                @if (!_spScored)
-                {
-                    <button class="game-bar-main" @onclick="SpSubmitAndShow">Submit</button>
-                }
-                else
-                {
-                    <button class="game-bar-main" @onclick="SpNextTop" @ref="_spNextButtonRef">Next</button>
-                }
-            </ChildContent>
-            <HelpContent>
-                <table class="help-table sp-help-table">
-                    <tr class="sp-pt-hd"><td colspan="2">21 + 3 (your 2 cards + dealer up-card)</td></tr>
-                    <tr><td>Straight Flush</td><td>30 to 1</td></tr>
-                    <tr><td>Three of a Kind</td><td>20 to 1</td></tr>
-                    <tr><td>Straight</td><td>10 to 1</td></tr>
-                    <tr><td>Flush</td><td>5 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td colspan="2">Lucky Ladies (your 2 cards total 20)</td></tr>
-                    <tr><td>Q&hearts; pair + dealer Blackjack</td><td>1000 to 1</td></tr>
-                    <tr><td>Queen of Hearts pair</td><td>125 to 1</td></tr>
-                    <tr><td>Matched 20 (identical cards)</td><td>19 to 1</td></tr>
-                    <tr><td>Suited 20</td><td>9 to 1</td></tr>
-                    <tr><td>Any 20</td><td>4 to 1</td></tr>
-                </table>
-                <p>Enter the winnings only. The wager stays on the layout. For a losing wager, tap Lose (or enter 0).</p>
-            </HelpContent>
-        </GameBar>
-    </div>
-}
-else
-{
-    @* Side Wagers in the payout modes' layout: the dealer's up-card and
-       each player hand on the felt, then two rows per hand (Lucky Ladies,
-       21 + 3) with the wager's chip and a Call button that pops Win / Lose
-       out beside it. *@
-    <div class="play-screen sp-screen cr-screen has-game-bar">
-        <div class="button-row">
-            <button class="back-button" @onclick="BackToStart">Back</button>
-        </div>
-
-        <GameStatus Title="Side Wagers" Correct="_swTotalCorrect" Played="_swTotalAnswered" />
-
-        @* One player hand, on the same felt as Side Wager Payouts: the
-           dealer's up-card on the left, the player's two cards on the right,
-           at the same card size. Then one row per wager (21 + 3, Lucky
-           Ladies) with its chip and a Call button. *@
-        <div class="felt sp-felt">
-            <div class="sp-col">
-                <div class="sp-cap">DEALER</div>
-                <img src="images/cards/@(_swDealerCard?.Code).png" alt="Up-card: @_swDealerCard?.Name" class="sp-card" />
-            </div>
-            @if (_swHands.Count > 0)
-            {
-                SwHandState player = _swHands[0];
-                <div class="sp-col">
-                    <div class="sp-cap">PLAYER</div>
-                    <div class="sp-cards">
-                        <img src="images/cards/@(player.Card1.Code).png" alt="@player.Card1.Name" class="sp-card" />
-                        <img src="images/cards/@(player.Card2.Code).png" alt="@player.Card2.Name" class="sp-card" />
-                    </div>
-                </div>
-            }
         </div>
 
         <div class="sp-wagers">
-            @foreach (SwHandState hand in _swHands)
+            @for (int w = 0; w < 2; w++)
             {
-                SwHandState h = hand;
-                <CallRow Chip="true" Name="21 + 3"
-                         Value="@h.TwentyOnePlus3Selection?.ToString()"
-                         OnPick="k => { h.TwentyOnePlus3Selection = Enum.Parse<WagerOutcome>(k); h.TwentyOnePlus3Wrong = false; }"
-                         Locked="_swRoundScored" Wrong="h.TwentyOnePlus3Wrong"
-                         AnswerText="@(SideWagerRules.Qualifies21Plus3(h.Card1, h.Card2, _swDealerCard!) ? "Win" : "Lose")" />
-                <CallRow Chip="true" Name="Lucky Ladies"
-                         Value="@h.LuckyLadiesSelection?.ToString()"
-                         OnPick="k => { h.LuckyLadiesSelection = Enum.Parse<WagerOutcome>(k); h.LuckyLadiesWrong = false; }"
-                         Locked="_swRoundScored" Wrong="h.LuckyLadiesWrong"
-                         AnswerText="@(SideWagerRules.QualifiesLuckyLadies(h.Card1, h.Card2) ? "Win" : "Lose")" />
+                int wi = w;
+                int wager = SwWager(wi);
+
+                @if (_swBox >= 0 && wi != _swBox)
+                {
+                    continue;
+                }
+
+                @if (wi == _swBox)
+                {
+                    @* The open payout box (same as Three Card Prime): the number
+                       pad below; a computer keyboard types straight in, Enter
+                       confirms, Esc cancels *@
+                    <div class="sp-wrow uc-boxrow">
+                        <div class="sp-chip @CallRow.ChipCss(wager)">$@wager</div>
+                        <div class="sp-wname">@SwNames[wi]<small>wager $@wager</small></div>
+                        <label class="uc-amt">
+                            <span class="uc-dollar">$</span>
+                            <input type="text"
+                                   inputmode="none"
+                                   autocomplete="off"
+                                   aria-label="@($"{SwNames[wi]} payout")"
+                                   placeholder="Payout"
+                                   value="@_swBoxText"
+                                   @oninput="SwBoxInput"
+                                   @onkeydown="SwBoxKeyDown"
+                                   @ref="_swBoxInputRef" />
+                        </label>
+                    </div>
+                    continue;
+                }
+
+                <CallRow Chip="@(!_swPay)" ChipAmount="@(_swPay ? wager : null)"
+                         Name="@SwNames[wi]"
+                         Sub="@(_swPay ? $"wager ${wager}" : null)"
+                         Options="WagerPick.WinLose"
+                         Value="@_swCall[wi]"
+                         PickedText="@SwPickedText(wi)"
+                         OnPick="k => SwPick(wi, k)"
+                         Locked="_swScored" Wrong="!_swOk[wi]" AnswerText="@SwAnswerText(wi)" />
             }
         </div>
 
-        @* First round only: what to do *@
-        @if (_swTotalAnswered == 0 && !_swRoundScored)
+        @if (_swBox >= 0)
         {
-            <p class="cr-howto">Tap Call on each wager and pick Win or Lose, then Submit.</p>
+            <div class="uc-keypad">
+                <NumericKeypad AllowDecimal="false" @bind-Value="SwBoxText" OnEnter="SwBoxEnter" EnterLabel="Enter" EnterDisabled="@(_swBoxText.Length == 0)" />
+            </div>
+        }
+        else if (_swPlayed == 0 && !_swScored)
+        {
+            @* First round only: what to do *@
+            <p class="cr-howto">@(_swPay
+                ? "Tap Call on each wager. Win opens its payout box."
+                : "Tap Call on each wager and pick Win or Lose, then Submit.")</p>
         }
 
         <div class="feedback-area sp-feedback">
-            @if (_swRoundScored)
+            @if (_swScored)
             {
-                @* After Submit: each wager with the right answer and why *@
-                <ResultBreakdown ResultText="@_swResultText" IsCorrect="_swIsCorrect" Rows="_swRows" />
-            }
-            else if (_swResultText.Length > 0)
-            {
-                <p class="result-line txt-bad">@_swResultText</p>
+                <ResultBreakdown ResultText="@_swResultText" IsCorrect="_swOk[0] && _swOk[1]" Rows="_swRows" />
             }
         </div>
 
-        @* Pinned bottom bar: Help | Submit (once every wager is called),
-           then Next | End Session *@
-        <GameBar HelpTitle="Side Wager Pay Tables" OnEnd="EndSession">
+        @if (_swPay)
+        {
+            @* Desktop: both pay tables stay in view (beside the game on a wide
+               window, under it otherwise). Phones: in Help. *@
+            <aside class="sp-paytable">
+                <table class="sp-pt">
+                    <tr class="sp-pt-hd"><td colspan="2">21 + 3</td></tr>
+                    <tr><td>Straight Flush</td><td>30 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>20 to 1</td></tr>
+                    <tr><td>Straight</td><td>10 to 1</td></tr>
+                    <tr><td>Flush</td><td>5 to 1</td></tr>
+                </table>
+                <table class="sp-pt">
+                    <tr class="sp-pt-hd"><td colspan="2">Lucky Ladies</td></tr>
+                    <tr><td>Q&hearts; pair + dealer BJ</td><td>1000 to 1</td></tr>
+                    <tr><td>Q&hearts; pair</td><td>125 to 1</td></tr>
+                    <tr><td>Matched 20</td><td>19 to 1</td></tr>
+                    <tr><td>Suited 20</td><td>9 to 1</td></tr>
+                    <tr><td>Any 20</td><td>4 to 1</td></tr>
+                </table>
+                <p class="sp-pt-note">Winnings only.</p>
+            </aside>
+        }
+
+        @* Pinned bottom bar: the main button counts the wagers left until
+           both are called; while a payout box is open, End Session becomes
+           Cancel *@
+        <GameBar HelpTitle="Side Wager Pay Tables" OnEnd="SwEndOrCancel"
+                 EndLabel="@(_swBox >= 0 ? "Cancel" : "End Session")"
+                 EndClass="@(_swBox >= 0 ? "game-bar-cancel" : "")">
             <ChildContent>
-                @if (!_swRoundScored)
+                @if (!_swScored)
                 {
-                    <button class="game-bar-main" @onclick="SwSubmitAndShow" disabled="@(!(_swSubmitEnabled && SwAllAnswered))">Submit</button>
+                    int left = SwWagersLeft;
+                    @if (left > 0 || _swBox >= 0)
+                    {
+                        <button class="game-bar-main" disabled>
+                            <span class="gb-left-long">@left @(left == 1 ? "wager" : "wagers") left</span><span class="gb-left-short">@left left</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="game-bar-main" @onclick="SwSubmitAndShow">Submit</button>
+                    }
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="SwNextHandTop" disabled="@(!_swDealEnabled)">Next</button>
+                    <button class="game-bar-main" @onclick="SwNextTop">Next</button>
                 }
             </ChildContent>
-            @* Same pay tables as Side Wager Payouts *@
             <HelpContent>
                 <table class="help-table sp-help-table">
                     <tr class="sp-pt-hd"><td colspan="2">21 + 3 (your 2 cards + dealer up-card)</td></tr>
@@ -529,7 +432,14 @@ else
                     <tr><td>Suited 20</td><td>9 to 1</td></tr>
                     <tr><td>Any 20</td><td>4 to 1</td></tr>
                 </table>
-                <p>A wager wins with any hand on its table; otherwise it loses.</p>
+                @if (_swPay)
+                {
+                    <p>Calling Win opens the wager's payout box: enter the winnings only (the wager stays on the layout), then Enter. Entering 0 counts as Lose; Cancel puts the wager back to Call.</p>
+                }
+                else
+                {
+                    <p>A wager wins with any hand on its table; otherwise it loses.</p>
+                }
             </HelpContent>
         </GameBar>
     </div>
@@ -549,15 +459,21 @@ else
                             RightText="paid right" YouVerb="paid"
                             OnAgain="PracticeAgain" OnDone="CloseSummary" />
             break;
-        case BlackjackMode.SidePayouts:
-            <SessionSummary ModeKey="bj-sidepayouts" Rounds="_spPlayed" Correct="_spCorrect" Log="_log"
-                            RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
-                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
-            break;
         default:
-            <SessionSummary ModeKey="bj-sidewagers" Rounds="_swTotalAnswered" Correct="_swTotalCorrect" Log="_log"
-                            RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
-                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            @* Side Wagers: each way of playing keeps its own "last time"
+               progress (the keys of the old separate modes) *@
+            @if (_swPay)
+            {
+                <SessionSummary ModeKey="bj-sidepayouts" Rounds="_swPlayed" Correct="_swCorrect" Log="_log"
+                                RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
+                                OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            }
+            else
+            {
+                <SessionSummary ModeKey="bj-sidewagers" Rounds="_swPlayed" Correct="_swCorrect" Log="_log"
+                                RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
+                                OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            }
             break;
     }
 }
@@ -582,9 +498,9 @@ else
         GameReset.ResetRequested -= OnResetRequested;
     }
 
-    private enum BlackjackMode { FlashCards, Payouts, SideWagers, SidePayouts }
+    private enum BlackjackMode { FlashCards, Payouts, SideWagers }
 
-    // Shared across all three modes -- which start screen/play screen
+    // Shared across the modes -- which start screen/play screen
     // to show, and the session-summary overlay.
     private bool _started;
     private BlackjackMode _mode = BlackjackMode.FlashCards;
@@ -604,7 +520,11 @@ else
     }
     private bool _showSessionSummary;
 
-    private void BackToStart() => _started = false;
+    private void BackToStart()
+    {
+        _swBox = -1;
+        _started = false;
+    }
 
     private void CloseSummary()
     {
@@ -633,9 +553,21 @@ else
         {
             case BlackjackMode.FlashCards: FcStartGame(); break;
             case BlackjackMode.Payouts: PoStartGame(); break;
-            case BlackjackMode.SidePayouts: SpStartGame(); break;
             default: SwStartGame(); break;
         }
+    }
+
+    // Side Wagers: the bar's right button is Cancel while a payout box is
+    // open; End Session ignores taps for a moment right after a box closes
+    private void SwEndOrCancel()
+    {
+        if (_swBox >= 0)
+        {
+            SwBoxCancel();
+            return;
+        }
+        if (DateTime.UtcNow < _swEndBlockedUntil) return;
+        EndSession();
     }
 
     private void EndSession()
@@ -644,8 +576,7 @@ else
         {
             BlackjackMode.FlashCards => _fcRoundsPlayed > 0,
             BlackjackMode.Payouts => _poTotalRounds > 0,
-            BlackjackMode.SidePayouts => _spPlayed > 0,
-            _ => _swTotalAnswered > 0
+            _ => _swPlayed > 0
         };
 
         if (anyRoundsPlayed)
@@ -1091,409 +1022,198 @@ else
     }
 
     // ============================================================
-    // SIDE WAGER PAYOUTS (Sp prefix)
+    // SIDE WAGERS (Sw prefix): Call Only or Call & Pay
     // ============================================================
 
-    private SideWagerPayoutRound _spRound = SideWagerPayouts.Deal(Random.Shared);
-    private readonly string[] _spAnswer = { "", "" };   // [0] = 21 + 3, [1] = Lucky Ladies
-    private readonly bool[] _spOk = new bool[2];
-    private readonly bool[] _spLose = new bool[2];      // Lose tapped for that wager
-    private int _spActive;
-    private bool _spScored;
-    private bool _spShowKeypad;
-    private string _spMessage = string.Empty;
-    private string _spResultText = string.Empty;
-    private readonly List<BreakdownRow> _spRows = new();
+    private static readonly string[] SwNames = { "21 + 3", "Lucky Ladies" };
 
-    private int _spCorrect;
-    private int _spPlayed;
+    // Start screen setting: false = Call Only, true = Call & Pay
+    private bool _swPay;
 
-    private readonly Microsoft.AspNetCore.Components.ElementReference[] _spInputRefs = new Microsoft.AspNetCore.Components.ElementReference[2];
-    private Microsoft.AspNetCore.Components.ElementReference _spNextButtonRef;
-    private int _spFocusInput = -1;
-    private bool _spFocusNext;
+    private SideWagerPayoutRound _swRound = SideWagerPayouts.Deal(Random.Shared);
 
-    // The keypad types into whichever box is active
-    private string SpActiveText
+    // Per wager ([0] = 21 + 3, [1] = Lucky Ladies): the call ("Win",
+    // "Lose" or null = not called yet) and, Call & Pay, the payout entered
+    private readonly string?[] _swCall = new string?[2];
+    private readonly int?[] _swPaid = new int?[2];
+
+    private int _swBox = -1;               // row whose payout box is open
+    private string _swBoxText = string.Empty;
+    private Microsoft.AspNetCore.Components.ElementReference _swBoxInputRef;
+    private bool _swFocusBox;
+    private DateTime _swEndBlockedUntil;
+
+    private bool _swScored;
+    private readonly bool[] _swOk = new bool[2];
+    private readonly List<BreakdownRow> _swRows = new();
+    private string _swResultText = string.Empty;
+    private int _swPlayed;
+    private int _swCorrect;
+
+    private int SwWager(int i) => i == 0 ? _swRound.TwentyOnePlus3Wager : _swRound.LuckyLadiesWager;
+    private int SwPayout(int i) => i == 0 ? _swRound.TwentyOnePlus3Payout : _swRound.LuckyLadiesPayout;
+    private int SwWagersLeft => _swCall.Count(c => c is null);
+
+    // Button / answer-box text once a payout is in, e.g. "Win $30"
+    private string? SwPickedText(int i) =>
+        _swPaid[i] is int v && _swCall[i] == "Win" ? $"Win ${v:N0}" : null;
+
+    private void SwStartGame()
     {
-        get => _spAnswer[_spActive];
-        set
+        _swPlayed = 0;
+        _swCorrect = 0;
+        SwNewRound();
+    }
+
+    // Both ways deal from a 6-deck shoe with real-world wager amounts.
+    // Call Only: the natural mix (most hands lose both); Call & Pay: every
+    // hand wins at least one wager.
+    private void SwNewRound()
+    {
+        _swRound = SideWagerPayouts.Deal(Random.Shared, winnersOnly: _swPay);
+        for (int i = 0; i < 2; i++)
         {
-            _spAnswer[_spActive] = SpDigitsOnly(value);
-            _spLose[_spActive] = false;
-            _spMessage = string.Empty;
+            _swCall[i] = null;
+            _swPaid[i] = null;
+            _swOk[i] = false;
         }
+        _swBox = -1;
+        _swBoxText = string.Empty;
+        _swScored = false;
+        _swRows.Clear();
+        _swResultText = string.Empty;
     }
 
-    private void SpStartGame()
+    private void SwPick(int i, string key)
     {
-        _spCorrect = 0;
-        _spPlayed = 0;
-        SpNewRound();
+        if (_swScored) return;
+
+        // Call & Pay: Win opens the payout box
+        if (_swPay && key == "Win")
+        {
+            _swCall[i] = null;
+            _swPaid[i] = null;
+            _swBox = i;
+            _swBoxText = string.Empty;
+            _swFocusBox = true;
+            _scrollToTopAfterNext = true;
+            return;
+        }
+
+        _swCall[i] = key;
+        _swPaid[i] = null;
     }
 
-    private void SpNewRound()
+    // ---- Payout box ----
+
+    private string SwBoxText
     {
-        _spRound = SideWagerPayouts.Deal(Random.Shared);
-        _spAnswer[0] = string.Empty;
-        _spAnswer[1] = string.Empty;
-        _spOk[0] = _spOk[1] = false;
-        _spLose[0] = _spLose[1] = false;
-        _spActive = 0;
-        _spScored = false;
-        _spMessage = string.Empty;
-        _spResultText = string.Empty;
-        _spRows.Clear();
-        _spFocusInput = 0;
+        get => _swBoxText;
+        set => _swBoxText = SwDigitsOnly(value);
     }
 
-    private void SpSelect(int index)
-    {
-        if (_spScored || _spActive == index) return;
-        _spActive = index;
-        _spFocusInput = index;
-    }
-
-    // Whole dollars only, at most 5 digits (the top pay is $25,000)
-    private static string SpDigitsOnly(string? raw)
+    // Whole dollars, at most 5 digits (the top pay is $50,000); no
+    // leading zeros, but a lone 0 stays (0 = Lose)
+    private static string SwDigitsOnly(string? raw)
     {
         System.Text.StringBuilder sb = new();
         foreach (char c in raw ?? string.Empty)
         {
             if (char.IsDigit(c) && sb.Length < 5) sb.Append(c);
         }
-        return sb.ToString();
+        string digits = sb.ToString().TrimStart('0');
+        return digits.Length == 0 && sb.Length > 0 ? "0" : digits;
     }
 
-    private void SpInput(int index, Microsoft.AspNetCore.Components.ChangeEventArgs e)
+    private void SwBoxInput(Microsoft.AspNetCore.Components.ChangeEventArgs e) => _swBoxText = SwDigitsOnly(e.Value?.ToString());
+
+    private void SwBoxKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
     {
-        _spAnswer[index] = SpDigitsOnly(e.Value?.ToString());
-        _spLose[index] = false;
-        _spActive = index;
-        _spMessage = string.Empty;
+        if (e.Key == "Enter") SwBoxEnter();
+        else if (e.Key == "Escape") SwBoxCancel();
     }
 
-    // Keyboard Enter: first box -> next box; second box -> Submit
-    private async Task SpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    // Enter: the amount goes on the row and the box closes; 0 counts as Lose
+    private void SwBoxEnter()
     {
-        if (e.Key != "Enter" || _spScored) return;
-        _spActive = index;
-        await SpKeypadEnter();
+        if (_swBox < 0 || _swBoxText.Length == 0) return;
+
+        int i = _swBox;
+        int amount = int.Parse(_swBoxText);
+        _swCall[i] = amount == 0 ? "Lose" : "Win";
+        _swPaid[i] = amount == 0 ? null : amount;
+        SwCloseBox();
     }
 
-    // Keypad Enter ("Next ↓" on the first box)
-    private async Task SpKeypadEnter()
+    // Cancel: the row goes back to Call (no penalty)
+    private void SwBoxCancel()
     {
-        if (_spScored) return;
-
-        if (_spActive == 0)
-        {
-            _spActive = 1;
-            _spFocusInput = 1;
-        }
-        else
-        {
-            await SpSubmitAndShow();
-        }
+        if (_swBox < 0) return;
+        _swCall[_swBox] = null;
+        _swPaid[_swBox] = null;
+        SwCloseBox();
     }
 
-    // Submit also scrolls to the feedback. The cursor moves onto Next only
-    // after a short wait (same as Flash Cards and Payouts): moved at once,
-    // the same Enter press that submitted would also press Next, dealing
-    // the next round before the feedback could be seen.
-    private async Task SpSubmitAndShow()
+    private void SwCloseBox()
     {
-        SpSubmit();
-        if (!_spScored) return;
-
-        _scrollToFeedback = true;
-        StateHasChanged();
-
-        await Task.Delay(200);
-        _spFocusNext = true;
+        _swBox = -1;
+        _swBoxText = string.Empty;
+        _swEndBlockedUntil = DateTime.UtcNow.AddMilliseconds(500);
     }
 
-    private void SpSubmit()
-    {
-        if (_spScored) return;
+    // ---- Submit ----
 
-        // Both boxes need an amount (0 for a losing wager)
+    private void SwSubmitAndShow()
+    {
+        SwSubmit();
+        if (_swScored) _scrollToFeedback = true;
+    }
+
+    private void SwSubmit()
+    {
+        if (_swScored || _swBox >= 0 || SwWagersLeft > 0) return;
+
+        _swRows.Clear();
+        string[] why = { SideWagerPayouts.Why21Plus3(_swRound), SideWagerPayouts.WhyLuckyLadies(_swRound) };
         for (int i = 0; i < 2; i++)
         {
-            if (_spAnswer[i].Length == 0 && !_spLose[i])
+            int payout = SwPayout(i);
+            bool wins = payout > 0;
+            _swOk[i] = _swCall[i] switch
             {
-                _spMessage = i == 0
-                    ? "Enter the 21 + 3 payout, or tap Lose."
-                    : "Enter the Lucky Ladies payout, or tap Lose.";
-                _spActive = i;
-                _spFocusInput = i;
-                return;
-            }
+                "Lose" => !wins,
+                "Win" => wins && (!_swPay || _swPaid[i] == payout),
+                _ => false
+            };
+
+            // Call & Pay: a missed payout gets its shortcut
+            string tip = _swPay && !_swOk[i] && wins ? PayoutShortcut.For(SwWager(i) * 100L, payout * 100L) : "";
+            _swRows.Add(new BreakdownRow(SwNames[i], SwYouText(i), SwAnswerText(i), _swOk[i], why[i], tip));
         }
 
-        int[] correct = { _spRound.TwentyOnePlus3Payout, _spRound.LuckyLadiesPayout };
-        for (int i = 0; i < 2; i++)
-        {
-            _spOk[i] = _spLose[i]
-                ? correct[i] == 0
-                : long.TryParse(_spAnswer[i], out long v) && v == correct[i];
-        }
-
-        _spRows.Clear();
-        // A missed payout gets the payout shortcut under its reason
-        int[] bets = { _spRound.TwentyOnePlus3Wager, _spRound.LuckyLadiesWager };
-        string Tip(int i) => _spOk[i] ? "" : PayoutShortcut.For(bets[i] * 100L, correct[i] * 100L);
-        _spRows.Add(new BreakdownRow("21 + 3",
-            SpEnteredMoney(0), SpAnswerMoney(correct[0]), _spOk[0],
-            SideWagerPayouts.Why21Plus3(_spRound), Tip(0)));
-        _spRows.Add(new BreakdownRow("Lucky Ladies",
-            SpEnteredMoney(1), SpAnswerMoney(correct[1]), _spOk[1],
-            SideWagerPayouts.WhyLuckyLadies(_spRound), Tip(1)));
-
-        _log.AddRows(_spRows);
-        _spPlayed++;
-        if (_spOk[0] && _spOk[1]) _spCorrect++;
-
-        _spResultText = BreakdownRow.Summary(_spRows);
-        _spMessage = string.Empty;
-        _spScored = true;
-    }
-
-    // Lose button: marks the wager as losing (clears any amount typed) and
-    // moves on to the next wager; tapped again it's undone.
-    private void SpToggleLose(int index)
-    {
-        if (_spScored) return;
-        _spMessage = string.Empty;
-
-        if (_spLose[index])
-        {
-            _spLose[index] = false;
-            _spActive = index;
-            _spFocusInput = index;
-            return;
-        }
-
-        _spLose[index] = true;
-        _spAnswer[index] = string.Empty;
-        int next = index == 0 ? 1 : index;
-        _spActive = next;
-        _spFocusInput = next;
-    }
-
-    // What was entered, for the payout box after Submit: "LOSE" or "1,000"
-    private string SpEnteredText(int index) =>
-        _spLose[index] ? "LOSE" : SpShowEntered(_spAnswer[index]).TrimStart('$');
-
-    // ...and for the breakdown: "Lose" or "$1,000"
-    private string SpEnteredMoney(int index) =>
-        _spLose[index] ? "Lose" : SpShowEntered(_spAnswer[index]);
-
-    private static string SpAnswerMoney(int dollars) =>
-        dollars == 0 ? "Lose" : SideWagerPayouts.Money(dollars);
-
-    // Chip color by the largest chip in the wager: $25 green, $10 blue,
-    // $5 red, $1 grey
-    private static string SpChipClass(int wager) =>
-        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
-
-    private static string SpShowEntered(string raw) =>
-        long.TryParse(raw, out long v) ? $"${v:N0}" : raw;
-
-    private void SpNextTop()
-    {
-        SpNewRound();
-        _scrollToTopAfterNext = true;
-    }
-
-    // ============================================================
-    // SIDE WAGERS (Sw prefix)
-    // ============================================================
-
-    private sealed class SwHandState
-    {
-        public Card Card1 = null!;
-        public Card Card2 = null!;
-        public WagerOutcome? LuckyLadiesSelection;
-        public WagerOutcome? TwentyOnePlus3Selection;
-        public bool LuckyLadiesWrong;
-        public bool TwentyOnePlus3Wrong;
-        // Chips on the rows (real-world betting pattern, $1-$50)
-        public int LuckyLadiesWager;
-        public int TwentyOnePlus3Wager;
-    }
-
-    private const int _swHandCount = 1;   // one player hand (multiple hands removed)
-    private Deck _swDeck = new();
-    private readonly List<SwHandState> _swHands = new();
-    private Card? _swDealerCard;
-
-    private int _swTotalCorrect;
-    private int _swTotalAnswered;
-
-    private bool _swSubmitEnabled;
-    private bool _swRoundScored;
-    private bool _swDealEnabled;
-    private string _swResultText = string.Empty;
-    private bool _swIsCorrect;
-    private string _swScoreText = "Score: 0 / 0 (0.0%)";
-
-    private void SwStartGame()
-    {
-        _swTotalCorrect = 0;
-        _swTotalAnswered = 0;
-        _swScoreText = "Score: 0 / 0 (0.0%)";
-
-        SwDealNewRound();
-    }
-
-    private void SwDealNewRound()
-    {
-        _swDealEnabled = false;
-
-        _swDeck = new Deck();
-        _swDeck.Shuffle();
-
-        _swHands.Clear();
-        for (int h = 0; h < _swHandCount; h++)
-        {
-            _swHands.Add(new SwHandState
-            {
-                Card1 = _swDeck.Draw(),
-                Card2 = _swDeck.Draw(),
-                LuckyLadiesWager = SideWagerPayouts.SideWager(Random.Shared),
-                TwentyOnePlus3Wager = SideWagerPayouts.SideWager(Random.Shared)
-            });
-        }
-
-        _swDealerCard = _swDeck.Draw();
-
-        _swResultText = string.Empty;
-        _swRoundScored = false;
-        _swSubmitEnabled = true;
-    }
-
-    // True once every hand has both of its wagers called (Win or Lose) --
-    // Submit only shows up at that point.
-    private bool SwAllAnswered => _swHands.Count > 0 && _swHands.All(h =>
-        h.LuckyLadiesSelection is not null && h.TwentyOnePlus3Selection is not null);
-
-    // After Submit: Lucky Ladies and 21 + 3 for each hand, with the right
-    // answer and why
-    private readonly List<BreakdownRow> _swRows = new();
-
-    private void SwDealAgain()
-    {
-        _swRows.Clear();
-        foreach (SwHandState hand in _swHands)
-        {
-            hand.LuckyLadiesSelection = null;
-            hand.TwentyOnePlus3Selection = null;
-            hand.LuckyLadiesWrong = false;
-            hand.TwentyOnePlus3Wrong = false;
-        }
-
-        SwDealNewRound();
-    }
-
-    private void SwSubmitRound()
-    {
-        for (int h = 0; h < _swHands.Count; h++)
-        {
-            SwHandState hand = _swHands[h];
-            if (hand.LuckyLadiesSelection is null || hand.TwentyOnePlus3Selection is null)
-            {
-                _swResultText = "Tap every wager to select an outcome before submitting.";
-                _swIsCorrect = false;
-                return;
-            }
-        }
-
-        int roundCorrect = 0;
-
-        foreach (SwHandState hand in _swHands)
-        {
-            bool actualLL = SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2);
-            bool actualTC = SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _swDealerCard!);
-
-            WagerOutcome actualLLOutcome = actualLL ? WagerOutcome.Win : WagerOutcome.Lose;
-            WagerOutcome actualTCOutcome = actualTC ? WagerOutcome.Win : WagerOutcome.Lose;
-
-            if (hand.LuckyLadiesSelection == actualLLOutcome)
-            {
-                hand.LuckyLadiesWrong = false;
-                roundCorrect++;
-            }
-            else
-            {
-                hand.LuckyLadiesWrong = true;
-            }
-
-            if (hand.TwentyOnePlus3Selection == actualTCOutcome)
-            {
-                hand.TwentyOnePlus3Wrong = false;
-                roundCorrect++;
-            }
-            else
-            {
-                hand.TwentyOnePlus3Wrong = true;
-            }
-        }
-
-        _swTotalAnswered++;
-
-        // Each wager with the right answer and why, hand by hand
-        _swRows.Clear();
-        for (int h = 0; h < _swHands.Count; h++)
-        {
-            SwHandState hand = _swHands[h];
-            BlackjackHand two = new();
-            two.AddCard(hand.Card1);
-            two.AddCard(hand.Card2);
-            bool ll = SideWagerRules.QualifiesLuckyLadies(hand.Card1, hand.Card2);
-            bool tc = SideWagerRules.Qualifies21Plus3(hand.Card1, hand.Card2, _swDealerCard!);
-            string tcName = !tc ? "no Flush, Straight or Three of a Kind"
-                : ThreeCardEvaluator.GetCategory(new[] { hand.Card1, hand.Card2, _swDealerCard! }) switch
-                {
-                    ThreeCardCategory.StraightFlush => "a Straight Flush",
-                    ThreeCardCategory.ThreeOfAKind => "Three of a Kind",
-                    ThreeCardCategory.Straight => "a Straight",
-                    _ => "a Flush"
-                };
-            string prefix = _swHands.Count > 1 ? $"Hand {h + 1} " : "";
-            WagerOutcome llActual = ll ? WagerOutcome.Win : WagerOutcome.Lose;
-            WagerOutcome tcActual = tc ? WagerOutcome.Win : WagerOutcome.Lose;
-
-            // 21 + 3 first, then Lucky Ladies (same order as the rows)
-            _swRows.Add(new BreakdownRow($"{prefix}21 + 3", $"{hand.TwentyOnePlus3Selection}", $"{tcActual}",
-                hand.TwentyOnePlus3Selection == tcActual,
-                $"With the dealer's up card: {tcName}."));
-            _swRows.Add(new BreakdownRow($"{prefix}Lucky Ladies", $"{hand.LuckyLadiesSelection}", $"{llActual}",
-                hand.LuckyLadiesSelection == llActual,
-                ll ? "The first two cards total 20." : $"The first two cards total {two.Total} (needs 20)."));
-        }
-
-        // Summary parts by wager ("Hand 2 Lucky Ladies" counts as Lucky Ladies)
-        _log.AddRows(_swRows, r => r.Name.EndsWith("Lucky Ladies") ? "Lucky Ladies" : "21 + 3");
-
-        if (roundCorrect == _swHandCount * 2)
-        {
-            _swTotalCorrect++;
-            _swIsCorrect = true;
-        }
-        else
-        {
-            _swIsCorrect = false;
-        }
-
+        _log.AddRows(_swRows);
+        _swPlayed++;
+        if (_swOk[0] && _swOk[1]) _swCorrect++;
         _swResultText = BreakdownRow.Summary(_swRows);
+        _swScored = true;
+    }
 
-        double percentage = (double)_swTotalCorrect / _swTotalAnswered;
-        _swScoreText = $"Score: {_swTotalCorrect} / {_swTotalAnswered} ({percentage:0.0%})";
+    // In the breakdown: "Win", "Lose" or (Call & Pay) "$150"
+    private string SwYouText(int i) =>
+        _swPaid[i] is int v && _swCall[i] == "Win" ? $"${v:N0}" : _swCall[i] ?? "";
 
-        _swRoundScored = true;
-        _swSubmitEnabled = false;
-        _swDealEnabled = true;
+    // The right answer on a missed row: "Win" / "Lose", or "$150"
+    private string SwAnswerText(int i)
+    {
+        int payout = SwPayout(i);
+        if (payout == 0) return "Lose";
+        return _swPay ? SideWagerPayouts.Money(payout) : "Win";
+    }
+
+    private void SwNextTop()
+    {
+        SwNewRound();
+        _scrollToTopAfterNext = true;
     }
 
     // Scroll back to the top whenever this game switches between its
@@ -1503,20 +1223,6 @@ else
     private bool _lastRenderedStarted;
 
     private bool _scrollToSummary;
-
-    // Side Wagers bar buttons: Submit also scrolls to the feedback;
-    // Next also scrolls back to the top
-    private void SwSubmitAndShow()
-    {
-        SwSubmitRound();
-        if (_swRoundScored) _scrollToFeedback = true;
-    }
-
-    private void SwNextHandTop()
-    {
-        SwDealAgain();
-        _scrollToTopAfterNext = true;
-    }
 
     private bool _scrollToFeedback;
     private bool _scrollToTopAfterNext;
@@ -1557,7 +1263,6 @@ else
                 bool fits = false;
                 try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", _mode == BlackjackMode.FlashCards ? 260 : 315); } catch { }
                 if (_mode == BlackjackMode.FlashCards) _fcShowKeypad = fits;
-                else if (_mode == BlackjackMode.SidePayouts) _spShowKeypad = fits;
                 else _poShowKeypad = fits;
                 if (fits) StateHasChanged();
             }
@@ -1589,26 +1294,12 @@ else
             try { await _poNewRoundButtonRef.FocusAsync(preventScroll: true); } catch { }
         }
 
-        // Side Wager Payouts: cursor into the active payout box, or onto
-        // Next once the round is scored (so Enter deals the next round)
-        // Payouts, phones: size the wager box to the space above the keypad
-        if (_started && _mode == BlackjackMode.SidePayouts)
+        // Side Wagers: the cursor into an open payout box (a computer
+        // keyboard types there)
+        if (_swFocusBox && _swBox >= 0)
         {
-            try { await JS.InvokeVoidAsync("dstFitWagerBox"); } catch { }
-        }
-
-        if (_spFocusInput >= 0)
-        {
-            int i = _spFocusInput;
-            _spFocusInput = -1;
-            try { await _spInputRefs[i].FocusAsync(preventScroll: true); } catch { }
-            try { await JS.InvokeVoidAsync("dstWagerRowIntoView", i); } catch { }
-        }
-
-        if (_spFocusNext)
-        {
-            _spFocusNext = false;
-            try { await _spNextButtonRef.FocusAsync(preventScroll: true); } catch { }
+            _swFocusBox = false;
+            try { await _swBoxInputRef.FocusAsync(preventScroll: true); } catch { }
         }
     }
 }
