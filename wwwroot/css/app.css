@@ -6366,7 +6366,8 @@ body {
 }
 
 /* Start screen: Call Only / Call & Pay as two green felt tiles
-   (Shared/PayoutChoice). The chosen one is lit with a gold edge. */
+   (Shared/PayoutChoice). The chosen one is lit felt with a gold edge
+   and a gold check; the other is a plain grey tile. */
 .pc-choice {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -6374,25 +6375,56 @@ body {
 }
 
 .content .pc-tile {
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 0;
     margin: 0;
     padding: 0.7rem 0.6rem;
-    border: 3px solid transparent;
+    border: 2px solid #cfd5dd;
     border-radius: 14px;
-    background: radial-gradient(ellipse at center, #2a7f53 0%, #1d6240 100%);
-    color: white;
+    background: #f4f5f7;
+    color: #555;
     text-align: center;
-    opacity: 0.72;
     cursor: pointer;
 }
 
+/* Not chosen: plain grey tile, grey chips */
+.pc-tile:not(.pc-on) .pc-icon {
+    filter: grayscale(1);
+    opacity: 0.55;
+}
+
+.pc-tile:not(.pc-on) .pc-desc {
+    color: #777;
+}
+
+/* Chosen: lit felt, gold edge, gold check badge */
 .content .pc-tile.pc-on {
-    border-color: #f2d27a;
+    border: 3px solid #f2d27a;
+    background: radial-gradient(ellipse at center, #2a7f53 0%, #1d6240 100%);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-    opacity: 1;
+    color: white;
+}
+
+.pc-tile.pc-on::after {
+    content: "\2713";
+    position: absolute;
+    top: -9px;
+    right: -9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background-color: #f2d27a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    color: #1d6240;
+    font-size: 15px;
+    font-weight: 900;
 }
 
 .pc-icon {
@@ -6429,5 +6461,8 @@ body {
     font-size: 0.8rem;
     font-weight: 400;
     line-height: 1.3;
+}
+
+.pc-tile.pc-on .pc-desc {
     color: #d7eadf;
 }
