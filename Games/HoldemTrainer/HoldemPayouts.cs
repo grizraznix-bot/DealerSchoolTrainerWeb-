@@ -40,13 +40,14 @@ public static class HoldemPayouts
 {
     // Training boost: about 1 hand in 5 gives the player a Straight or
     // better (so Odds pays more often); about a third of those lose to
-    // the dealer, for Bad Beat practice
+    // the dealer, for Bad Beat practice. boost: false (Call Only) deals
+    // the hand as it comes.
     private const double BigHandRate = 0.20;
     private const double BadBeatShare = 0.30;
 
-    public static HdPayoutRound Deal(Random rng)
+    public static HdPayoutRound Deal(Random rng, bool boost = true)
     {
-        bool forceBig = rng.NextDouble() < BigHandRate;
+        bool forceBig = boost && rng.NextDouble() < BigHandRate;
         bool forceBadBeat = forceBig && rng.NextDouble() < BadBeatShare;
 
         Card[] dealer, player, board;

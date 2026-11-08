@@ -9,7 +9,11 @@
    (same arrangement as the LTD trainer apps); in decimal mode the
    bottom row stays  .  0  <<  and a full-width Enter row is added
    below it. EnterLabel changes the Enter key's caption (e.g. "Next"
-   once a hand is finished, when Enter deals the next one). *@
+   once a hand is finished, when Enter deals the next one).
+
+   BackspaceInBox (decimal mode with Enter): the bottom row is  .  0  Enter
+   and no extra row -- the page puts its own backspace key inside the
+   answer box (Hold'em's payout box). *@
 
 <div class="numeric-keypad">
     @for (int row = 0; row < 3; row++)
@@ -24,7 +28,13 @@
         </div>
     }
     <div class="numeric-keypad-row">
-        @if (AllowDecimal)
+        @if (AllowDecimal && BackspaceInBox && OnEnter.HasDelegate)
+        {
+            <button type="button" @onclick="AppendDecimalPoint">.</button>
+            <button type="button" @onclick="() => AppendDigit(0)">0</button>
+            <button type="button" class="numeric-keypad-enter" disabled="@EnterDisabled" @onclick="PressEnter">@EnterLabel</button>
+        }
+        else if (AllowDecimal)
         {
             <button type="button" @onclick="AppendDecimalPoint">.</button>
             <button type="button" @onclick="() => AppendDigit(0)">0</button>
@@ -43,7 +53,7 @@
             <button type="button" @onclick="Backspace">⌫</button>
         }
     </div>
-    @if (AllowDecimal && OnEnter.HasDelegate)
+    @if (AllowDecimal && OnEnter.HasDelegate && !BackspaceInBox)
     {
         <div class="numeric-keypad-row">
             <button type="button" class="numeric-keypad-enter numeric-keypad-wide" disabled="@EnterDisabled" @onclick="PressEnter">@EnterLabel</button>
@@ -58,6 +68,8 @@
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public EventCallback OnEnter { get; set; }
     [Parameter] public string EnterLabel { get; set; } = "Enter";
+    // Decimal mode: Enter in the bottom row, backspace left to the page
+    [Parameter] public bool BackspaceInBox { get; set; }
     // Greys out the Enter key (e.g. nothing typed yet)
     [Parameter] public bool EnterDisabled { get; set; }
 

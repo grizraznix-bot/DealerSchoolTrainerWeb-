@@ -14,7 +14,7 @@
 
         @* Each mode is a collapsible card: tap its title to open its
            settings and its own Start button (one card open at a time).
-           Settle the Bets allows 1-6 player hands, defaulting to 1. *@
+           Settle the Bets is played Call Only or Call & Pay. *@
         <div class="mode-list">
             <ModeCard Title="Identify the Hands"
                       Description="The board and the dealer's 2 cards are dealt. Tap the 2 cards that are NOT part of the dealer's best 5-card hand, then Submit."
@@ -23,39 +23,36 @@
                       OnStart="StartGame" />
 
             <ModeCard Title="Settle the Bets"
-                      Description="The dealer's best hand is already set -- its 2 unused cards are dimmed. Call the player Win / Lose / Push against it with the Call button, then Submit."
-                      Expanded="@IsModeOpen(TrainerMode.SettleBets)"
-                      OnToggle="() => ToggleMode(TrainerMode.SettleBets)"
-                      OnStart="StartGame" />
-
-            <ModeCard Title="Hold'em Payouts"
-                      Description="The hand is dealt and settled out. Tap a hand to see its rank. Call the Raise and Ante (Win / Lose / Push), then pay the Odds, Trips Plus and Pocket Bonus: enter the winnings, or tap Push / Lose, then Submit."
-                      Expanded="@IsModeOpen(TrainerMode.Payouts)"
-                      OnToggle="() => ToggleMode(TrainerMode.Payouts)"
-                      OnStart="StartGame" />
+                      Description="The board and both hands are dealt; the dealer's 2 unused cards are dimmed. Settle the Raise, Ante, Odds, Trips Plus and Pocket Bonus in order, then Submit."
+                      Expanded="@IsModeOpen(TrainerMode.Settle)"
+                      OnToggle="() => ToggleMode(TrainerMode.Settle)"
+                      OnStart="StartGame">
+                <PayoutChoice @bind-Pay="_hpPay"
+                              CallText="Call each wager Win, Lose or Push."
+                              PayText="Call each wager, then pay the winners." />
+            </ModeCard>
         </div>
     </div>
 }
-else if (_mode == TrainerMode.Payouts)
+else if (_mode == TrainerMode.Settle)
 {
-    <div class="play-screen sp-screen hp-screen has-game-bar">
+    @* Settle the Bets, played Call Only or Call & Pay. The board on top
+       (the dealer's 2 unused cards dimmed, wherever they are), then the
+       dealer's and player's hole cards side by side. Call & Pay: tap a
+       hand for a bubble with its rank (the dealer's adds OPENS / DOESN'T
+       OPEN); until the first tap this session the board caption fades
+       between the dimmed-card note and the tap prompt. Call Only: no
+       ranks -- who wins is the skill. After Submit each rank shows under
+       its caption. *@
+    <div class="play-screen sp-screen hp-screen has-game-bar @(_hpPay ? "" : "cr-screen") @(_hpBox >= 0 ? "uc-open" : "")">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Hold'em Payouts" Correct="_hpCorrect" Played="_hpPlayed" />
+        <GameStatus Title="Settle the Bets" Correct="_hpCorrect" Played="_hpPlayed" />
 
-        @* The board on top (the dealer's 2 unused cards dimmed, wherever
-           they are), then the dealer's and player's hole cards side by side
-           under plain DEALER / PLAYER captions. Tap a hand for a bubble with
-           its rank (the dealer's adds OPENS / DOESN'T OPEN), as in Pai Gow
-           Payouts. Until the first tap this session, the board caption
-           fades between the dimmed-card note and the tap prompt every 5
-           seconds (CSS only; @key restarts it on each deal). After Submit
-           each rank shows under its caption (the keypad is gone by then, so
-           the extra line costs nothing). *@
         <div class="felt hp-felt">
-            @if (_hpPeekUsed || _hpScored)
+            @if (!_hpPay || _hpPeekUsed || _hpScored)
             {
                 <div class="cr-cap hp-board-cap">BOARD &middot; dimmed = not in dealer's hand</div>
             }
@@ -78,9 +75,10 @@ else if (_mode == TrainerMode.Payouts)
                     bool dealerHand = isDealer;
                     string rank = isDealer ? _hpRound.DealerHand : _hpRound.PlayerHand;
                     Card[] hole = isDealer ? _hpRound.DealerCards : _hpRound.PlayerCards;
-                    bool peekOpen = !_hpScored && _hpPeek == (isDealer ? 2 : 1);
-                    <div class="hp-hand @(!_hpScored ? "hp-tap" : "") @(peekOpen ? "hp-tap-on" : "")"
-                         role="@(!_hpScored ? "button" : null)"
+                    bool canPeek = _hpPay && !_hpScored && _hpBox < 0;
+                    bool peekOpen = canPeek && _hpPeek == (isDealer ? 2 : 1);
+                    <div class="hp-hand @(canPeek ? "hp-tap" : "") @(peekOpen ? "hp-tap-on" : "")"
+                         role="@(canPeek ? "button" : null)"
                          @onclick="() => HpTogglePeek(dealerHand)">
                         @if (peekOpen)
                         {
@@ -118,86 +116,71 @@ else if (_mode == TrainerMode.Payouts)
             <div class="cr-backdrop" @onclick="HpClosePeek"></div>
         }
 
-        @* The five wagers in settling order, in the shared wager box (on
-           phones it scrolls when the rows don't all fit above the keypad).
-           Raise and Ante only ever pay even money, so they're called (Win /
-           Lose / Push with the Call button) instead of typed; the keypad is
-           for Odds, Trips Plus and Pocket Bonus. *@
-        <div class="pw-wrap">
-            <div class="pw-box @(!_hpScored ? "pw-scroll" : "")">
-                <div class="sp-wagers">
-                    @for (int w = 0; w < 5; w++)
-                    {
-                        int wi = w;
-                        int wager = _hpRound.Wagers[wi];
-                        bool canPush = wi <= HdPayoutRound.Odds;
-                        string sub = wi == HdPayoutRound.Raise ? $"${wager} · {_hpRound.RaiseTiming}" : $"wager ${wager}";
-                        @if (HpCall[wi])
-                        {
-                            <CallRow ChipAmount="wager" Name="@HdPayoutRound.Names[wi]" Sub="@sub" Options="WagerPick.WinLosePush"
-                                     Value="@(_hpMark[wi] == HpMark.None ? null : _hpMark[wi].ToString())"
-                                     OnPick="k => HpPickCall(wi, k)"
-                                     Locked="_hpScored" Wrong="!_hpOk[wi]" AnswerText="@HpCallText(_hpRound.Pays[wi])" />
-                            continue;
-                        }
-                        <div class="sp-wrow @(!_hpScored && _hpActive == wi ? "sp-wrow-on" : "")" @onclick="() => HpSelect(wi)">
-                            <div class="sp-chip @HpChipClass(wager)">$@wager</div>
-                            <div class="sp-wname">@HdPayoutRound.Names[wi]<small>@sub</small></div>
-                            @if (_hpScored)
-                            {
-                                <div class="sp-ans @(_hpOk[wi] ? "sp-ans-ok" : "sp-ans-bad")">
-                                    @if (_hpOk[wi])
-                                    {
-                                        <text>&#x2713; @HpEnteredText(wi)</text>
-                                    }
-                                    else
-                                    {
-                                        <text>&#x2717; @HpEnteredText(wi) &middot; Ans: @HpPayText(_hpRound.Pays[wi])</text>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <input type="text"
-                                       class="sp-input @(_hpMark[wi] == HpMark.Lose ? "sp-input-lose" : _hpMark[wi] == HpMark.Push ? "tp-input-push" : "")"
-                                       inputmode="none"
-                                       autocomplete="off"
-                                       value="@HpBoxValue(wi)"
-                                       @oninput="e => HpInput(wi, e)"
-                                       @onkeydown="e => HpKeyDown(wi, e)"
-                                       @onfocus="() => _hpActive = wi"
-                                       @ref="_hpInputRefs[wi]"
-                                       placeholder="Payout" />
-                            }
-                            @if (canPush)
-                            {
-                                <button type="button"
-                                        class="sp-lose tp-push @(_hpMark[wi] == HpMark.Push ? "tp-push-on" : "")"
-                                        disabled="@_hpScored"
-                                        @onclick="() => HpToggleMark(wi, HpMark.Push)"
-                                        @onclick:stopPropagation="true">Push</button>
-                            }
-                            <button type="button"
-                                    class="sp-lose @(_hpMark[wi] == HpMark.Lose ? "sp-lose-on" : "")"
-                                    disabled="@_hpScored"
-                                    @onclick="() => HpToggleMark(wi, HpMark.Lose)"
-                                    @onclick:stopPropagation="true">Lose</button>
-                        </div>
-                    }
-                </div>
-            </div>
+        @* The five wagers in settling order, each with a Call button.
+           Call & Pay: Raise and Ante are plain calls (even money); Pay on
+           the Odds, or Win on Trips Plus / Pocket Bonus, opens that row's
+           payout box (cents allowed) and hides the other rows. *@
+        <div class="sp-wagers">
+            @for (int w = 0; w < 5; w++)
+            {
+                int wi = w;
+                int wager = _hpRound.Wagers[wi];
+                string sub = wi == HdPayoutRound.Raise ? $"${wager} · {_hpRound.RaiseTiming}" : $"wager ${wager}";
+
+                @if (_hpBox >= 0 && wi != _hpBox)
+                {
+                    continue;
+                }
+
+                @if (wi == _hpBox)
+                {
+                    @* The open payout box: the number pad below is  1-9 / . 0 Enter
+                       with the backspace inside the box; a computer keyboard
+                       types straight in, Enter confirms, Esc cancels *@
+                    <div class="sp-wrow uc-boxrow">
+                        <div class="sp-chip @CallRow.ChipCss(wager)">$@wager</div>
+                        <div class="sp-wname">@HdPayoutRound.Names[wi]<small>@sub</small></div>
+                        <label class="uc-amt">
+                            <span class="uc-dollar">$</span>
+                            <input type="text"
+                                   inputmode="none"
+                                   autocomplete="off"
+                                   aria-label="@($"{HdPayoutRound.Names[wi]} payout")"
+                                   placeholder="Payout"
+                                   value="@_hpBoxText"
+                                   @oninput="HpBoxInput"
+                                   @onkeydown="HpBoxKeyDown"
+                                   @ref="_hpBoxInputRef" />
+                            <button type="button" class="uc-bs" aria-label="Backspace" @onclick="HpBoxBackspace">&#x232B;</button>
+                        </label>
+                    </div>
+                    continue;
+                }
+
+                <CallRow Chip="@(!_hpPay)" ChipAmount="@(_hpPay ? wager : null)"
+                         Name="@HdPayoutRound.Names[wi]"
+                         Sub="@(_hpPay ? sub : null)"
+                         Options="@HpOptionsFor(wi)"
+                         Value="@_hpCall[wi]"
+                         PickedText="@HpPickedText(wi)"
+                         OnPick="k => HpPick(wi, k)"
+                         Locked="_hpScored" Wrong="!_hpOk[wi]" AnswerText="@HpAnswerText(wi)" />
+            }
         </div>
 
-        <div class="sp-hint-row">
-            <span class="sp-desk-hint">Type each payout (cents allowed); Tab or Enter moves to the next box.</span>
-            <button class="keypad-toggle" @onclick="() => _hpShowKeypad = !_hpShowKeypad">123</button>
-        </div>
-
-        @if (!_hpScored)
+        @if (_hpBox >= 0)
         {
-            <div class="keypad-wrap sp-keypad @(_hpShowKeypad ? "keypad-open" : "")">
-                <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" @bind-Value="HpActiveText" />
+            <div class="uc-keypad">
+                <NumericKeypad AllowDecimal="true" MaxDecimalDigits="2" BackspaceInBox="true" @bind-Value="HpBoxText"
+                               OnEnter="HpBoxEnter" EnterLabel="Enter" EnterDisabled="@(HpCents(_hpBoxText) is null)" />
             </div>
+        }
+        else if (_hpPlayed == 0 && !_hpScored)
+        {
+            @* First round only: what to do *@
+            <p class="cr-howto">@(_hpPay
+                ? "Tap Call on each wager. Pay on the Odds, or Win on Trips Plus or Pocket Bonus, opens its payout box."
+                : "Tap Call on each wager and pick Win, Lose or Push, then Submit.")</p>
         }
 
         <div class="feedback-area sp-feedback">
@@ -205,65 +188,86 @@ else if (_mode == TrainerMode.Payouts)
             {
                 <ResultBreakdown ResultText="@_hpResultText" IsCorrect="_hpOk.All(o => o)" Rows="_hpRows" />
             }
-            else if (_hpMessage.Length > 0)
-            {
-                <p class="result-line txt-bad">@_hpMessage</p>
-            }
         </div>
 
-        @* Desktop: pay tables always in view (phones: in Help) *@
-        <aside class="sp-paytable tp-paytable">
-            <table class="sp-pt">
-                <tr class="sp-pt-hd"><td colspan="2">Raise &amp; Ante</td></tr>
-                <tr><td>Player wins</td><td>1 to 1</td></tr>
-                <tr><td>Tie</td><td>Push</td></tr>
-                <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't open (needs a pair): Ante pushes. Raise: 3x pre-flop, 2x after the flop, 1x after the river.</td></tr>
-                <tr class="sp-pt-hd"><td colspan="2">Odds (player wins)</td></tr>
-                <tr><td>Royal Flush</td><td>500 to 1</td></tr>
-                <tr><td>Straight Flush</td><td>50 to 1</td></tr>
-                <tr><td>Four of a Kind</td><td>10 to 1</td></tr>
-                <tr><td>Full House</td><td>3 to 1</td></tr>
-                <tr><td>Flush</td><td>3 to 2</td></tr>
-                <tr><td>Straight</td><td>1 to 1</td></tr>
-                <tr><td>Less than a Straight</td><td>Push</td></tr>
-                <tr class="sp-pt-hd"><td colspan="2">Odds Bad Beat (player loses)</td></tr>
-                <tr><td>Straight Flush</td><td>500 to 1</td></tr>
-                <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
-                <tr><td>Full House</td><td>6 to 1</td></tr>
-                <tr><td>Flush</td><td>5 to 1</td></tr>
-                <tr><td>Straight</td><td>4 to 1</td></tr>
-            </table>
-            <table class="sp-pt">
-                <tr class="sp-pt-hd"><td colspan="2">Trips Plus</td></tr>
-                <tr><td>Royal Flush</td><td>100 to 1</td></tr>
-                <tr><td>Straight Flush</td><td>40 to 1</td></tr>
-                <tr><td>Four of a Kind</td><td>30 to 1</td></tr>
-                <tr><td>Full House</td><td>8 to 1</td></tr>
-                <tr><td>Flush</td><td>7 to 1</td></tr>
-                <tr><td>Straight</td><td>4 to 1</td></tr>
-                <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
-                <tr class="sp-pt-hd"><td colspan="2">Pocket Bonus</td></tr>
-                <tr><td>Pocket Aces</td><td>25 to 1</td></tr>
-                <tr><td>Ace-Face suited</td><td>20 to 1</td></tr>
-                <tr><td>Ace-Face</td><td>10 to 1</td></tr>
-                <tr><td>Pair</td><td>5 to 1</td></tr>
-            </table>
-            <p class="sp-pt-note">Winnings only. Ace-Face = A-K, A-Q or A-J.</p>
-        </aside>
+        @if (_hpPay)
+        {
+            @* Desktop: pay tables always in view (phones: in Help) *@
+            <aside class="sp-paytable tp-paytable">
+                <table class="sp-pt">
+                    <tr class="sp-pt-hd"><td colspan="2">Raise &amp; Ante</td></tr>
+                    <tr><td>Player wins</td><td>1 to 1</td></tr>
+                    <tr><td>Tie</td><td>Push</td></tr>
+                    <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't open (needs a pair): Ante pushes. Raise: 3x pre-flop, 2x after the flop, 1x after the river.</td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Odds (player wins)</td></tr>
+                    <tr><td>Royal Flush</td><td>500 to 1</td></tr>
+                    <tr><td>Straight Flush</td><td>50 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>10 to 1</td></tr>
+                    <tr><td>Full House</td><td>3 to 1</td></tr>
+                    <tr><td>Flush</td><td>3 to 2</td></tr>
+                    <tr><td>Straight</td><td>1 to 1</td></tr>
+                    <tr><td>Less than a Straight</td><td>Push</td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Odds Bad Beat (player loses)</td></tr>
+                    <tr><td>Straight Flush</td><td>500 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
+                    <tr><td>Full House</td><td>6 to 1</td></tr>
+                    <tr><td>Flush</td><td>5 to 1</td></tr>
+                    <tr><td>Straight</td><td>4 to 1</td></tr>
+                </table>
+                <table class="sp-pt">
+                    <tr class="sp-pt-hd"><td colspan="2">Trips Plus</td></tr>
+                    <tr><td>Royal Flush</td><td>100 to 1</td></tr>
+                    <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                    <tr><td>Four of a Kind</td><td>30 to 1</td></tr>
+                    <tr><td>Full House</td><td>8 to 1</td></tr>
+                    <tr><td>Flush</td><td>7 to 1</td></tr>
+                    <tr><td>Straight</td><td>4 to 1</td></tr>
+                    <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Pocket Bonus</td></tr>
+                    <tr><td>Pocket Aces</td><td>25 to 1</td></tr>
+                    <tr><td>Ace-Face suited</td><td>20 to 1</td></tr>
+                    <tr><td>Ace-Face</td><td>10 to 1</td></tr>
+                    <tr><td>Pair</td><td>5 to 1</td></tr>
+                </table>
+                <p class="sp-pt-note">Winnings only. Ace-Face = A-K, A-Q or A-J.</p>
+            </aside>
+        }
 
-        <GameBar HelpTitle="Hold'em Pay Tables" OnEnd="EndSession">
+        @* Pinned bottom bar: the main button counts the wagers left until
+           every one is called; while a payout box is open, End Session
+           becomes Cancel *@
+        <GameBar HelpTitle="Hold'em Pay Tables" OnEnd="HpEndOrCancel"
+                 EndLabel="@(_hpBox >= 0 ? "Cancel" : "End Session")"
+                 EndClass="@(_hpBox >= 0 ? "game-bar-cancel" : "")">
             <ChildContent>
                 @if (!_hpScored)
                 {
-                    <button class="game-bar-main" @onclick="HpSubmitAndShow">Submit</button>
+                    int left = HpWagersLeft;
+                    @if (left > 0 || _hpBox >= 0)
+                    {
+                        <button class="game-bar-main" disabled>
+                            <span class="gb-left-long">@left @(left == 1 ? "wager" : "wagers") left</span><span class="gb-left-short">@left left</span>
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="game-bar-main" @onclick="HpSubmitAndShow">Submit</button>
+                    }
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="HpNextTop" @ref="_hpNextButtonRef">Next</button>
+                    <button class="game-bar-main" @onclick="HpNextTop">Next</button>
                 }
             </ChildContent>
             <HelpContent>
-                <p>Tap the Dealer or Player cards to see that hand's rank (and whether the dealer opens). Dimmed cards are the 2 the dealer doesn't use.</p>
+                @if (_hpPay)
+                {
+                    <p>Tap the Dealer or Player cards to see that hand's rank (and whether the dealer opens). Dimmed cards are the 2 the dealer doesn't use.</p>
+                }
+                else
+                {
+                    <p>Dimmed cards are the 2 the dealer doesn't use.</p>
+                }
                 <table class="help-table sp-help-table">
                     <tr class="sp-pt-hd"><td colspan="2">Raise &amp; Ante</td></tr>
                     <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
@@ -298,115 +302,14 @@ else if (_mode == TrainerMode.Payouts)
                     <tr><td>Ace-Face</td><td>10 to 1</td></tr>
                     <tr><td>Pair</td><td>5 to 1</td></tr>
                 </table>
-                <p>Call the Raise and Ante Win, Lose or Push (they pay even money). For the Odds, Trips Plus and Pocket Bonus, enter the winnings only (cents allowed), or tap Lose or Push (0 also counts as Lose).</p>
-            </HelpContent>
-        </GameBar>
-    </div>
-}
-else if (_mode == TrainerMode.SettleBets)
-{
-    @* Settle the Bets in the payout modes' layout: the dealer's two cards
-       and the board on the felt, with the 2 cards the dealer doesn't use
-       already marked (dropped and darkened), then one row per player with
-       their two cards and a Call button that pops Win / Lose / Push out
-       beside it. Every player is on screen (no paging). *@
-    <div class="play-screen sp-screen hp-screen cr-screen has-game-bar">
-        <div class="button-row">
-            <button class="back-button" @onclick="BackToStart">Back</button>
-        </div>
-
-        <GameStatus Title="Settle the Bets" Correct="_correctCount" Played="_totalRounds" />
-
-        @* One player. The felt is laid out from the dealer's side of the
-           table: the player's cards across the top, then the board, then the
-           dealer's two cards at the bottom (nearest the dealer). The 2 cards
-           the dealer doesn't use are already dimmed and dropped. Then one Call
-           row for the player. *@
-        <div class="felt cr-felt">
-            @if (_hands.Count > 0)
-            {
-                HandState player = _hands[0];
-                <div class="cr-cap">PLAYER</div>
-                <div class="cr-lane cr-mid">
-                    <img src="images/cards/@(player.Card1.Code).png" alt="@player.Card1.Name" />
-                    <img src="images/cards/@(player.Card2.Code).png" alt="@player.Card2.Name" />
-                </div>
-            }
-            <div class="cr-sep"></div>
-            <div class="cr-cap">BOARD &middot; dimmed = not in the dealer's hand</div>
-            <div class="cr-lane cr-board">
-                @for (int i = 0; i < _community.Length; i++)
+                @if (_hpPay)
                 {
-                    Card? c = _community[i];
-                    <img src="images/cards/@(c?.Code).png" alt="@c?.Name" class="@(_communityRotated[i] ? "cr-unused" : "")" />
-                }
-            </div>
-            <div class="cr-cap">DEALER</div>
-            <div class="cr-lane cr-mid">
-                <img src="images/cards/@(_dealerCard1?.Code).png" alt="@_dealerCard1?.Name" class="@(_dealerCard1Rotated ? "cr-unused" : "")" />
-                <img src="images/cards/@(_dealerCard2?.Code).png" alt="@_dealerCard2?.Name" class="@(_dealerCard2Rotated ? "cr-unused" : "")" />
-            </div>
-        </div>
-
-        <div class="sp-wagers">
-            @for (int h = 0; h < _hands.Count; h++)
-            {
-                int handIndex = h;
-                HandState hand = _hands[handIndex];
-                <CallRow Name="Player vs dealer" Options="WagerPick.WinLosePush"
-                         Value="@hand.WagerSelection?.ToString()"
-                         OnPick="k => PickOutcome(handIndex, Enum.Parse<WagerOutcome>(k))"
-                         Locked="_roundScored" Wrong="hand.WagerWrong"
-                         AnswerText="@($"{hand.ActualOutcome}")" />
-            }
-        </div>
-
-        @* First round only: what to do *@
-        @if (_totalRounds == 0 && !_roundScored)
-        {
-            <p class="cr-howto">Tap Call and pick Win, Lose or Push for the player against the dealer's hand, then Submit.</p>
-        }
-
-        <div class="feedback-area sp-feedback">
-            @if (_roundScored)
-            {
-                @* After Submit: each player with the right answer and why *@
-                <ResultBreakdown ResultText="@_resultText" IsCorrect="_isCorrect" Rows="_rows" />
-            }
-            else if (_resultText.Length > 0)
-            {
-                <p class="result-line txt-bad">@_resultText</p>
-            }
-        </div>
-
-        @* Pinned bottom bar: Help | Submit (once every player is called),
-           then Next | End Session *@
-        <GameBar HelpTitle="Hand Rankings" OnEnd="EndSession">
-            <ChildContent>
-                @if (!_roundScored)
-                {
-                    <button class="game-bar-main" @onclick="SubmitAndShow" disabled="@(!(_submitEnabled && AllHandsAnswered))">Submit</button>
+                    <p>Call the Raise and Ante Win, Lose or Push (they pay even money). Pay on the Odds, or Win on Trips Plus or Pocket Bonus, opens its payout box: enter the winnings only (cents allowed), then Enter. Entering 0 counts as Lose; Cancel puts the wager back to Call.</p>
                 }
                 else
                 {
-                    <button class="game-bar-main" @onclick="NextFromTop" disabled="@(!_dealEnabled)">Next</button>
+                    <p>Call each wager Win, Lose or Push from the tables above. The Odds wins on a Bad Beat even when the player loses.</p>
                 }
-            </ChildContent>
-            <HelpContent>
-                <p>Head's-Up Hold'em: the player and the dealer each use their two cards plus the five community cards to make the best five-card poker hand.</p>
-                <table class="help-table sp-help-table hw-table">
-                    <tr class="sp-pt-hd"><td colspan="2">Hand Rankings (highest first)</td></tr>
-                    <tr><td>1</td><td>Royal Flush</td></tr>
-                    <tr><td>2</td><td>Straight Flush</td></tr>
-                    <tr><td>3</td><td>Four of a Kind</td></tr>
-                    <tr><td>4</td><td>Full House</td></tr>
-                    <tr><td>5</td><td>Flush</td></tr>
-                    <tr><td>6</td><td>Straight</td></tr>
-                    <tr><td>7</td><td>Three of a Kind</td></tr>
-                    <tr><td>8</td><td>Two Pair</td></tr>
-                    <tr><td>9</td><td>One Pair</td></tr>
-                    <tr><td>10</td><td>High Card</td></tr>
-                </table>
             </HelpContent>
         </GameBar>
     </div>
@@ -484,22 +387,17 @@ else
             </RevealPopup>
         }
 
-        @* Pinned bottom bar: Help | (Identify the Hands: Reveal) Submit, then
-           Deal | End Session. Submit is enabled once every player hand is
-           called (Settle the Bets) or the hand is set (Identify the Hands). *@
+        @* Pinned bottom bar: Help | Reveal | Submit, then Next | End.
+           Submit is enabled once 2 cards are marked. *@
         @* Identify the Hands has four buttons (with Reveal): "End" keeps
            them all at full size on a phone *@
-        <GameBar HelpTitle="Hand Rankings" OnEnd="EndSession"
-                 EndLabel="@(_mode == TrainerMode.IdentifyHands ? "End" : "End Session")">
+        <GameBar HelpTitle="Hand Rankings" OnEnd="EndSession" EndLabel="End">
             <ChildContent>
                 @if (!_roundScored)
                 {
-                    @if (_mode == TrainerMode.IdentifyHands)
-                    {
-                        <button class="reveal-button" @onclick="RevealIdentify">Reveal</button>
-                    }
+                    <button class="reveal-button" @onclick="RevealIdentify">Reveal</button>
                     <button class="game-bar-main" @onclick="SubmitAndShow"
-                            disabled="@(!(_submitEnabled && (_mode == TrainerMode.IdentifyHands ? SbRotatedCount == 2 : AllHandsAnswered)))">Submit</button>
+                            disabled="@(!(_submitEnabled && SbRotatedCount == 2))">Submit</button>
                 }
                 else
                 {
@@ -530,15 +428,21 @@ else
 {
     @switch (_mode)
     {
-        case TrainerMode.Payouts:
-            <SessionSummary ModeKey="hd-payouts" Rounds="_hpPlayed" Correct="_hpCorrect" Log="_log"
-                            RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
-                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
-            break;
-        case TrainerMode.SettleBets:
-            <SessionSummary ModeKey="hd-settle" Rounds="_totalRounds" Correct="_correctCount" Log="_log"
-                            RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
-                            OnAgain="PracticeAgain" OnDone="CloseSummary" />
+        case TrainerMode.Settle:
+            @* Each way of playing keeps its own "last time" progress (the
+               keys of the old separate modes) *@
+            @if (_hpPay)
+            {
+                <SessionSummary ModeKey="hd-payouts" Rounds="_hpPlayed" Correct="_hpCorrect" Log="_log"
+                                RightText="paid right" ConfidentText="You're paying these with confidence" YouVerb="paid"
+                                OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            }
+            else
+            {
+                <SessionSummary ModeKey="hd-settle" Rounds="_hpPlayed" Correct="_hpCorrect" Log="_log"
+                                RightText="rounds right" ConfidentText="You're calling these with confidence" YouVerb="called"
+                                OnAgain="PracticeAgain" OnDone="CloseSummary" />
+            }
             break;
         default:
             <SessionSummary ModeKey="hd-identify" Rounds="_totalRounds" Correct="_correctCount" Log="_log"
@@ -621,61 +525,22 @@ else
         {
             _lastRenderedStarted = _started;
             try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
-
-            // Payouts on desktop: open the number pad straight away when
-            // the window is tall enough for it (123 still hides / shows it)
-            if (_started && _mode == TrainerMode.Payouts)
-            {
-                bool fits = false;
-                try { fits = await JS.InvokeAsync<bool>("dstKeypadFits", 315); } catch { }
-                _hpShowKeypad = fits;
-                if (fits) StateHasChanged();
-            }
         }
 
-        if (_started && _mode == TrainerMode.Payouts)
+        // Settle the Bets: the cursor into an open payout box (a computer
+        // keyboard types there)
+        if (_hpFocusBox && _hpBox >= 0)
         {
-            // Phones: size the wager box to the space above the keypad
-            try { await JS.InvokeVoidAsync("dstFitWagerBox"); } catch { }
-
-            // Cursor into the active payout box (scrolling the wager box
-            // to it), or onto Next once the round is scored
-            if (_hpFocusInput >= 0)
-            {
-                int i = _hpFocusInput;
-                _hpFocusInput = -1;
-                try { await _hpInputRefs[i].FocusAsync(preventScroll: true); } catch { }
-                try { await JS.InvokeVoidAsync("dstWagerRowIntoView", i); } catch { }
-            }
-
-            if (_hpFocusNext)
-            {
-                _hpFocusNext = false;
-                try { await _hpNextButtonRef.FocusAsync(preventScroll: true); } catch { }
-            }
+            _hpFocusBox = false;
+            try { await _hpBoxInputRef.FocusAsync(preventScroll: true); } catch { }
         }
     }
 
     private const int CommunityCount = 5;
 
-    private static readonly WagerOutcome[] OutcomeChoices = { WagerOutcome.Win, WagerOutcome.Lose, WagerOutcome.Push };
-
-    private enum TrainerMode { IdentifyHands, SettleBets, Payouts }
-
-    private sealed class HandState
-    {
-        public Card Card1 = null!;
-        public Card Card2 = null!;
-        public WagerOutcome? WagerSelection; // Settle the Bets mode: this hand's Win/Lose/Push call against the dealer
-        public bool WagerWrong;
-        public WagerOutcome? ActualOutcome; // set at Submit, to outline the right answer when the call was wrong
-        public string RankName = string.Empty; // set at Submit: this hand's poker rank, for the phone result line
-        public string Reason = string.Empty;   // set at Submit: why it won, lost or pushed
-    }
+    private enum TrainerMode { IdentifyHands, Settle }
 
     private bool _started;
-    private int _handCount = 1;
-    private const int _handCountSettleBets = 1;   // one player (multiple players removed)
     private TrainerMode _mode = TrainerMode.IdentifyHands;
 
     // Start screen: which mode card is open (null = all closed). Opening
@@ -694,7 +559,6 @@ else
 
     private Deck _deck = new();
     private readonly Card?[] _community = new Card?[CommunityCount];
-    private readonly List<HandState> _hands = new();
 
     private int _correctCount;
     private int _totalRounds;
@@ -704,33 +568,20 @@ else
     private bool _dealEnabled;
     private string _resultText = string.Empty;
     private bool _isCorrect;
-    private string _mistakesText = string.Empty;
 
-    // Settle the Bets mode: each hand's actual poker rank, shown
-    // regardless of whether the round overall was correct or not --
-    // dark blue if that hand's own wager call was correct, red if
-    // wrong (including every hand when the dealer declaration itself
-    // was invalid, since that marks every hand wrong).
-    private readonly List<(string Text, string Color)> _handRankLines = new();
-
-    // After Submit: one line per question (Identify: the dealer's hand;
-    // Settle: each player hand) for the feedback box
+    // After Submit: the dealer's-hand line for the feedback box
     private readonly List<BreakdownRow> _rows = new();
     private string _scoreText = "Score: 0 / 0 (0.0%)";
     private bool _showSessionSummary;
 
-    // Settle the Bets mode state only.
+    // Identify the Hands: the dealer's hole cards and which cards are marked
     private Card? _dealerCard1;
     private Card? _dealerCard2;
     private bool _dealerCard1Rotated;
     private bool _dealerCard2Rotated;
     private readonly bool[] _communityRotated = new bool[CommunityCount];
 
-    // Player hands show in Settle the Bets only.
-    private bool PlayersVisible => _mode == TrainerMode.SettleBets;
-
-    // Only Identify the Hands lets the trainee mark cards, until Submit.
-    // Settle the Bets deals the dealer hand already set.
+    // Cards can be marked until Submit
     private bool CanMarkCards => _mode == TrainerMode.IdentifyHands && !_roundScored;
 
     // How many of the 7 dealer cards (2 dealer + 5 community) are marked
@@ -753,16 +604,13 @@ else
     private void StartGame()
     {
         _log = new SessionLog();
-        if (_mode == TrainerMode.Payouts)
+        if (_mode == TrainerMode.Settle)
         {
             _started = true;
             HpStartGame();
             return;
         }
 
-        _handCount = _mode == TrainerMode.SettleBets
-            ? _handCountSettleBets
-            : 0; // Identify the Hands: dealer hand only
         _started = true;
         _correctCount = 0;
         _totalRounds = 0;
@@ -785,16 +633,6 @@ else
         for (int i = 0; i < CommunityCount; i++)
             _community[i] = _deck.Draw();
 
-        _hands.Clear();
-        for (int h = 0; h < _handCount; h++)
-        {
-            _hands.Add(new HandState
-            {
-                Card1 = _deck.Draw(),
-                Card2 = _deck.Draw()
-            });
-        }
-
         Array.Clear(_communityRotated);
         _dealerCard1Rotated = false;
         _dealerCard2Rotated = false;
@@ -803,38 +641,13 @@ else
         _dealerCard1 = _deck.Draw();
         _dealerCard2 = _deck.Draw();
 
-        foreach (HandState hand in _hands)
-        {
-            hand.WagerSelection = null;
-            hand.WagerWrong = false;
-            hand.ActualOutcome = null;
-        }
-
-        // Settle the Bets: the dealer's best hand comes already set
-        if (_mode == TrainerMode.SettleBets) MarkCorrectUnusedCards();
-
         _resultText = string.Empty;
-        _mistakesText = string.Empty;
-        _handRankLines.Clear();
         _rows.Clear();
         _roundScored = false;
         _submitEnabled = true;
     }
 
     private void DealAgain() => DealNewRound();
-
-    // Settle the Bets: true once every player hand has a Win/Lose/Push
-    // called. Submit only shows up at that point.
-    private bool AllHandsAnswered => _hands.Count > 0 && _hands.All(h => h.WagerSelection is not null);
-
-    // Settle the Bets: record the call.
-    private void PickOutcome(int handIndex, WagerOutcome choice)
-    {
-        if (_roundScored) return;
-        HandState hand = _hands[handIndex];
-        hand.WagerSelection = choice;
-        hand.WagerWrong = false;
-    }
 
     // Identify the Hands: tap marks / un-marks a card; at most 2 marked
     private void ToggleCommunityRotation(int index)
@@ -919,10 +732,7 @@ else
         _totalRounds++;
         _isCorrect = false;
         _resultText = "REVEALED";
-        _mistakesText = string.Empty;
-        _handRankLines.Clear();
         _rows.Clear();
-        _handRankLines.Add(($"Dealer: {HandEvaluator.DescribeHand(DealerPool())}", "txt-bad"));
         _rows.Add(new BreakdownRow("Dealer's hand", "Revealed", HandEvaluator.DescribeHand(DealerPool()), false, DealerHandWhy()));
         _log.AddRows(_rows, r => HandEvaluator.HandRankName(_revealRank));
 
@@ -986,17 +796,7 @@ else
             _communityRotated[i] = !bestFive.Contains(_community[i]!);
     }
 
-    private void SubmitRound()
-    {
-        if (_mode == TrainerMode.SettleBets)
-        {
-            SubmitSettleBets();
-        }
-        else
-        {
-            SubmitIdentifyHands();
-        }
-    }
+    private void SubmitRound() => SubmitIdentifyHands();
 
     // Identify the Hands: graded on the 2 marked cards. Right when the 5
     // left standing are the dealer's best hand (any equal-scoring set of 5
@@ -1043,98 +843,9 @@ else
         _dealEnabled = true;
     }
 
-    // Settle the Bets: the dealer's best hand is set when dealt, so each
-    // player's call is graded against it. The round scores as correct
-    // only if every call is right.
-    private void SubmitSettleBets()
-    {
-        for (int h = 0; h < _hands.Count; h++)
-        {
-            if (_hands[h].WagerSelection is null)
-            {
-                _resultText = "Tap every hand's outcome before submitting.";
-                _isCorrect = false;
-                return;
-            }
-        }
-
-        if (_roundScored) return;
-
-        HandRank dealerRank = HandEvaluator.BestHandRank(DealerPool());
-        long dealerScore = HandEvaluator.HandScore(DeclaredDealerHand());
-
-        bool allCorrect = true;
-        System.Text.StringBuilder mistakes = new();
-        string dealerDesc = HandEvaluator.DescribeHand(DeclaredDealerHand());
-        _rows.Clear();
-
-        for (int h = 0; h < _hands.Count; h++)
-        {
-            HandState hand = _hands[h];
-            Card[] sevenCards =
-            {
-                hand.Card1, hand.Card2,
-                _community[0]!, _community[1]!, _community[2]!, _community[3]!, _community[4]!
-            };
-
-            long playerScore = HandEvaluator.HandScore(HandEvaluator.BestFiveCards(sevenCards));
-
-            WagerOutcome actualOutcome = playerScore > dealerScore ? WagerOutcome.Win
-                : playerScore < dealerScore ? WagerOutcome.Lose
-                : WagerOutcome.Push;
-
-            hand.ActualOutcome = actualOutcome;
-
-            if (hand.WagerSelection == actualOutcome)
-            {
-                hand.WagerWrong = false;
-            }
-            else
-            {
-                hand.WagerWrong = true;
-                allCorrect = false;
-                mistakes.AppendLine($"Hand {h + 1}: actually a {actualOutcome}");
-            }
-
-            HandRank handRank = HandEvaluator.BestHandRank(sevenCards);
-            hand.RankName = HandEvaluator.DescribeHand(sevenCards);
-
-            // Why: a higher rank wins outright; the same rank is decided by
-            // the higher cards (pairs, then kickers); identical 5-card
-            // hands push
-            hand.Reason = handRank != dealerRank
-                ? $"{hand.RankName} {(handRank > dealerRank ? "beats" : "loses to")} the dealer's {dealerDesc}."
-                : actualOutcome == WagerOutcome.Push
-                    ? $"{hand.RankName} is the same 5-card hand as the dealer's {dealerDesc}: push."
-                    : $"{hand.RankName} vs the dealer's {dealerDesc}: the {(actualOutcome == WagerOutcome.Win ? "player's" : "dealer's")} cards are higher.";
-
-            _handRankLines.Add(($"Hand {h + 1}: {hand.Reason}", hand.WagerWrong ? "txt-bad" : "txt-ok"));
-            _rows.Add(new BreakdownRow(_hands.Count > 1 ? $"Player {h + 1}" : "Player", $"{hand.WagerSelection}", $"{actualOutcome}", !hand.WagerWrong, hand.Reason));
-        }
-        _handRankLines.Insert(0, ($"Dealer: {dealerDesc}", "txt-ok"));
-        _log.AddRows(_rows, r => r.Answer switch { "Win" => "Player wins", "Lose" => "Dealer wins", _ => "Pushes" });
-        // The per-hand lines below already say who won and why
-        _mistakesText = string.Empty;
-
-        _totalRounds++;
-        if (allCorrect) _correctCount++;
-
-        _isCorrect = allCorrect;
-        _resultText = BreakdownRow.Summary(_rows);
-
-        string pct = _totalRounds > 0
-            ? ((double)_correctCount / _totalRounds).ToString("0.0%")
-            : "0.0%";
-        _scoreText = $"Score: {_correctCount} / {_totalRounds} ({pct})";
-
-        _roundScored = true;
-        _submitEnabled = false;
-        _dealEnabled = true;
-    }
-
     private void EndSession()
     {
-        if (_mode == TrainerMode.Payouts ? _hpPlayed > 0 : _totalRounds > 0)
+        if (_mode == TrainerMode.Settle ? _hpPlayed > 0 : _totalRounds > 0)
         {
             _showSessionSummary = true;
             _scrollToSummary = true;
@@ -1152,32 +863,11 @@ else
     }
 
     // ============================================================
-    // HOLD'EM PAYOUTS (Hp prefix)
+    // SETTLE THE BETS (Hp prefix) -- Call Only or Call & Pay
     // ============================================================
 
-    private enum HpMark { None, Lose, Push, Win }
-
-    // Wagers that only pay even money (Raise, Ante): called Win / Lose /
-    // Push instead of typed
-    private static readonly bool[] HpCall = { true, true, false, false, false };
-
-    // The next typed (keypad) wager after index, or -1
-    private static int HpNextTyped(int index)
-    {
-        for (int i = index + 1; i < 5; i++)
-            if (!HpCall[i]) return i;
-        return -1;
-    }
-
-    private void HpPickCall(int index, string key)
-    {
-        if (_hpScored) return;
-        _hpMark[index] = Enum.Parse<HpMark>(key);
-        _hpMessage = string.Empty;
-    }
-
-    // The right call for an even-money wager: "Win", "Lose" or "Push"
-    private static string HpCallText(HdPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
+    // Start screen setting: false = Call Only, true = Call & Pay
+    private bool _hpPay;
 
     private HdPayoutRound _hpRound = null!; // dealt by HpStartGame
     // The dealer's best five of 7 (hole cards + board), for dimming the
@@ -1186,57 +876,44 @@ else
 
     private bool HpDealerUnused(Card c) => !_hpDealerBest.Contains(c);
 
-    // Tap-a-hand rank bubble: 0 = closed, 1 = player, 2 = dealer.
-    // _hpPeekUsed: tapped once this session, so the board caption stops
-    // alternating with the tap prompt. _hpDealNo restarts the caption fade
-    // on each deal.
+    // Per wager (Raise, Ante, Odds, Trips Plus, Pocket Bonus): the call
+    // ("Win", "Lose", "Push", or "Pay" on the Odds; null = not called yet)
+    // and, Call & Pay, the payout entered in cents
+    private readonly string?[] _hpCall = new string?[5];
+    private readonly int?[] _hpPaid = new int?[5];
+    private readonly bool[] _hpOk = new bool[5];
+
+    private int _hpBox = -1;               // row whose payout box is open
+    private string _hpBoxText = string.Empty;
+    private ElementReference _hpBoxInputRef;
+    private bool _hpFocusBox;
+    private DateTime _hpEndBlockedUntil;
+
+    private bool _hpScored;
+    private string _hpResultText = string.Empty;
+    private readonly List<BreakdownRow> _hpRows = new();
+    private int _hpCorrect;
+    private int _hpPlayed;
+
+    private int HpWagersLeft => _hpCall.Count(c => c is null);
+
+    // Tap-a-hand rank bubble (Call & Pay): 0 = closed, 1 = player,
+    // 2 = dealer. _hpPeekUsed: tapped once this session, so the board
+    // caption stops alternating with the tap prompt. _hpDealNo restarts
+    // the caption fade on each deal.
     private int _hpPeek;
     private bool _hpPeekUsed;
     private int _hpDealNo;
 
     private void HpTogglePeek(bool dealer)
     {
-        if (_hpScored) return;
+        if (!_hpPay || _hpScored || _hpBox >= 0) return;
         int which = dealer ? 2 : 1;
         _hpPeek = _hpPeek == which ? 0 : which;
         _hpPeekUsed = true;
     }
 
-    // Closing the bubble puts the cursor back in the active payout box
-    // (a PC keyboard keeps typing there)
-    private void HpClosePeek()
-    {
-        _hpPeek = 0;
-        _hpFocusInput = _hpActive;
-    }
-    private readonly string[] _hpAnswer = new string[5];
-    private readonly HpMark[] _hpMark = new HpMark[5];
-    private readonly bool[] _hpOk = new bool[5];
-    private int _hpActive;
-    private bool _hpScored;
-    private bool _hpShowKeypad;
-    private string _hpMessage = string.Empty;
-    private string _hpResultText = string.Empty;
-    private readonly List<BreakdownRow> _hpRows = new();
-    private int _hpCorrect;
-    private int _hpPlayed;
-
-    private readonly ElementReference[] _hpInputRefs = new ElementReference[5];
-    private ElementReference _hpNextButtonRef;
-    private int _hpFocusInput = -1;
-    private bool _hpFocusNext;
-
-    // The keypad types into whichever box is active
-    private string HpActiveText
-    {
-        get => _hpAnswer[_hpActive] ?? string.Empty;
-        set
-        {
-            _hpAnswer[_hpActive] = HpAmountOnly(value);
-            _hpMark[_hpActive] = HpMark.None;
-            _hpMessage = string.Empty;
-        }
-    }
+    private void HpClosePeek() => _hpPeek = 0;
 
     private void HpStartGame()
     {
@@ -1246,31 +923,120 @@ else
         HpNewRound();
     }
 
+    // Call & Pay keeps the training boost (more Straights or better, some
+    // Bad Beats); Call Only deals the natural mix
     private void HpNewRound()
     {
-        _hpRound = HoldemPayouts.Deal(Random.Shared);
+        _hpRound = HoldemPayouts.Deal(Random.Shared, boost: _hpPay);
         _hpPeek = 0;
         _hpDealNo++;
         _hpDealerBest = HandEvaluator.BestFiveCards(_hpRound.DealerCards.Concat(_hpRound.Board).ToList());
         for (int i = 0; i < 5; i++)
         {
-            _hpAnswer[i] = string.Empty;
-            _hpMark[i] = HpMark.None;
+            _hpCall[i] = null;
+            _hpPaid[i] = null;
             _hpOk[i] = false;
         }
-        _hpActive = HpNextTyped(-1);
+        _hpBox = -1;
+        _hpBoxText = string.Empty;
         _hpScored = false;
-        _hpMessage = string.Empty;
         _hpResultText = string.Empty;
         _hpRows.Clear();
-        _hpFocusInput = _hpActive;
     }
 
-    private void HpSelect(int index)
+    // Raise and Ante can push; so can the Odds. Trips Plus and Pocket
+    // Bonus only win or lose. Call & Pay: the Odds is Pay / Push / Lose.
+    private IReadOnlyList<WagerPickOption> HpOptionsFor(int i) =>
+        i <= HdPayoutRound.Ante ? WagerPick.WinLosePush
+        : i == HdPayoutRound.Odds ? (_hpPay ? WagerPick.PayPushLose : WagerPick.WinLosePush)
+        : WagerPick.WinLose;
+
+    // Call & Pay rows that take a payout: Odds, Trips Plus, Pocket Bonus
+    private static bool HpTyped(int i) => i >= HdPayoutRound.Odds;
+
+    // The right call: "Win", "Lose" or "Push"
+    private static string HpCallText(HdPay pay) => pay.IsPush ? "Push" : pay.IsLose ? "Lose" : "Win";
+
+    private void HpPick(int i, string key)
     {
-        if (_hpScored || HpCall[index] || _hpActive == index) return;
-        _hpActive = index;
-        _hpFocusInput = index;
+        if (_hpScored) return;
+        _hpPeek = 0;
+
+        // Call & Pay: Pay on the Odds, or Win on Trips Plus / Pocket
+        // Bonus, opens the payout box
+        if (_hpPay && HpTyped(i) && (key == "Pay" || key == "Win"))
+        {
+            _hpCall[i] = null;
+            _hpPaid[i] = null;
+            _hpBox = i;
+            _hpBoxText = string.Empty;
+            _hpFocusBox = true;
+            _scrollToTopAfterNext = true;
+            return;
+        }
+
+        _hpCall[i] = key;
+        _hpPaid[i] = null;
+    }
+
+    // ---- Payout box ----
+
+    private string HpBoxText
+    {
+        get => _hpBoxText;
+        set => _hpBoxText = HpAmountOnly(value);
+    }
+
+    private void HpBoxInput(ChangeEventArgs e) => _hpBoxText = HpAmountOnly(e.Value?.ToString());
+
+    private void HpBoxBackspace()
+    {
+        if (_hpBoxText.Length > 0) _hpBoxText = _hpBoxText[..^1];
+        _hpFocusBox = true;
+    }
+
+    private void HpBoxKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") HpBoxEnter();
+        else if (e.Key == "Escape") HpBoxCancel();
+    }
+
+    // Enter: the amount goes on the row and the box closes; 0 counts as Lose
+    private void HpBoxEnter()
+    {
+        if (_hpBox < 0 || HpCents(_hpBoxText) is not int cents) return;
+
+        int i = _hpBox;
+        _hpCall[i] = cents == 0 ? "Lose" : i == HdPayoutRound.Odds ? "Pay" : "Win";
+        _hpPaid[i] = cents == 0 ? null : cents;
+        HpCloseBox();
+    }
+
+    // Cancel: the row goes back to Call (no penalty)
+    private void HpBoxCancel()
+    {
+        if (_hpBox < 0) return;
+        _hpCall[_hpBox] = null;
+        _hpPaid[_hpBox] = null;
+        HpCloseBox();
+    }
+
+    private void HpCloseBox()
+    {
+        _hpBox = -1;
+        _hpBoxText = string.Empty;
+        _hpEndBlockedUntil = DateTime.UtcNow.AddMilliseconds(500);
+    }
+
+    private void HpEndOrCancel()
+    {
+        if (_hpBox >= 0)
+        {
+            HpBoxCancel();
+            return;
+        }
+        if (DateTime.UtcNow < _hpEndBlockedUntil) return;
+        EndSession();
     }
 
     // Dollars and cents (Odds pays 3 to 2 on a Flush): digits, one
@@ -1302,122 +1068,40 @@ else
             ? (int)Math.Round(d * 100m)
             : null;
 
-    private string HpBoxValue(int i) => _hpMark[i] switch
-    {
-        HpMark.Lose => "LOSE",
-        HpMark.Push => "PUSH",
-        _ => _hpAnswer[i] ?? string.Empty
-    };
+    // Button / answer text once a payout is in, e.g. "Pay $7.50", "Win $30"
+    private string? HpPickedText(int i) =>
+        _hpPaid[i] is int c ? $"{_hpCall[i]} {HoldemPayouts.MoneyCents(c)}" : null;
 
-    private void HpInput(int index, ChangeEventArgs e)
-    {
-        _hpAnswer[index] = HpAmountOnly(e.Value?.ToString());
-        _hpMark[index] = HpMark.None;
-        _hpActive = index;
-        _hpMessage = string.Empty;
-    }
+    // ---- Submit ----
 
-    // Keyboard Enter: on to the next box; on the last box, Submit
-    private async Task HpKeyDown(int index, Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
-    {
-        if (e.Key != "Enter" || _hpScored) return;
-        _hpActive = index;
-        await HpKeypadEnter();
-    }
-
-    private async Task HpKeypadEnter()
-    {
-        if (_hpScored) return;
-
-        int next = HpNextTyped(_hpActive);
-        if (next >= 0)
-        {
-            _hpActive = next;
-            _hpFocusInput = next;
-        }
-        else
-        {
-            await HpSubmitAndShow();
-        }
-    }
-
-    // Lose / Push: marks the wager (clearing any amount typed) and moves
-    // on to the next wager; tapped again it's undone
-    private void HpToggleMark(int index, HpMark mark)
-    {
-        if (_hpScored) return;
-        _hpMessage = string.Empty;
-
-        if (_hpMark[index] == mark)
-        {
-            _hpMark[index] = HpMark.None;
-            _hpActive = index;
-            _hpFocusInput = index;
-            return;
-        }
-
-        _hpMark[index] = mark;
-        _hpAnswer[index] = string.Empty;
-        int next = HpNextTyped(index);
-        if (next < 0) next = index;
-        _hpActive = next;
-        _hpFocusInput = next;
-    }
-
-    // Submit also scrolls to the feedback; the cursor moves onto Next
-    // after a short wait so the same Enter press doesn't also press Next
-    private async Task HpSubmitAndShow()
+    // Submit also scrolls to the feedback
+    private void HpSubmitAndShow()
     {
         HpSubmit();
-        if (!_hpScored) return;
-
-        _scrollToFeedback = true;
-        StateHasChanged();
-
-        await Task.Delay(200);
-        _hpFocusNext = true;
+        if (_hpScored) _scrollToFeedback = true;
     }
 
     private void HpSubmit()
     {
-        if (_hpScored) return;
-
-        for (int i = 0; i < 5; i++)
-        {
-            if (HpCall[i] && _hpMark[i] == HpMark.None)
-            {
-                _hpMessage = $"Call the {HdPayoutRound.Names[i]}: Win, Lose or Push.";
-                return;
-            }
-            if ((_hpAnswer[i] ?? "").Length == 0 && _hpMark[i] == HpMark.None)
-            {
-                _hpMessage = i <= HdPayoutRound.Odds
-                    ? $"Enter the {HdPayoutRound.Names[i]} payout, or tap Push or Lose."
-                    : $"Enter the {HdPayoutRound.Names[i]} payout, or tap Lose.";
-                _hpActive = i;
-                _hpFocusInput = i;
-                return;
-            }
-        }
+        if (_hpScored || _hpBox >= 0 || HpWagersLeft > 0) return;
 
         _hpRows.Clear();
         for (int i = 0; i < 5; i++)
         {
             HdPay pay = _hpRound.Pays[i];
-            int? typed = HpCents(_hpAnswer[i] ?? "");
-            _hpOk[i] = _hpMark[i] switch
+            string right = HpCallText(pay);
+            _hpOk[i] = _hpCall[i] switch
             {
-                HpMark.Lose => pay.IsLose,
-                HpMark.Push => pay.IsPush,
-                HpMark.Win => !pay.IsLose && !pay.IsPush,
-                _ => typed is int c && (c == 0 ? pay.IsLose : !pay.IsPush && c == pay.Cents)
+                "Lose" => pay.IsLose,
+                "Push" => pay.IsPush,
+                "Pay" or "Win" => right == "Win" && (!_hpPay || !HpTyped(i) || _hpPaid[i] == pay.Cents),
+                _ => false
             };
 
-            // A missed payout gets the payout shortcut under its reason
-            string tip = !_hpOk[i] && !HpCall[i] && !pay.IsLose && !pay.IsPush
+            // Call & Pay: a missed payout gets its shortcut under the reason
+            string tip = _hpPay && HpTyped(i) && !_hpOk[i] && right == "Win"
                 ? PayoutShortcut.For(_hpRound.Wagers[i] * 100L, pay.Cents) : "";
-            _hpRows.Add(new BreakdownRow(HdPayoutRound.Names[i], HpEnteredMoney(i),
-                HpCall[i] ? HpCallText(pay) : HpPayMoney(pay), _hpOk[i], _hpRound.Why[i], tip));
+            _hpRows.Add(new BreakdownRow(HdPayoutRound.Names[i], HpYouText(i), HpAnswerText(i), _hpOk[i], _hpRound.Why[i], tip));
         }
 
         _log.AddRows(_hpRows);
@@ -1425,8 +1109,20 @@ else
         if (_hpOk.All(o => o)) _hpCorrect++;
 
         _hpResultText = BreakdownRow.Summary(_hpRows);
-        _hpMessage = string.Empty;
         _hpScored = true;
+    }
+
+    // In the breakdown: "Win", "Lose", "Push" or (Call & Pay) "$7.50"
+    private string HpYouText(int i) =>
+        _hpPaid[i] is int c ? HoldemPayouts.MoneyCents(c) : _hpCall[i] ?? "";
+
+    // The right answer on a missed row: "Win" / "Lose" / "Push", or
+    // (Call & Pay, a winning Odds / Trips Plus / Pocket Bonus) "$7.50"
+    private string HpAnswerText(int i)
+    {
+        HdPay pay = _hpRound.Pays[i];
+        string right = HpCallText(pay);
+        return _hpPay && HpTyped(i) && right == "Win" ? HoldemPayouts.MoneyCents(pay.Cents) : right;
     }
 
     private void HpNextTop()
@@ -1434,33 +1130,4 @@ else
         HpNewRound();
         _scrollToTopAfterNext = true;
     }
-
-    // In the payout box after Submit: "LOSE", "PUSH", "15" or "7.50"
-    private string HpEnteredText(int i) => _hpMark[i] switch
-    {
-        HpMark.Lose => "LOSE",
-        HpMark.Push => "PUSH",
-        _ => HpCents(_hpAnswer[i] ?? "") is int c ? HoldemPayouts.MoneyCents(c).TrimStart('$') : _hpAnswer[i] ?? ""
-    };
-
-    private static string HpPayText(HdPay pay) =>
-        pay.IsPush ? "PUSH" : pay.IsLose ? "LOSE" : HoldemPayouts.MoneyCents(pay.Cents).TrimStart('$');
-
-    // In the breakdown: "Lose", "Push", "$15" or "$7.50"
-    private string HpEnteredMoney(int i) => _hpMark[i] switch
-    {
-        HpMark.Win => "Win",
-        HpMark.Lose => "Lose",
-        HpMark.Push => "Push",
-        _ => HpCents(_hpAnswer[i] ?? "") is int c ? HoldemPayouts.MoneyCents(c) : _hpAnswer[i] ?? ""
-    };
-
-    private static string HpPayMoney(HdPay pay) =>
-        pay.IsPush ? "Push" : pay.IsLose ? "Lose" : HoldemPayouts.MoneyCents(pay.Cents);
-
-    // Chip color by the largest chip in the wager: $100 black, $25 green,
-    // $10 blue, $5 red, $1 grey
-    private static string HpChipClass(int wager) =>
-        wager >= 100 ? "sp-chip-100" : wager >= 25 ? "sp-chip-25" : wager >= 10 ? "sp-chip-10" : wager >= 5 ? "sp-chip-5" : "sp-chip-1";
-
 }
