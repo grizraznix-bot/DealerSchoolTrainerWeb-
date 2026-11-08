@@ -3761,6 +3761,20 @@ label,
     font-weight: bold;
 }
 
+/* Pay tables in Help: the pay ("Both 1 to 1", "1,000 to 1") stays on one
+   line; the hand name beside it wraps instead */
+.help-table.sp-help-table td:last-child {
+    padding-left: 0.75rem;
+    white-space: nowrap;
+}
+
+/* Section headings span both columns and wrap normally */
+.help-table.sp-help-table .sp-pt-hd td,
+.sp-pt .sp-pt-hd td {
+    padding-left: 0;
+    white-space: normal;
+}
+
 /* Pai Gow House Ways Help: numbered rules, left-aligned plain text
    (not a pay table), lettered sub-rules indented */
 .hw-key {
@@ -3954,7 +3968,14 @@ label,
 }
 
 .game-status-title {
+    min-width: 0;
     font-weight: bold;
+}
+
+/* "Score 1 / 3" always on one line; a long title wraps instead */
+.game-status > span:last-child {
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------
@@ -6342,4 +6363,71 @@ body {
 .content .game-bar .game-bar-end.game-bar-cancel {
     border: 2px solid #e0a0a0;
     color: #c80000;
+}
+
+/* Start screen: Call Only / Call & Pay as two green felt tiles
+   (Shared/PayoutChoice). The chosen one is lit with a gold edge. */
+.pc-choice {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.content .pc-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 0;
+    margin: 0;
+    padding: 0.7rem 0.6rem;
+    border: 3px solid transparent;
+    border-radius: 14px;
+    background: radial-gradient(ellipse at center, #2a7f53 0%, #1d6240 100%);
+    color: white;
+    text-align: center;
+    opacity: 0.72;
+    cursor: pointer;
+}
+
+.content .pc-tile.pc-on {
+    border-color: #f2d27a;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    opacity: 1;
+}
+
+.pc-icon {
+    position: relative;
+    display: block;
+    width: 40px;
+    height: 40px;
+}
+
+.pc-icon-two {
+    width: 64px;
+}
+
+.pc-chip {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40px;
+    height: 40px;
+}
+
+.pc-icon-two .pc-chip + .pc-chip {
+    filter: drop-shadow(-1px 0 1px rgba(0, 0, 0, 0.3));
+}
+
+.pc-title {
+    margin: 0.35rem 0 0.15rem 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.pc-desc {
+    min-height: 2.6em;
+    font-size: 0.8rem;
+    font-weight: 400;
+    line-height: 1.3;
+    color: #d7eadf;
 }

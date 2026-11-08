@@ -214,11 +214,11 @@ else if (_mode == TrainerMode.Payouts)
         @* Desktop: pay tables always in view (phones: in Help) *@
         <aside class="sp-paytable tp-paytable">
             <table class="sp-pt">
-                <tr class="sp-pt-hd"><td>Raise &amp; Ante</td><td></td></tr>
+                <tr class="sp-pt-hd"><td colspan="2">Raise &amp; Ante</td></tr>
                 <tr><td>Player wins</td><td>1 to 1</td></tr>
                 <tr><td>Tie</td><td>Push</td></tr>
                 <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't open (needs a pair): Ante pushes. Raise: 3x pre-flop, 2x after the flop, 1x after the river.</td></tr>
-                <tr class="sp-pt-hd"><td>Odds (player wins)</td><td></td></tr>
+                <tr class="sp-pt-hd"><td colspan="2">Odds (player wins)</td></tr>
                 <tr><td>Royal Flush</td><td>500 to 1</td></tr>
                 <tr><td>Straight Flush</td><td>50 to 1</td></tr>
                 <tr><td>Four of a Kind</td><td>10 to 1</td></tr>
@@ -226,7 +226,7 @@ else if (_mode == TrainerMode.Payouts)
                 <tr><td>Flush</td><td>3 to 2</td></tr>
                 <tr><td>Straight</td><td>1 to 1</td></tr>
                 <tr><td>Less than a Straight</td><td>Push</td></tr>
-                <tr class="sp-pt-hd"><td>Odds Bad Beat (player loses)</td><td></td></tr>
+                <tr class="sp-pt-hd"><td colspan="2">Odds Bad Beat (player loses)</td></tr>
                 <tr><td>Straight Flush</td><td>500 to 1</td></tr>
                 <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
                 <tr><td>Full House</td><td>6 to 1</td></tr>
@@ -234,7 +234,7 @@ else if (_mode == TrainerMode.Payouts)
                 <tr><td>Straight</td><td>4 to 1</td></tr>
             </table>
             <table class="sp-pt">
-                <tr class="sp-pt-hd"><td>Trips Plus</td><td></td></tr>
+                <tr class="sp-pt-hd"><td colspan="2">Trips Plus</td></tr>
                 <tr><td>Royal Flush</td><td>100 to 1</td></tr>
                 <tr><td>Straight Flush</td><td>40 to 1</td></tr>
                 <tr><td>Four of a Kind</td><td>30 to 1</td></tr>
@@ -242,7 +242,7 @@ else if (_mode == TrainerMode.Payouts)
                 <tr><td>Flush</td><td>7 to 1</td></tr>
                 <tr><td>Straight</td><td>4 to 1</td></tr>
                 <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
-                <tr class="sp-pt-hd"><td>Pocket Bonus</td><td></td></tr>
+                <tr class="sp-pt-hd"><td colspan="2">Pocket Bonus</td></tr>
                 <tr><td>Pocket Aces</td><td>25 to 1</td></tr>
                 <tr><td>Ace-Face suited</td><td>20 to 1</td></tr>
                 <tr><td>Ace-Face</td><td>10 to 1</td></tr>
@@ -265,12 +265,12 @@ else if (_mode == TrainerMode.Payouts)
             <HelpContent>
                 <p>Tap the Dealer or Player cards to see that hand's rank (and whether the dealer opens). Dimmed cards are the 2 the dealer doesn't use.</p>
                 <table class="help-table sp-help-table">
-                    <tr class="sp-pt-hd"><td>Raise &amp; Ante</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Raise &amp; Ante</td></tr>
                     <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
                     <tr><td>Dealer doesn't open (needs a pair)</td><td>Ante push</td></tr>
                     <tr><td>Tie</td><td>Push</td></tr>
                     <tr><td>Raise size</td><td>3x / 2x / 1x</td></tr>
-                    <tr class="sp-pt-hd"><td>Odds (player wins; equals the Ante)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Odds (player wins; equals the Ante)</td></tr>
                     <tr><td>Royal Flush</td><td>500 to 1</td></tr>
                     <tr><td>Straight Flush</td><td>50 to 1</td></tr>
                     <tr><td>Four of a Kind</td><td>10 to 1</td></tr>
@@ -278,13 +278,13 @@ else if (_mode == TrainerMode.Payouts)
                     <tr><td>Flush</td><td>3 to 2</td></tr>
                     <tr><td>Straight</td><td>1 to 1</td></tr>
                     <tr><td>Less than a Straight</td><td>Push</td></tr>
-                    <tr class="sp-pt-hd"><td>Odds Bad Beat (player loses with)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Odds Bad Beat (player loses with)</td></tr>
                     <tr><td>Straight Flush</td><td>500 to 1</td></tr>
                     <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
                     <tr><td>Full House</td><td>6 to 1</td></tr>
                     <tr><td>Flush</td><td>5 to 1</td></tr>
                     <tr><td>Straight</td><td>4 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>Trips Plus (player's best 5 of 7)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Trips Plus (player's best 5 of 7)</td></tr>
                     <tr><td>Royal Flush</td><td>100 to 1</td></tr>
                     <tr><td>Straight Flush</td><td>40 to 1</td></tr>
                     <tr><td>Four of a Kind</td><td>30 to 1</td></tr>
@@ -292,7 +292,7 @@ else if (_mode == TrainerMode.Payouts)
                     <tr><td>Flush</td><td>7 to 1</td></tr>
                     <tr><td>Straight</td><td>4 to 1</td></tr>
                     <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>Pocket Bonus (player's 2 cards)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Pocket Bonus (player's 2 cards)</td></tr>
                     <tr><td>Pocket Aces</td><td>25 to 1</td></tr>
                     <tr><td>Ace-Face suited (A-K, A-Q, A-J)</td><td>20 to 1</td></tr>
                     <tr><td>Ace-Face</td><td>10 to 1</td></tr>

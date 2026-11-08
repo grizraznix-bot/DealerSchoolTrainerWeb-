@@ -1,0 +1,45 @@
+@* Start screen choice between the two ways to play a game's wagers, as
+   two green felt tiles: Call Only (a blue chip with a check) and Call &
+   Pay (the same chip with a green $ chip beside it). The chosen tile is
+   lit with a gold edge, the other dimmed. Each tile carries its own
+   short line, so switching doesn't move anything on the screen. *@
+
+<div class="pc-choice" role="radiogroup" aria-label="How to play the wagers">
+    <button type="button" class="pc-tile @(Pay ? "" : "pc-on")" role="radio" aria-checked="@(!Pay)"
+            @onclick="() => Set(false)">
+        <span class="pc-icon">@Chip("#2f6fd6", "✓", 0)</span>
+        <span class="pc-title">Call Only</span>
+        <span class="pc-desc">@CallText</span>
+    </button>
+    <button type="button" class="pc-tile @(Pay ? "pc-on" : "")" role="radio" aria-checked="@Pay"
+            @onclick="() => Set(true)">
+        <span class="pc-icon pc-icon-two">@Chip("#2f6fd6", "✓", 0)@Chip("#1e8a4c", "$", 24)</span>
+        <span class="pc-title">Call &amp; Pay</span>
+        <span class="pc-desc">@PayText</span>
+    </button>
+</div>
+
+@code {
+    /// <summary>True = Call &amp; Pay, false = Call Only.</summary>
+    [Parameter] public bool Pay { get; set; }
+    [Parameter] public EventCallback<bool> PayChanged { get; set; }
+    [Parameter] public string CallText { get; set; } = "Call each wager Win, Lose or Push.";
+    [Parameter] public string PayText { get; set; } = "Call each wager, then pay the winners.";
+
+    private async Task Set(bool pay)
+    {
+        if (pay != Pay) await PayChanged.InvokeAsync(pay);
+    }
+
+    // A casino chip: colored ring with white edge spots, white center
+    // with a mark; left = offset for the second chip of the pair
+    private static RenderFragment Chip(string color, string mark, int left) => __builder =>
+    {
+        <svg class="pc-chip" style="@(left > 0 ? $"left:{left}px" : "")" viewBox="0 0 40 40" aria-hidden="true">
+            <circle cx="20" cy="20" r="19" fill="@color" />
+            <circle cx="20" cy="20" r="19" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="6 6.4" />
+            <circle cx="20" cy="20" r="12" fill="#fff" />
+            <text x="20" y="25" text-anchor="middle" font-size="14" font-weight="800" fill="@color">@mark</text>
+        </svg>
+    };
+}

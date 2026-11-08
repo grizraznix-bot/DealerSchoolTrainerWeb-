@@ -13,27 +13,13 @@
     <div class="start-screen">
         <h1>THREE CARD PRIME</h1>
 
-        @* One mode; the Payouts setting decides whether winning bonus
-           wagers are also paid (Call only is the default) *@
+        @* One mode, played Call Only (the default) or Call & Pay (winning
+           bonus wagers are also paid) *@
         <div class="mode-list">
             <ModeCard Title="Three Card Prime" Collapsible="false"
-                      Description="@(_pay
-                          ? "Call each wager Win, Lose or Push. Calling Win on a bonus wager (Pay on the Ante) opens its payout box: enter the winnings (the Ante's includes any Ante Bonus), then Submit."
-                          : "Call each wager Win, Lose or Push, tap + Bonus if the Ante Bonus pays, then Submit.")"
+                      Description="Both hands are dealt. Settle each wager in order, then Submit."
                       OnStart="StartGame">
-                <div class="mode-options">
-                    <div class="mode-option-group">
-                        <p class="mode-option-label">Payouts</p>
-                        <label class="mode-choice">
-                            <input type="radio" name="tcPay" checked="@(!_pay)" @onchange="() => _pay = false" />
-                            Call only (Default)
-                        </label>
-                        <label class="mode-choice">
-                            <input type="radio" name="tcPay" checked="@_pay" @onchange="() => _pay = true" />
-                            Call and pay winners
-                        </label>
-                    </div>
-                </div>
+                <PayoutChoice @bind-Pay="_pay" />
             </ModeCard>
         </div>
     </div>
@@ -50,7 +36,7 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="@(_pay ? "Three Card Prime Payouts" : "Three Card Prime")" Correct="_correct" Played="_played" />
+        <GameStatus Title="Three Card Prime" Correct="_correct" Played="_played" />
 
         @* Payouts on: hand names and whether the dealer qualifies are shown
            (paying is the skill). Call only: no hand names -- that's the answer. *@
@@ -160,15 +146,15 @@ else
             @* Desktop: pay tables always in view (phones: in Help) *@
             <aside class="sp-paytable tp-paytable">
                 <table class="sp-pt">
-                    <tr class="sp-pt-hd"><td>Play &amp; Ante</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Play &amp; Ante</td></tr>
                     <tr><td>Player wins</td><td>1 to 1</td></tr>
                     <tr><td>Tie</td><td>Push</td></tr>
                     <tr><td colspan="2" class="tp-pt-wide">Dealer doesn't qualify: Ante 1 to 1, Play pushes</td></tr>
-                    <tr class="sp-pt-hd"><td>Ante Bonus</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Ante Bonus</td></tr>
                     <tr><td>Straight Flush</td><td>5 to 1</td></tr>
                     <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
                     <tr><td>Straight</td><td>1 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>Pair Bonus</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Pair Bonus</td></tr>
                     <tr><td>Straight Flush</td><td>40 to 1</td></tr>
                     <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
                     <tr><td>Straight</td><td>6 to 1</td></tr>
@@ -176,10 +162,10 @@ else
                     <tr><td>Any Pair</td><td>1 to 1</td></tr>
                 </table>
                 <table class="sp-pt">
-                    <tr class="sp-pt-hd"><td>Prime</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Prime</td></tr>
                     <tr><td>All 6 cards same color</td><td>4 to 1</td></tr>
                     <tr><td>Player's 3 same color</td><td>3 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>All 6</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">All 6</td></tr>
                     <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
                     <tr><td>Straight Flush</td><td>200 to 1</td></tr>
                     <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
@@ -220,24 +206,25 @@ else
             </ChildContent>
             <HelpContent>
                 <table class="help-table sp-help-table">
-                    <tr class="sp-pt-hd"><td>Play &amp; Ante (dealer qualifies with Queen high or better)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Play &amp; Ante (dealer qualifies with Queen high or better)</td></tr>
                     <tr><td>Player wins</td><td>Both 1 to 1</td></tr>
-                    <tr><td>Dealer doesn't qualify</td><td>Ante 1 to 1, Play push</td></tr>
+                    <tr><td>Dealer doesn't qualify: Ante</td><td>1 to 1</td></tr>
+                    <tr><td>Dealer doesn't qualify: Play</td><td>Push</td></tr>
                     <tr><td>Tie</td><td>Both push</td></tr>
-                    <tr class="sp-pt-hd"><td>Ante Bonus (paid with the Ante, win or lose)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Ante Bonus (paid with the Ante, win or lose)</td></tr>
                     <tr><td>Straight Flush</td><td>5 to 1</td></tr>
                     <tr><td>Three of a Kind</td><td>4 to 1</td></tr>
                     <tr><td>Straight</td><td>1 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>Pair Bonus (player's 3 cards)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Pair Bonus (player's 3 cards)</td></tr>
                     <tr><td>Straight Flush</td><td>40 to 1</td></tr>
                     <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
                     <tr><td>Straight</td><td>6 to 1</td></tr>
                     <tr><td>Flush</td><td>3 to 1</td></tr>
                     <tr><td>Any Pair</td><td>1 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>Prime (color)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">Prime (color)</td></tr>
                     <tr><td>Player AND dealer cards same color</td><td>4 to 1</td></tr>
                     <tr><td>Player's cards same color</td><td>3 to 1</td></tr>
-                    <tr class="sp-pt-hd"><td>All 6 (best 5 of all 6 cards)</td><td></td></tr>
+                    <tr class="sp-pt-hd"><td colspan="2">All 6 (best 5 of all 6 cards)</td></tr>
                     <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
                     <tr><td>Straight Flush</td><td>200 to 1</td></tr>
                     <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
