@@ -6520,3 +6520,51 @@ body {
     width: 40px;
     height: 40px;
 }
+
+/* ------------------------------------------------------------------
+   Portrait only: a phone held sideways (short landscape screen, touch
+   only) gets a full-screen "Turn your phone upright" message over the
+   page (index.html, #rotate-msg). Tablets and computers are never
+   covered: their landscape screens are taller than 500px.
+   ------------------------------------------------------------------ */
+#rotate-msg {
+    display: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) and (pointer: coarse) {
+    #rotate-msg {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        padding: 1rem;
+        background: radial-gradient(ellipse at center, #2a7f53 0%, #1d6240 100%);
+        color: white;
+        text-align: center;
+    }
+
+    #rotate-msg svg {
+        color: #f2d27a;
+    }
+
+    #rotate-msg p {
+        margin: 0.4rem 0 0 0;
+        font-size: 1.3rem;
+        font-weight: 800;
+    }
+
+    #rotate-msg span {
+        color: #d7eadf;
+        font-size: 0.95rem;
+    }
+
+    /* Nothing behind it scrolls while it's up */
+    html,
+    body {
+        overflow: hidden;
+    }
+}
