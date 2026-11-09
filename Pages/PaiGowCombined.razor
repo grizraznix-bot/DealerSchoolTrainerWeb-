@@ -526,7 +526,9 @@ else
                          AnswerText="@($"{w.Actual}")"
                          LockedText="@SbWagerLockedText(w)" />
             }
-            <CallRow Name="Foul hand" Sub="player's hand" Options="FoulOptions"
+            @* A fouled hand stops the game until the floor (supervisor)
+               is called: the row's button reads Call Floor *@
+            <CallRow Name="Foul hand" Sub="player's hand" Options="FoulOptions" CallText="Call Floor"
                      Value="@(_sbFoulFlagged ? "Foul" : _sbNotFoulPicked || _sbRoundScored ? "NotFoul" : null)"
                      OnPick='k => SbSetFoul(k == "Foul")'
                      Locked="_sbRoundScored" Wrong="_sbFoulWrong"
@@ -551,7 +553,7 @@ else
         @* First round only: what to do *@
         @if (_sbTotalRounds == 0 && !_sbRoundScored)
         {
-            <p class="cr-howto">Tap Call on each wager and pick Win, Lose or Push, or mark the player's hand Foul, then Submit.</p>
+            <p class="cr-howto">Tap Call on each wager and pick Win, Lose or Push, then Submit. A fouled hand: tap Call Floor and pick Foul.</p>
         }
 
         <div class="feedback-area sp-feedback">
@@ -594,7 +596,7 @@ else
             </ChildContent>
             <HelpContent>
                 @PgPayTables
-                <p>Insurance and Emperor's Treasure win with any hand on their tables; otherwise they lose. A fouled hand is a floor call: mark it Foul instead of calling the wagers.</p>
+                <p>Insurance and Emperor's Treasure win with any hand on their tables; otherwise they lose. A fouled hand stops the game: call the floor (supervisor) before going any further. Tap Call Floor and pick Foul instead of calling the wagers.</p>
                 <p>Tap a hand to see it enlarged (ranks show after Submit).</p>
             </HelpContent>
         </GameBar>
