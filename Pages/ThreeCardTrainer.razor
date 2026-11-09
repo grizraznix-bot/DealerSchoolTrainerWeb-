@@ -39,10 +39,11 @@ else
         <GameStatus Title="Three Card Prime" Correct="_correct" Played="_played" />
 
         @* Payouts on: hand names and whether the dealer qualifies are shown
-           (paying is the skill). Call only: no hand names -- that's the answer. *@
+           (paying is the skill). Call only: no hand names -- that's the answer.
+           Tap a hand (🔍 beside its label) to see its cards enlarged. *@
         <div class="felt tp-felt">
-            <div class="tp-hand">
-                <div class="sp-cap">DEALER@(_pay ? $" · {_round.DealerHand}" : "")</div>
+            <div class="tp-hand hz-tap @(_zoom == 1 ? "hz-on" : "")" role="button" @onclick="() => _zoom = 1">
+                <div class="sp-cap">DEALER@(_pay ? $" · {_round.DealerHand}" : "")<span class="hz-mag" aria-hidden="true"></span></div>
                 <div class="tp-cards">
                     @foreach (Card c in _round.DealerCards)
                     {
@@ -54,8 +55,8 @@ else
                     <span class="tp-qtag @(_round.DealerQualifies ? "" : "tp-qtag-no")">@(_round.DealerQualifies ? "QUALIFIES" : "DOESN'T QUALIFY")</span>
                 }
             </div>
-            <div class="tp-hand tp-hand-player">
-                <div class="sp-cap">PLAYER@(_pay ? $" · {_round.PlayerHand}" : "")</div>
+            <div class="tp-hand tp-hand-player hz-tap @(_zoom == 2 ? "hz-on" : "")" role="button" @onclick="() => _zoom = 2">
+                <div class="sp-cap">PLAYER@(_pay ? $" · {_round.PlayerHand}" : "")<span class="hz-mag" aria-hidden="true"></span></div>
                 <div class="tp-cards">
                     @foreach (Card c in _round.PlayerCards)
                     {
@@ -181,6 +182,13 @@ else
         @* Pinned bottom bar. Until every wager is called the main button is
            dimmed and counts the wagers left; while a payout box is open,
            End Session becomes Cancel. *@
+        @if (_zoom != 0)
+        {
+            <HandZoom Title="@(_zoom == 1 ? "DEALER" : "PLAYER")"
+                      Cards="@(_zoom == 1 ? _round.DealerCards : _round.PlayerCards)"
+                      OnClose="CloseZoom" />
+        }
+
         <GameBar HelpTitle="Three Card Prime Pay Tables" OnEnd="EndOrCancel"
                  EndLabel="@(_box >= 0 ? "Cancel" : "End Session")"
                  EndClass="@(_box >= 0 ? "game-bar-cancel" : "")">
@@ -322,6 +330,16 @@ else
     private bool _scrollToSummary;
     private bool _focusBox;
 
+    // Tap-to-zoom: 0 = closed, 1 = dealer's hand, 2 = player's hand
+    private int _zoom;
+
+    // Closing the zoom puts the cursor back in an open payout box
+    private void CloseZoom()
+    {
+        _zoom = 0;
+        if (_box >= 0) _focusBox = true;
+    }
+
     // ---- Rows ----------------------------------------------------------
 
     // Play and Ante can push; the bonus wagers win or lose. Payouts on, the
@@ -454,6 +472,7 @@ else
     // real-world amounts, with the All 6 training boost (ThreeCardPayouts)
     private void NewRound()
     {
+        _zoom = 0;
         _round = ThreeCardPayouts.Deal(Random.Shared);
         for (int i = 0; i < 5; i++)
         {

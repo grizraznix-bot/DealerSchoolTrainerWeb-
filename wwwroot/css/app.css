@@ -452,8 +452,9 @@ code {
 /* Payouts: the wager amount, large enough to read at a glance, in a
    light blue tag so it stands out */
 .po-wager {
-    font-size: 1.5rem;
+    font-size: 2rem;
     margin: 0.5rem 0;
+    white-space: nowrap;
 }
 
 .po-wager strong {
@@ -461,7 +462,14 @@ code {
     background-color: #d0e0f8;
     border: 1px solid var(--c-info-line);
     border-radius: 8px;
-    padding: 0.1rem 0.75rem;
+    padding: 0.1rem 0.8rem;
+}
+
+/* Narrow phones: a little smaller, so "Wager: $1,250.00" stays on one line */
+@media (max-width: 360px) {
+    .po-wager {
+        font-size: 1.75rem;
+    }
 }
 
 /* Payouts on phones: display box in place of the text box (amount being
@@ -6567,4 +6575,105 @@ body {
     body {
         overflow: hidden;
     }
+}
+
+/* ------------------------------------------------------------------
+   Blackjack Payouts on short phones (e.g. 320x568): smaller cards and
+   tighter spacing so the whole keypad clears the Help / Submit / End bar
+   ------------------------------------------------------------------ */
+@media (max-width: 768px) and (max-height: 600px) {
+    .po-screen .po-card {
+        width: 56px;
+        height: 78px;
+    }
+
+    .po-screen .po-wager {
+        margin: 0.15rem 0;
+    }
+
+    .keypad-screen.po-screen > .keypad-answer {
+        margin: 0.25rem 0 0.35rem 0 !important;
+    }
+
+    .po-screen .po-display {
+        min-height: 3rem;
+        padding: 0.2rem 0.6rem;
+    }
+
+    .content .po-screen .numeric-keypad-row button {
+        height: 40px;
+        min-height: 40px;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Tap-to-zoom (Shared/HandZoom): a hand with small cards can be tapped
+   to see it enlarged. .hz-tap marks the hand (🔍 beside its label),
+   .hz-on outlines it in gold while its pop-up is open.
+   ------------------------------------------------------------------ */
+.hz-tap {
+    cursor: pointer;
+    border-radius: 8px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.hz-tap.hz-on {
+    outline: 3px solid #f2d27a;
+    outline-offset: 2px;
+}
+
+.hz-mag::after {
+    content: "\1F50D";
+    margin-left: 0.3rem;
+    font-size: 1.05em;
+}
+
+.hz-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    background-color: rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+}
+
+.hz-panel {
+    padding: 14px 14px 12px 14px;
+    border: 3px solid #f2d27a;
+    border-radius: 16px;
+    background: radial-gradient(ellipse at center, #2a7f53 0%, #1d6240 100%);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    color: white;
+    text-align: center;
+}
+
+.hz-title {
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.hz-cards {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* About twice the felt size; narrower on small phones so 3 cards fit */
+.hz-card {
+    width: min(100px, calc((100vw - 80px) / 3));
+    aspect-ratio: 5 / 7;
+    border-radius: 7px;
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.hz-hint {
+    margin-top: 10px;
+    color: #d7eadf;
+    font-size: 0.8rem;
 }
