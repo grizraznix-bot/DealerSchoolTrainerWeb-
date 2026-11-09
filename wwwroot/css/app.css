@@ -6690,3 +6690,39 @@ body {
 .hz-pg-tag {
     margin-top: 8px;
 }
+
+/* ------------------------------------------------------------------
+   Side Wagers dealer peek (house procedure): with a Queen of Hearts
+   pair showing and an Ace or 10-value card up, the hole card stays face
+   down (a plain card back) until Call Supervisor is tapped
+   ------------------------------------------------------------------ */
+.sp-card.sw-back {
+    border: 3px solid white;
+    border-radius: 6px;
+    background-color: #1f4fa3;
+    background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 4px, transparent 4px 9px),
+                      repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.18) 0 4px, transparent 4px 9px);
+    box-sizing: border-box;
+}
+
+.sw-peek-btn {
+    margin-top: 1.25rem;
+    padding: 0.35rem 0.7rem;
+    border: 2px solid #f2d27a;
+    border-radius: 8px;
+    background-color: #f2d27a;
+    color: #3b2a00;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.sw-peek-ok {
+    margin-top: 1.25rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.25);
+    color: #c8f0d4;
+    font-size: 0.8rem;
+    font-weight: 800;
+}

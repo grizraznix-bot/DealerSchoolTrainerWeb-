@@ -261,8 +261,10 @@ else if (_mode == BlackjackMode.Payouts)
 else
 {
     @* Side Wagers, played Call Only or Call & Pay: the dealer's up-card
-       (on an Ace, the hole card too -- tucked behind, tilted, darker, with
-       a dashed gold outline and a HOLE CARD tag) and the player's two
+       (when the house peeks -- a Queen of Hearts pair showing and an Ace
+       or 10-value card up -- the hole card too, tucked behind, tilted,
+       with a dashed gold outline and a HOLE CARD tag; it stays face down
+       until the trainee taps Call Supervisor) and the player's two
        cards, then 21 + 3 and Lucky Ladies, each with a Call button. Call
        & Pay: calling Win opens that wager's payout box with the number
        pad; the other row hides until Enter (or Cancel) closes it. *@
@@ -279,11 +281,29 @@ else
                 @if (_swRound.DealerHole is not null)
                 {
                     <div class="sp-dealer">
-                        <img src="images/cards/@(_swRound.DealerHole.Code).png" alt="Hole card: @_swRound.DealerHole.Name" class="sp-card sp-hole" />
+                        @if (_swPeeked || _swScored)
+                        {
+                            <img src="images/cards/@(_swRound.DealerHole.Code).png" alt="Hole card: @_swRound.DealerHole.Name" class="sp-card sp-hole" />
+                        }
+                        else
+                        {
+                            <div class="sp-card sp-hole sw-back" role="img" aria-label="Hole card, face down"></div>
+                        }
                         <img src="images/cards/@(_swRound.DealerUp.Code).png" alt="Up-card: @_swRound.DealerUp.Name" class="sp-card sp-up" />
                         <span class="sp-tag sp-uptag">UP</span>
                         <span class="sp-tag sp-holetag">HOLE CARD</span>
                     </div>
+                    @* House procedure: a Queen of Hearts pair with an Ace or
+                       10-value card up -- call a supervisor, who approves
+                       the peek before Lucky Ladies is settled *@
+                    @if (_swPeeked)
+                    {
+                        <div class="sw-peek-ok">✓ Peek approved</div>
+                    }
+                    else if (!_swScored)
+                    {
+                        <button type="button" class="sw-peek-btn" @onclick="SwCallSupervisor">Call Supervisor</button>
+                    }
                 }
                 else
                 {
@@ -433,13 +453,14 @@ else
                 @if (_swPay)
                 {
                     <p>Calling Win opens the wager's payout box: enter the winnings only (the wager stays on the layout), then Enter. Entering 0 counts as Lose; Cancel puts the wager back to Call.</p>
-                    <p>Every hand wins at least one side wager.</p>
+                    <p>Every hand wins at least one side wager. For practice, big pays come up far more often than at a live table.</p>
                 }
                 else
                 {
                     <p>A wager wins with any hand on its table; otherwise it loses.</p>
-                    <p>Hands come from a 6-deck shoe, so most side wagers lose.</p>
+                    <p>For practice, about half the hands win a side wager, more than at a live table.</p>
                 }
+                <p>A Queen of Hearts pair with an Ace or 10-value card up: tap Call Supervisor. The supervisor approves the peek, then settle Lucky Ladies.</p>
             </HelpContent>
         </GameBar>
     </div>
@@ -1030,7 +1051,7 @@ else
     // Start screen setting: false = Call Only, true = Call & Pay
     private bool _swPay;
 
-    private SideWagerPayoutRound _swRound = SideWagerPayouts.Deal(Random.Shared);
+    private SideWagerPayoutRound _swRound = SideWagerPayouts.Deal(Random.Shared, callAndPay: false);
 
     // Per wager ([0] = 21 + 3, [1] = Lucky Ladies): the call ("Win",
     // "Lose" or null = not called yet) and, Call & Pay, the payout entered
@@ -1054,6 +1075,19 @@ else
     private int SwPayout(int i) => i == 0 ? _swRound.TwentyOnePlus3Payout : _swRound.LuckyLadiesPayout;
     private int SwWagersLeft => _swCall.Count(c => c is null);
 
+    // The dealer peek (house procedure): when the house peeks, the hole
+    // card stays face down until the trainee calls a supervisor.
+    // _swPeeked: approved and turned over. _swLlBeforePeek: Lucky Ladies
+    // was called before the supervisor -- a miss on that row.
+    private bool _swPeeked;
+    private bool _swLlBeforePeek;
+
+    private void SwCallSupervisor()
+    {
+        if (_swScored) return;
+        _swPeeked = true;
+    }
+
     // Button / answer-box text once a payout is in, e.g. "Win $30"
     private string? SwPickedText(int i) =>
         _swPaid[i] is int v && _swCall[i] == "Win" ? $"Win ${v:N0}" : null;
@@ -1070,7 +1104,9 @@ else
     // hand wins at least one wager.
     private void SwNewRound()
     {
-        _swRound = SideWagerPayouts.Deal(Random.Shared, winnersOnly: _swPay);
+        _swRound = SideWagerPayouts.Deal(Random.Shared, callAndPay: _swPay);
+        _swPeeked = false;
+        _swLlBeforePeek = false;
         for (int i = 0; i < 2; i++)
         {
             _swCall[i] = null;
@@ -1087,6 +1123,9 @@ else
     private void SwPick(int i, string key)
     {
         if (_swScored) return;
+
+        // Lucky Ladies called before the supervisor approved the peek
+        if (i == 1 && _swRound.PeekNeeded && !_swPeeked) _swLlBeforePeek = true;
 
         // Call & Pay: Win opens the payout box
         if (_swPay && key == "Win")
@@ -1185,10 +1224,16 @@ else
                 "Win" => wins && (!_swPay || _swPaid[i] == payout),
                 _ => false
             };
+            string reason = why[i];
+            if (i == 1 && _swLlBeforePeek)
+            {
+                _swOk[i] = false;
+                reason = "Call a supervisor first: the peek needs approval before Lucky Ladies is settled. " + reason;
+            }
 
             // Call & Pay: a missed payout gets its shortcut
             string tip = _swPay && !_swOk[i] && wins ? PayoutShortcut.For(SwWager(i) * 100L, payout * 100L) : "";
-            _swRows.Add(new BreakdownRow(SwNames[i], SwYouText(i), SwAnswerText(i), _swOk[i], why[i], tip));
+            _swRows.Add(new BreakdownRow(SwNames[i], SwYouText(i), SwAnswerText(i), _swOk[i], reason, tip));
         }
 
         _log.AddRows(_swRows);
@@ -1202,9 +1247,12 @@ else
     private string SwYouText(int i) =>
         _swPaid[i] is int v && _swCall[i] == "Win" ? $"${v:N0}" : _swCall[i] ?? "";
 
-    // The right answer on a missed row: "Win" / "Lose", or "$150"
+    // The right answer on a missed row: "Win" / "Lose", "$150", or
+    // "Supervisor first" (Lucky Ladies called before the peek)
     private string SwAnswerText(int i)
     {
+        // Lucky Ladies called before the peek was approved
+        if (i == 1 && _swLlBeforePeek) return "Supervisor first";
         int payout = SwPayout(i);
         if (payout == 0) return "Lose";
         return _swPay ? SideWagerPayouts.Money(payout) : "Win";
