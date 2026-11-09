@@ -1029,8 +1029,8 @@ else
                 PayoutWager.ExplainPayout(_poWagerCents, _poRatio),
                 PayoutWager.FormatShort(userCents), PayoutWager.FormatShort(correctCents));
             _poIsCorrect = false;
-            _poPromptText = $"INCORRECT \u2014 you entered {PayoutWager.FormatShort(userCents)}";
-            _poPromptDetailText = PayoutWager.ExplainPayout(_poWagerCents, _poRatio);
+            _poPromptText = $"INCORRECT \u2014 {BreakdownRow.FloorCall}";
+            _poPromptDetailText = $"You entered {PayoutWager.FormatShort(userCents)}. {PayoutWager.ExplainPayout(_poWagerCents, _poRatio)}";
         }
 
         _poAnswerEnabled = false;

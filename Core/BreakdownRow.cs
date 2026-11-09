@@ -10,6 +10,12 @@ namespace DealerSchoolTrainerWeb.Core;
 public sealed record BreakdownRow(string Name, string You, string Answer, bool Ok, string Why, string Tip = "")
 {
     /// <summary>
+    /// Shown on every incorrect result, site-wide: a dealer never fixes
+    /// their own mistake -- the floorperson is called and decides.
+    /// </summary>
+    public const string FloorCall = "Call the floor";
+
+    /// <summary>
     /// Result line above the box, worded the same in every game:
     /// "CORRECT — all 5 right" / "INCORRECT — 2 of 5 wrong" (just
     /// CORRECT / INCORRECT when there's only one line).
