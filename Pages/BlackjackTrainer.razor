@@ -24,10 +24,11 @@
                       Expanded="@IsModeOpen(BlackjackMode.FlashCards)"
                       OnToggle="() => ToggleMode(BlackjackMode.FlashCards)"
                       OnStart="StartGame">
-                <label class="mode-choice">
-                    <input type="checkbox" @bind="_fcRemoveTens" />
-                    Remove all 10-value cards
-                </label>
+                <TileChoice @bind-Second="_fcRemoveTens" Label="Cards dealt"
+                            FirstTitle="All Cards" FirstText="Every card in the deck."
+                            FirstIcon="@(__b => { TileChoice.MiniCard("♠")(__b); TileChoice.MiniCard("♥")(__b); })"
+                            SecondTitle="No 10's" SecondText="All 10-value cards removed."
+                            SecondIcon="@TileChoice.MiniCard("♠", struck: true)" />
             </ModeCard>
 
             <ModeCard Title="Blackjack Payouts"
@@ -35,18 +36,14 @@
                       Expanded="@IsModeOpen(BlackjackMode.Payouts)"
                       OnToggle="() => ToggleMode(BlackjackMode.Payouts)"
                       OnStart="StartGame">
+                <TileChoice Second="@(_poRatio == PayoutRatio.SixToFive)"
+                            SecondChanged="@(v => _poRatio = v ? PayoutRatio.SixToFive : PayoutRatio.ThreeToTwo)"
+                            Label="Payout"
+                            FirstTitle="3:2 Payouts" FirstText="Pays 3 to 2."
+                            FirstIcon="@TileChoice.Chip("#1e8a4c", "3:2")"
+                            SecondTitle="6:5 Payouts" SecondText="Pays 6 to 5."
+                            SecondIcon="@TileChoice.Chip("#c62828", "6:5")" />
                 <div class="mode-options">
-                    <div class="mode-option-group">
-                        <p class="mode-option-label">Payout</p>
-                        <label class="mode-choice">
-                            <input type="radio" name="ratio" checked="@(_poRatio == PayoutRatio.ThreeToTwo)" @onchange="() => _poRatio = PayoutRatio.ThreeToTwo" />
-                            3:2 Payouts
-                        </label>
-                        <label class="mode-choice">
-                            <input type="radio" name="ratio" checked="@(_poRatio == PayoutRatio.SixToFive)" @onchange="() => _poRatio = PayoutRatio.SixToFive" />
-                            6:5 Payouts
-                        </label>
-                    </div>
                     <div class="mode-option-group">
                         <p class="mode-option-label">Difficulty</p>
                         <label class="mode-choice">

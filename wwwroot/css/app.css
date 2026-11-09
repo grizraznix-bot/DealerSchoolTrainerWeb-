@@ -6351,14 +6351,6 @@ body {
     opacity: 0.45;
 }
 
-/* Short phone screens: slightly shorter keys while a box is open, so the
-   cards, the box and the whole pad fit without scrolling */
-@media (max-width: 768px) and (max-height: 700px) {
-    .uc-open .numeric-keypad-row button,
-    .uc-open .numeric-keypad-row span {
-        height: 40px;
-    }
-}
 
 /* Pai Gow: the LOW / HIGH captions hide while a box is open (the
    cards, the box and the pad fit without scrolling) */
@@ -6508,4 +6500,23 @@ body {
 
 .pc-tile.pc-on .pc-desc {
     color: #d7eadf;
+}
+
+/* TileChoice icons: mini cards and chips side by side, 40px tall */
+.pc-icon.tc-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    width: auto;
+}
+
+.tc-card {
+    width: 28px;
+    height: 40px;
+}
+
+.tc-chip {
+    width: 40px;
+    height: 40px;
 }

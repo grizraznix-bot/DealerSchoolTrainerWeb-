@@ -1,0 +1,86 @@
+@* Start screen choice between two settings, as two felt tiles (same look
+   as the Call Only / Call & Pay choice): the chosen tile is lit felt with
+   a gold edge and gold check; the other is plain grey. Each tile carries
+   its own short line, so switching doesn't move anything on the screen.
+   Second = true when the right-hand tile is chosen. The icons come from
+   the static helpers below (mini cards, chips). *@
+
+<div class="pc-choice" role="radiogroup" aria-label="@Label">
+    <button type="button" class="pc-tile @(Second ? "" : "pc-on")" role="radio" aria-checked="@(!Second)"
+            @onclick="() => Set(false)">
+        <span class="pc-icon tc-icon">@FirstIcon</span>
+        <span class="pc-title">@FirstTitle</span>
+        <span class="pc-desc">@FirstText</span>
+    </button>
+    <button type="button" class="pc-tile @(Second ? "pc-on" : "")" role="radio" aria-checked="@Second"
+            @onclick="() => Set(true)">
+        <span class="pc-icon tc-icon">@SecondIcon</span>
+        <span class="pc-title">@SecondTitle</span>
+        <span class="pc-desc">@SecondText</span>
+    </button>
+</div>
+
+@code {
+    [Parameter] public bool Second { get; set; }
+    [Parameter] public EventCallback<bool> SecondChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string FirstTitle { get; set; } = "";
+    [Parameter] public string FirstText { get; set; } = "";
+    [Parameter] public RenderFragment? FirstIcon { get; set; }
+    [Parameter] public string SecondTitle { get; set; } = "";
+    [Parameter] public string SecondText { get; set; } = "";
+    [Parameter] public RenderFragment? SecondIcon { get; set; }
+
+    private async Task Set(bool second)
+    {
+        if (second != Second) await SecondChanged.InvokeAsync(second);
+    }
+
+    /// <summary>A small card face with a suit shape in the middle ("♠",
+    /// "♥", "♦", "♣"; hearts and diamonds red); struck = red slash across
+    /// it (a card taken out). The suits are drawn shapes, not text, so all
+    /// four are the same size on every phone.</summary>
+    public static RenderFragment MiniCard(string suit, bool struck = false) => __builder =>
+    {
+        bool red = suit is "♥" or "♦";
+        <svg class="tc-card" viewBox="0 0 28 40" aria-hidden="true">
+            <rect x="1" y="1" width="26" height="38" rx="3" fill="#fff" stroke="#9aa3ad" stroke-width="1.5" />
+            <g transform="translate(5 11) scale(0.9)" fill="@(red ? "#c62828" : "#1a1a1a")">
+                @switch (suit)
+                {
+                    case "♥":
+                        <path d="M10 18.5C10 18.5 1 12.5 1 6.6 1 3.6 3.3 1.5 5.8 1.5 7.6 1.5 9.1 2.6 10 4.1 10.9 2.6 12.4 1.5 14.2 1.5 16.7 1.5 19 3.6 19 6.6 19 12.5 10 18.5 10 18.5Z" />
+                        break;
+                    case "♦":
+                        <path d="M10 1 17.5 10 10 19 2.5 10Z" />
+                        break;
+                    case "♣":
+                        <circle cx="10" cy="5.5" r="4.3" />
+                        <circle cx="5" cy="11" r="4.3" />
+                        <circle cx="15" cy="11" r="4.3" />
+                        <path d="M9 10h2c0 4 1 6.8 2.8 8.8H6.2C8 16.8 9 14 9 10Z" />
+                        break;
+                    default:
+                        <path d="M10 1C10 1 1 7.8 1 12 1 14.8 3.2 16.5 5.6 16.5 7.2 16.5 8.5 15.7 9.2 14.6 9 16.5 8.2 17.9 6.6 19H13.4C11.8 17.9 11 16.5 10.8 14.6 11.5 15.7 12.8 16.5 14.4 16.5 16.8 16.5 19 14.8 19 12 19 7.8 10 1 10 1Z" />
+                        break;
+                }
+            </g>
+            @if (struck)
+            {
+                <line x1="3" y1="37" x2="25" y2="3" stroke="#fff" stroke-width="4.5" stroke-linecap="round" />
+                <line x1="3" y1="37" x2="25" y2="3" stroke="#d32f2f" stroke-width="2.5" stroke-linecap="round" />
+            }
+        </svg>
+    };
+
+    /// <summary>A casino chip with a short mark in the center ("3:2", "★").</summary>
+    public static RenderFragment Chip(string color, string mark) => __builder =>
+    {
+        <svg class="tc-chip" viewBox="0 0 40 40" aria-hidden="true">
+            <circle cx="20" cy="20" r="19" fill="@color" />
+            <circle cx="20" cy="20" r="19" fill="none" stroke="#fff" stroke-width="5" stroke-dasharray="6 6.4" />
+            <circle cx="20" cy="20" r="12" fill="#fff" />
+            <text x="20" y="@(mark.Length > 1 ? 24 : 25)" text-anchor="middle" font-size="@(mark.Length > 1 ? 10 : 14)" font-weight="800" fill="@color">@mark</text>
+        </svg>
+    };
+}

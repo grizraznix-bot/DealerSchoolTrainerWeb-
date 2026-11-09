@@ -22,18 +22,12 @@
                       Expanded="@IsModeOpen(PaiGowMode.HandSetting)"
                       OnToggle="() => ToggleMode(PaiGowMode.HandSetting)"
                       OnStart="StartGame">
+                <TileChoice @bind-Second="_hsAdvanced" Label="Difficulty"
+                            FirstTitle="Normal" FirstText="Random hands."
+                            FirstIcon="@(__b => { TileChoice.MiniCard("♣")(__b); TileChoice.MiniCard("♦")(__b); })"
+                            SecondTitle="Advanced" SecondText="More special-rule hands."
+                            SecondIcon="@(__b => { TileChoice.MiniCard("♣")(__b); TileChoice.MiniCard("♦")(__b); TileChoice.Chip("#c99a1e", "★")(__b); })" />
                 <div class="mode-options">
-                    <div class="mode-option-group">
-                        <p class="mode-option-label">Difficulty</p>
-                        <label class="mode-choice">
-                            <input type="radio" name="hsLevel" checked="@(!_hsAdvanced)" @onchange="() => _hsAdvanced = false" />
-                            <span class="rl-level"><strong>Normal</strong><span class="rl-level-desc">random hands</span></span>
-                        </label>
-                        <label class="mode-choice">
-                            <input type="radio" name="hsLevel" checked="@_hsAdvanced" @onchange="() => _hsAdvanced = true" />
-                            <span class="rl-level"><strong>Advanced</strong><span class="rl-level-desc">more special-rule hands</span></span>
-                        </label>
-                    </div>
                     <div class="mode-option-group">
                         <p class="mode-option-label">Joker Frequency</p>
                         <label class="mode-choice">
