@@ -6743,6 +6743,7 @@ body {
    ------------------------------------------------------------------ */
 .bd-card {
     align-self: stretch;
+    margin-top: 0.6rem;     /* a little space from the felt or wager rows above */
     display: flex;
     flex-direction: column;
     border-radius: 8px;
