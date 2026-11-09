@@ -183,6 +183,7 @@ else if (_mode == PaiGowMode.HandSetting)
             </ChildContent>
             <HelpContent>
                 <p class="hw-key">Front = Low hand (2 cards) &middot; Back = High hand (5 cards)</p>
+                <p>Advanced deals more hands that need one of the House Way's special rules.</p>
                 <table class="help-table sp-help-table hw-table">
                     <tr class="sp-pt-hd"><td colspan="2">Two Pair</td></tr>
                     <tr><td>1</td><td>No Ace: split only if one pair is 7s or better.</td></tr>
@@ -239,9 +240,9 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
 {
     @* Settling Bets, Call & Pay. Laid out from the dealer's side of the
        table: the player's hand on top, the dealer's at the bottom, Low
-       beside High. Hand names are not shown on the felt: tap a hand for a
-       bubble with its Low and High names (and the dealer's Ace-high Pai
-       Gow note). Until the first tap this session, each caption fades
+       beside High. Hand names are not shown on the felt: tap a hand to see
+       it enlarged, Low over High, with its Low and High names (and the
+       dealer's Ace-high Pai Gow note). Until the first tap this session, each caption fades
        between its name and "Tap ... cards to reveal rank" every 5
        seconds (CSS only; @key restarts it on each deal). After Submit
        the names show on the felt. *@
@@ -261,8 +262,7 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
                 string lowLabel = isDealer ? _ppRound.DealerLowLabel : _ppRound.PlayerLowLabel;
                 string highLabel = isDealer ? _ppRound.DealerHighLabel : _ppRound.PlayerHighLabel;
                 string who = isDealer ? "Dealer" : "Player";
-                bool canPeek = !_ppScored && _ppBox < 0;
-                bool peekOpen = canPeek && _ppPeek == (isDealer ? 2 : 1);
+                bool zoomOn = _ppZoom == (isDealer ? 2 : 1);
                 @if (isDealer)
                 {
                     <div class="cr-sep"></div>
@@ -270,7 +270,7 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
                 @if (_ppScored || _ppPeekUsed)
                 {
                     <div class="cr-cap">
-                        @who.ToUpperInvariant()
+                        @who.ToUpperInvariant()<span class="hz-mag" aria-hidden="true"></span>
                         @if (isDealer && _ppScored && _ppRound.DealerAceHighPaiGow)
                         {
                             <span class="tp-qtag tp-qtag-no pp-cap-tag">ACE-HIGH PAI GOW</span>
@@ -280,24 +280,13 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
                 else
                 {
                     <div class="cr-cap pp-alt" @key="@($"{_ppDealNo}-{who}")">
-                        <span class="pp-alt-a">@who.ToUpperInvariant()</span>
+                        <span class="pp-alt-a">@who.ToUpperInvariant()<span class="hz-mag" aria-hidden="true"></span></span>
                         <span class="pp-alt-b">Tap @who cards to reveal rank</span>
                     </div>
                 }
-                <div class="pg-hand @(canPeek ? "pp-tap" : "") @(peekOpen ? "pp-tap-on" : "")"
-                     role="@(canPeek ? "button" : null)"
+                <div class="pg-hand hz-tap @(zoomOn ? "hz-on" : "")"
+                     role="button"
                      @onclick="() => PpTogglePeek(dealerHand)">
-                    @if (peekOpen)
-                    {
-                        <div class="pp-bub @(isDealer ? "pp-bub-up" : "pp-bub-dn")">
-                            <div><b>LOW</b>@lowLabel</div>
-                            <div><b>HIGH</b>@highLabel</div>
-                            @if (isDealer && _ppRound.DealerAceHighPaiGow)
-                            {
-                                <span class="tp-qtag tp-qtag-no">ACE-HIGH PAI GOW</span>
-                            }
-                        </div>
-                    }
                     <div class="pg-group">
                         <div class="pg-sub">LOW@(_ppScored && lowLabel.Length > 0 ? " · " + lowLabel : "")</div>
                         <div class="pg-cards">
@@ -319,9 +308,17 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
                 </div>
             }
         </div>
-        @if (_ppPeek != 0 && !_ppScored)
+        @* Tap-to-zoom: the hand enlarged, Low over High, with each hand's
+           rank (and the dealer's Ace-high Pai Gow) *@
+        @if (_ppZoom != 0)
         {
-            <div class="cr-backdrop" @onclick="PpClosePeek"></div>
+            bool zd = _ppZoom == 2;
+            <HandZoom Title="@(zd ? "DEALER" : "PLAYER")" OnClose="PpCloseZoom">
+                @PgZoomRows(zd ? _ppRound.DealerLow : _ppRound.PlayerLow, zd ? _ppRound.DealerHigh : _ppRound.PlayerHigh,
+                            zd ? _ppRound.DealerLowLabel : _ppRound.PlayerLowLabel,
+                            zd ? _ppRound.DealerHighLabel : _ppRound.PlayerHighLabel,
+                            zd && _ppRound.DealerAceHighPaiGow)
+            </HandZoom>
         }
 
         @* The three wagers in settling order, each with a Call button. The
@@ -452,9 +449,10 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
                 }
             </ChildContent>
             <HelpContent>
-                <p>Tap the Player or Dealer cards to see that hand's Low and High ranks.</p>
+                <p>Tap the Player or Dealer cards to see the hand enlarged, Low over High, with its ranks.</p>
                 @PgPayTables
                 <p>Call the Main Wager Win, Lose or Push (it pays even money). Win on Insurance or Emperor's Treasure opens its payout box: enter the winnings only, then Enter. Entering 0 counts as Lose; Cancel puts the wager back to Call. Envy Bonuses are shown as a tip after Submit; they are not entered.</p>
+                <p>For practice, big Emperor's Treasure hands come up more often than at a live table.</p>
             </HelpContent>
         </GameBar>
     </div>
@@ -489,8 +487,10 @@ else
                 {
                     <div class="cr-sep"></div>
                 }
-                <div class="cr-cap">@(isDealer ? "DEALER" : "PLAYER")</div>
-                <div class="pg-hand">
+                bool dealerHand = isDealer;
+                <div class="cr-cap">@(isDealer ? "DEALER" : "PLAYER")<span class="hz-mag" aria-hidden="true"></span></div>
+                <div class="pg-hand hz-tap @(_sbZoom == (isDealer ? 2 : 1) ? "hz-on" : "")" role="button"
+                     @onclick="() => _sbZoom = dealerHand ? 2 : 1">
                     <div class="pg-group">
                         <div class="pg-sub">LOW@(_sbRoundScored && lowLabel.Length > 0 ? " · " + lowLabel : "")</div>
                         <div class="pg-cards">
@@ -534,6 +534,19 @@ else
         </div>
 
         <p class="cr-note">All Hands Push with a Dealer Ace-High Pai Gow</p>
+
+        @* Tap-to-zoom: the hand enlarged, Low over High (hand names only
+           after Submit, like the felt) *@
+        @if (_sbZoom != 0)
+        {
+            bool zd = _sbZoom == 2;
+            <HandZoom Title="@(zd ? "DEALER" : "PLAYER")" OnClose="() => _sbZoom = 0">
+                @PgZoomRows(zd ? _sbDealerLowSorted : _sbPlayerLowSorted, zd ? _sbDealerHighSorted : _sbPlayerHighSorted,
+                            _sbRoundScored ? (zd ? _sbDealerLowLabel : _sbPlayerLowLabel) : "",
+                            _sbRoundScored ? (zd ? _sbDealerHighLabel : _sbPlayerHighLabel) : "",
+                            false)
+            </HandZoom>
+        }
 
         @* First round only: what to do *@
         @if (_sbTotalRounds == 0 && !_sbRoundScored)
@@ -582,6 +595,7 @@ else
             <HelpContent>
                 @PgPayTables
                 <p>Insurance and Emperor's Treasure win with any hand on their tables; otherwise they lose. A fouled hand is a floor call: mark it Foul instead of calling the wagers.</p>
+                <p>Tap a hand to see it enlarged (ranks show after Submit).</p>
             </HelpContent>
         </GameBar>
     </div>
@@ -1026,6 +1040,9 @@ else
     }
 
     private int _sbJokerFrequencyLevel;
+
+    // Tap-to-zoom: 0 = closed, 1 = player, 2 = dealer
+    private int _sbZoom;
     private int _sbFoulFrequencyLevel;
 
     private readonly PaiGowSolver _sbPlayerSolver = new();
@@ -1086,6 +1103,7 @@ else
 
     private void SbDealNewRound()
     {
+        _sbZoom = 0;
         _sbDealEnabled = false;
 
         double jokerProbability = ComputeJokerProbability(_sbJokerFrequencyLevel, twoHands: true);
@@ -1456,6 +1474,34 @@ else
         return false;
     }
 
+    // Tap-to-zoom content for a Pai Gow hand: the Low hand's 2 cards on
+    // top, the High hand's 5 below (overlapped, every corner showing), each
+    // with its name when given (empty = not shown yet)
+    private static RenderFragment PgZoomRows(List<PaiGowCard> low, List<PaiGowCard> high,
+                                             string lowLabel, string highLabel, bool aceHighPaiGow) => __builder =>
+    {
+        <div class="hz-pg">
+            <div class="hz-pg-sub">LOW@(lowLabel.Length > 0 ? " · " + lowLabel : "")</div>
+            <div class="hz-pg-cards">
+                @foreach (PaiGowCard c in low)
+                {
+                    <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="hz-pg-card" />
+                }
+            </div>
+            <div class="hz-pg-sub">HIGH@(highLabel.Length > 0 ? " · " + highLabel : "")</div>
+            <div class="hz-pg-cards">
+                @foreach (PaiGowCard c in high)
+                {
+                    <img src="images/cards/@(c.ImageCode).png" alt="@c.Name" class="hz-pg-card" />
+                }
+            </div>
+            @if (aceHighPaiGow)
+            {
+                <span class="tp-qtag tp-qtag-no hz-pg-tag">ACE-HIGH PAI GOW</span>
+            }
+        </div>
+    };
+
     // Pay tables for the Help in both Settling Bets options
     private RenderFragment PgPayTables => @<text>
                 <table class="help-table sp-help-table">
@@ -1512,23 +1558,26 @@ else
 
     private int PpWagersLeft => _ppCall.Count(c => c is null);
 
-    // Tap-a-hand rank bubble: 0 = closed, 1 = player, 2 = dealer.
+    // Tap-to-zoom (with ranks): 0 = closed, 1 = player, 2 = dealer.
     // _ppPeekUsed: tapped once this session, so the captions stop
     // alternating with the tap prompt. _ppDealNo restarts the caption
     // fade on each deal.
-    private int _ppPeek;
+    private int _ppZoom;
     private bool _ppPeekUsed;
     private int _ppDealNo;
 
     private void PpTogglePeek(bool dealer)
     {
-        if (_ppScored || _ppBox >= 0) return;
-        int which = dealer ? 2 : 1;
-        _ppPeek = _ppPeek == which ? 0 : which;
+        _ppZoom = dealer ? 2 : 1;
         _ppPeekUsed = true;
     }
 
-    private void PpClosePeek() => _ppPeek = 0;
+    // Closing the zoom puts the cursor back in an open payout box
+    private void PpCloseZoom()
+    {
+        _ppZoom = 0;
+        if (_ppBox >= 0) _ppFocusBox = true;
+    }
 
     private void PpStartGame()
     {
@@ -1543,7 +1592,7 @@ else
     private void PpNewRound()
     {
         _ppRound = PaiGowPayouts.Deal(Random.Shared, ComputeJokerProbability(_sbJokerFrequencyLevel, twoHands: true));
-        _ppPeek = 0;
+        _ppZoom = 0;
         _ppDealNo++;
         for (int i = 0; i < 3; i++)
         {
@@ -1568,7 +1617,7 @@ else
     private void PpPick(int i, string key)
     {
         if (_ppScored) return;
-        _ppPeek = 0;
+        _ppZoom = 0;
 
         // Win on Insurance / Emperor's Treasure opens the payout box
         if (PpTyped(i) && key == "Win")

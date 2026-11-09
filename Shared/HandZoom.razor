@@ -1,19 +1,27 @@
 @* Tap-to-zoom for a hand shown with small cards: a felt pop-up over the
    page with the hand's cards about twice the size and the hand's label.
    Tapping anywhere closes it (OnClose). The cards shrink to fit narrow
-   phones. The page shows it only while a hand is chosen. *@
+   phones. The page shows it only while a hand is chosen. A page can pass
+   its own layout as ChildContent (Pai Gow: Low row over High row). *@
 
 @using DealerSchoolTrainerWeb.Core
 
 <div class="hz-backdrop" role="dialog" aria-label="@($"{Title} cards, enlarged")" @onclick="OnClose">
     <div class="hz-panel">
         <div class="hz-title">@Title</div>
-        <div class="hz-cards">
-            @foreach (Card c in Cards)
-            {
-                <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hz-card" />
-            }
-        </div>
+        @if (ChildContent is not null)
+        {
+            @ChildContent
+        }
+        else
+        {
+            <div class="hz-cards">
+                @foreach (Card c in Cards)
+                {
+                    <img src="images/cards/@(c.Code).png" alt="@c.Name" class="hz-card" />
+                }
+            </div>
+        }
         <div class="hz-hint">Tap anywhere to close</div>
     </div>
 </div>
@@ -22,4 +30,5 @@
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public IEnumerable<Card> Cards { get; set; } = Array.Empty<Card>();
     [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 }

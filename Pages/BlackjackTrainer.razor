@@ -78,7 +78,7 @@ else if (_mode == BlackjackMode.FlashCards)
 {
     @* keypad-screen: on phones the feedback line moves up above the
        answer box so it isn't hidden below the keypad (see app.css) *@
-    <div class="play-screen keypad-screen has-game-bar">
+    <div class="play-screen keypad-screen fc-screen has-game-bar">
         <div class="button-row">
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
@@ -161,6 +161,7 @@ else if (_mode == BlackjackMode.FlashCards)
                     <li>The dealer must hit 16 or less and must hit soft 17; the dealer stands on 17 or more otherwise.</li>
                     <li>Enter the dealer's total each time a card is dealt. Over 21: tap BUST or enter the total.</li>
                     <li>Stuck? Reveal shows the total (the hand counts as a miss).</li>
+                    <li>With No 10's, every 10, J, Q and K is taken out.</li>
                 </ul>
             </HelpContent>
         </GameBar>
@@ -432,10 +433,12 @@ else
                 @if (_swPay)
                 {
                     <p>Calling Win opens the wager's payout box: enter the winnings only (the wager stays on the layout), then Enter. Entering 0 counts as Lose; Cancel puts the wager back to Call.</p>
+                    <p>Every hand wins at least one side wager.</p>
                 }
                 else
                 {
                     <p>A wager wins with any hand on its table; otherwise it loses.</p>
+                    <p>Hands come from a 6-deck shoe, so most side wagers lose.</p>
                 }
             </HelpContent>
         </GameBar>

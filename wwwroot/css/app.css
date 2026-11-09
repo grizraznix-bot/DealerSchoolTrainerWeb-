@@ -6117,12 +6117,6 @@ body {
         justify-content: space-between;
         padding: 0 14px;
     }
-
-    /* Pai Gow Payouts' tappable hand (3px padding for its outline):
-       cards end up the same distance from the edges */
-    .pg-felt .pg-hand.pp-tap {
-        padding: 3px 14px;
-    }
 }
 
 .pg-group {
@@ -6161,62 +6155,6 @@ body {
 .pg-cards img + img {
     margin-left: calc(var(--pgw) * -0.25);
 }
-
-/* Pai Gow Payouts: tap a hand for its rank. The hand gets a light
-   outline and a bubble with its Low and High names (dealer's opens
-   upward, player's downward), above the tap-anywhere-to-close backdrop. */
-.pg-hand.pp-tap {
-    position: relative;
-    padding: 3px;
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.pg-hand.pp-tap-on {
-    background-color: rgba(255, 255, 255, 0.14);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
-}
-
-.pp-bub {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1001;
-    padding: 7px 12px;
-    border-radius: 10px;
-    background-color: white;
-    color: #111;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
-    font-size: 0.8rem;
-    line-height: 1.45;
-    white-space: nowrap;
-    cursor: default;
-}
-
-.pp-bub b {
-    display: inline-block;
-    width: 3.1em;
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    color: #555;
-}
-
-.pp-bub .tp-qtag {
-    display: inline-block;
-}
-
-.pp-bub::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    margin-left: -7px;
-    border: 7px solid transparent;
-}
-
-.pp-bub-up { bottom: calc(100% + 8px); }
-.pp-bub-up::after { top: 100%; border-top-color: white; }
-.pp-bub-dn { top: calc(100% + 8px); }
-.pp-bub-dn::after { bottom: 100%; border-bottom-color: white; }
 
 .pp-cap-tag {
     display: inline-block;
@@ -6607,6 +6545,40 @@ body {
 }
 
 /* ------------------------------------------------------------------
+   Blackjack Flash Cards on short phones (e.g. 320x568): smaller cards
+   and tighter spacing so the whole keypad clears the Help / Next / End bar
+   ------------------------------------------------------------------ */
+@media (max-width: 768px) and (max-height: 600px) {
+    .fc-screen .card-row.fc-fan {
+        --fc-w: min(66px, calc((var(--col-w) - 2rem) / (1 + 0.7 * (var(--n, 2) - 1))));
+        margin: 0.25rem 0 0.1rem 0 !important;
+    }
+
+    .fc-screen .felt .table-rule {
+        margin: 0.1rem 0;
+        font-size: 0.8rem;
+    }
+
+    .fc-screen .prompt-line {
+        margin: 0.2rem 0;
+        font-size: 1.05rem;
+    }
+
+    .fc-screen .fc-msg {
+        margin: 0.1rem 0;
+    }
+
+    .keypad-screen.fc-screen > .keypad-answer {
+        margin: 0.2rem 0 0.3rem 0 !important;
+    }
+
+    .content .fc-screen .numeric-keypad-row button {
+        height: 40px;
+        min-height: 40px;
+    }
+}
+
+/* ------------------------------------------------------------------
    Tap-to-zoom (Shared/HandZoom): a hand with small cards can be tapped
    to see it enlarged. .hz-tap marks the hand (🔍 beside its label),
    .hz-on outlines it in gold while its pop-up is open.
@@ -6676,4 +6648,45 @@ body {
     margin-top: 10px;
     color: #d7eadf;
     font-size: 0.8rem;
+}
+
+/* Pai Gow zoom: Low hand's 2 cards on top, High hand's 5 below,
+   overlapped 25% (every corner showing), each row with its caption */
+.hz-pg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hz-pg-sub {
+    margin: 2px 0 4px 0;
+    color: #f2d27a;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.hz-pg-cards + .hz-pg-sub {
+    margin-top: 10px;
+}
+
+.hz-pg-cards {
+    display: flex;
+    justify-content: center;
+}
+
+.hz-pg-card {
+    width: min(84px, calc((100vw - 64px) / 4));
+    aspect-ratio: 5 / 7;
+    border-radius: 6px;
+    background-color: white;
+    box-shadow: -1px 0 3px rgba(0, 0, 0, 0.35);
+}
+
+.hz-pg-card + .hz-pg-card {
+    margin-left: calc(min(84px, calc((100vw - 64px) / 4)) * -0.25);
+}
+
+.hz-pg-tag {
+    margin-top: 8px;
 }
