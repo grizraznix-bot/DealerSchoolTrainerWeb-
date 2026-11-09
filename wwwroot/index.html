@@ -104,46 +104,6 @@
                 el.click();
             }, { passive: false });
         })();
-        // Phones: a swipe in from the left edge opens the menu, and a swipe
-        // to the left while it's open closes it (same as tapping the menu
-        // button or the dimmed page). Only where the menu button shows
-        // (phone widths). The swipe must be mostly sideways, so scrolling
-        // is never mistaken for it. In Safari's normal browser view iPhone
-        // uses the same edge swipe for Back; the home-screen app has no
-        // Back swipe, so there it always opens the menu.
-        (function () {
-            var EDGE = 24, DIST = 50;
-            var sx = 0, sy = 0, tracking = false, fromEdge = false, done = false;
-            function toggle() { return document.querySelector('.menu-toggle'); }
-            function menuOpen() {
-                var t = toggle();
-                return !!t && t.getAttribute('aria-expanded') === 'true';
-            }
-            document.addEventListener('touchstart', function (e) {
-                tracking = false;
-                if (e.touches.length !== 1) return;
-                var t = toggle();
-                if (!t || t.offsetParent === null) return;   // desktop: no menu button
-                sx = e.touches[0].clientX;
-                sy = e.touches[0].clientY;
-                fromEdge = sx <= EDGE && !menuOpen();
-                tracking = fromEdge || menuOpen();
-                done = false;
-            }, { passive: true });
-            document.addEventListener('touchmove', function (e) {
-                if (!tracking || done || e.touches.length !== 1) return;
-                var dx = e.touches[0].clientX - sx, dy = e.touches[0].clientY - sy;
-                if (Math.abs(dy) > 30 && Math.abs(dy) > Math.abs(dx)) { tracking = false; return; }
-                if (fromEdge && dx >= DIST && Math.abs(dy) < dx / 2) {
-                    done = true;
-                    toggle().click();
-                } else if (!fromEdge && dx <= -DIST && Math.abs(dy) < -dx / 2) {
-                    done = true;
-                    var bd = document.querySelector('.menu-backdrop');
-                    (bd || toggle()).click();
-                }
-            }, { passive: true });
-        })();
         // Add to Home Screen page: which phone's steps to show first
         window.dstPhoneOs = function () {
             return /android/i.test(navigator.userAgent) ? 'android' : 'ios';
