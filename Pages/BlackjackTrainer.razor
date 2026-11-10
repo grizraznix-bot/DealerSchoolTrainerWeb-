@@ -15,11 +15,24 @@
     <div class="start-screen">
         <h1>BLACKJACK</h1>
 
-        @* Three trainers on one page. Each mode is a
-           collapsible card: tap its title to open its settings and its
-           own Start button (one card open at a time). *@
+        @* The Tutorial first (game 1 of the Dealer School course), then the
+           three trainers, numbered in the suggested practice order. Each
+           mode is a collapsible card: tap its title to open its settings
+           and its own Start button (one card open at a time). *@
+        <a class="tu-entry" href="blackjack-tutorial">
+            <span class="tu-entry-cards">
+                <img src="images/cards/AS.png" alt="" />
+                <img src="images/cards/KH.png" alt="" />
+            </span>
+            <span class="tu-entry-text">
+                <b>New to Blackjack?</b>
+                <span>Start with the 3-minute tutorial.</span>
+            </span>
+            <span class="tu-entry-btn">Tutorial</span>
+        </a>
+
         <div class="mode-list">
-            <ModeCard Title="Flash Cards"
+            <ModeCard Title="Flash Cards" Number="1"
                       Description="Type the dealer's total, press Enter to Submit."
                       Expanded="@IsModeOpen(BlackjackMode.FlashCards)"
                       OnToggle="() => ToggleMode(BlackjackMode.FlashCards)"
@@ -31,7 +44,7 @@
                             SecondIcon="@TileChoice.MiniCard("♠", struck: true)" />
             </ModeCard>
 
-            <ModeCard Title="Blackjack Payouts"
+            <ModeCard Title="Blackjack Payouts" Number="2"
                       Description="Pay each blackjack. Type the payout, then press Enter or Submit."
                       Expanded="@IsModeOpen(BlackjackMode.Payouts)"
                       OnToggle="() => ToggleMode(BlackjackMode.Payouts)"
@@ -41,7 +54,7 @@
                             Label="Payout"
                             FirstTitle="3:2 Payouts" FirstText="Pays 3 to 2."
                             FirstIcon="@TileChoice.Chip("#1e8a4c", "3:2")"
-                            SecondTitle="6:5 Payouts" SecondText="Pays 6 to 5."
+                            SecondTitle="6:5 Payouts" SecondText="Single Deck Blackjack only."
                             SecondIcon="@TileChoice.Chip("#c62828", "6:5")" />
                 <div class="mode-options">
                     <div class="mode-option-group">
@@ -62,7 +75,7 @@
                 </div>
             </ModeCard>
 
-            <ModeCard Title="Side Wagers"
+            <ModeCard Title="Side Wagers" Number="3"
                       Description="The dealer's up-card and the player's two cards are dealt. Settle 21 + 3, then Lucky Ladies, then Submit."
                       Expanded="@IsModeOpen(BlackjackMode.SideWagers)"
                       OnToggle="() => ToggleMode(BlackjackMode.SideWagers)"
@@ -502,9 +515,25 @@ else
 @code {
     // Menu link for this game tapped while it's already open: return to
     // the start screen, same as the Back button (hidden on phones).
+    // ?open=flash / payouts / side (from the Tutorial's "Practice this"
+    // links): that mode's card opens on the start screen
+    [SupplyParameterFromQuery(Name = "open")] public string? Open { get; set; }
+
     protected override void OnInitialized()
     {
         GameReset.ResetRequested += OnResetRequested;
+        BlackjackMode? fromLink = Open switch
+        {
+            "flash" => BlackjackMode.FlashCards,
+            "payouts" => BlackjackMode.Payouts,
+            "side" => BlackjackMode.SideWagers,
+            _ => null
+        };
+        if (fromLink is BlackjackMode m)
+        {
+            _openMode = m;
+            _mode = m;
+        }
     }
 
     private void OnResetRequested()

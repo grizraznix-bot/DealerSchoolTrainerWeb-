@@ -5,13 +5,14 @@
    The page decides which card is open (Expanded) and handles the tap
    (OnToggle), so it can keep only one card open at a time.
    Collapsible="false" is for a game with a single mode: the card is
-   always open and its title is not a button. *@
+   always open and its title is not a button. Number (optional) shows
+   the mode's place in the suggested practice order. *@
 
 <div class="mode-card @(Expanded || !Collapsible ? "mode-card-open" : "") @(Collapsible ? "" : "mode-card-static")">
     @if (Collapsible)
     {
         <button type="button" class="mode-header" aria-expanded="@(Expanded ? "true" : "false")" @onclick="OnToggle">
-            <span class="mode-title">@Title</span>
+            <span class="mode-title">@if (Number is not null) {<span class="mode-num">@Number</span>}@Title</span>
             <span class="mode-chevron" aria-hidden="true"></span>
         </button>
     }
@@ -39,6 +40,8 @@
 
 @code {
     [Parameter] public string Title { get; set; } = "";
+    // Suggested practice order: a small numbered circle before the title
+    [Parameter] public int? Number { get; set; }
     [Parameter] public string? Description { get; set; }
     [Parameter] public bool Expanded { get; set; }
     [Parameter] public bool Collapsible { get; set; } = true;

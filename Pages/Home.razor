@@ -18,21 +18,32 @@
         <img src="images/cards/TS.png" alt="10 of Spades" class="home-card" />
     </div>
 
-    <h2 class="home-heading">Pick a game</h2>
+    @* The games in two groups: the Dealer School course, numbered in the
+       order it's taught (shuffling and chips come first, in person), then
+       the games beyond Dealer School for working dealers; Challenge Mode
+       last. *@
+    <h2 class="home-heading">Dealer School course</h2>
+    <p class="home-sub">The games in the order they're taught.</p>
 
     <div class="home-games">
         <a class="home-game" href="blackjack-trainer">
-            <span class="home-game-name">Blackjack</span>
-            <span class="home-game-desc">Dealer totals, 3:2 and 6:5 payouts, and the 21&nbsp;+&nbsp;3 and Lucky Ladies side wagers</span>
+            <span class="home-game-name"><span class="home-num">1</span>Blackjack</span>
+            <span class="home-game-desc">Card totals, 3:2 payouts, and the 21&nbsp;+&nbsp;3 and Lucky Ladies side wagers. New? Start with the tutorial</span>
         </a>
         <a class="home-game" href="three-card-trainer">
-            <span class="home-game-name">Three Card Prime</span>
+            <span class="home-game-name"><span class="home-num">2</span>Three Card Prime</span>
             <span class="home-game-desc">Settle Play, Ante, Pair Bonus, Prime and All 6. Call them, or call and pay</span>
         </a>
         <a class="home-game" href="pai-gow">
-            <span class="home-game-name">Pai Gow</span>
+            <span class="home-game-name"><span class="home-num">3</span>Pai Gow</span>
             <span class="home-game-desc">Set hands the House Way, then settle Insurance, the Main Wager and Emperor's Treasure</span>
         </a>
+    </div>
+
+    <h2 class="home-heading">Beyond Dealer School</h2>
+    <p class="home-sub">More games and pays for working dealers, to prepare for what's next.</p>
+
+    <div class="home-games">
         <a class="home-game" href="holdem-trainer">
             <span class="home-game-name">Heads-Up Hold'em</span>
             <span class="home-game-desc">Find the dealer's best hand, then settle Raise, Ante, Odds, Trips Plus and Pocket Bonus</span>
@@ -40,6 +51,10 @@
         <a class="home-game" href="roulette">
             <span class="home-game-name">Roulette</span>
             <span class="home-game-desc">Pay the winning chips around the winning number, with math tricks for working out payouts</span>
+        </a>
+        <a class="home-game" href="blackjack-trainer?open=payouts">
+            <span class="home-game-name">Single Deck Blackjack</span>
+            <span class="home-game-desc">6:5 Blackjack payouts: choose 6:5 in Blackjack Payouts</span>
         </a>
         <a class="home-game home-game-challenge" href="challenge">
             <span class="home-game-name">Challenge Mode</span>

@@ -1,0 +1,199 @@
+@page "/blackjack-tutorial"
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Blackjack Tutorial</PageTitle>
+
+@* Blackjack Tutorial: game 1 of the Dealer School course. An intro
+   screen, five short illustrated steps (card values, hard and soft
+   totals, the dealer's hand, paying a Blackjack, side wagers), then a
+   finish screen with the suggested practice order. Steps 2-5 end with a
+   "Practice this" link that opens that mode on the Blackjack page.
+   Back / Next sit in the same pinned bottom bar as the games. Opened from
+   the "New to Blackjack?" card on the Blackjack page. *@
+<div class="play-screen tu-screen has-game-bar">
+    <div class="tu-head">
+        <b>Blackjack Tutorial</b>
+        <span>@(_step == 0 ? "About 3 minutes" : _step == LastStep ? "Complete" : $"Step {_step} of {StepCount}")</span>
+    </div>
+    @if (_step > 0)
+    {
+        <div class="tu-dots" aria-hidden="true">
+            @for (int i = 1; i <= StepCount; i++)
+            {
+                <i class="@(i < _step || _step == LastStep ? "tu-done" : i == _step ? "tu-on" : "")"></i>
+            }
+        </div>
+    }
+
+    @switch (_step)
+    {
+        case 0:
+            <div class="felt tu-felt">
+                <div class="tu-hero">
+                    <img src="images/cards/AS.png" alt="Ace of Spades" />
+                    <img src="images/cards/KH.png" alt="King of Hearts" />
+                </div>
+                <div class="tu-tot">Blackjack<small>Game 1 of the Dealer School course</small></div>
+            </div>
+            <p>Learn what you'll be doing on the Blackjack table, one short step at a time. Each step ends with a practice mode you can jump into.</p>
+            <ol class="tu-steps">
+                <li><div><b>Card values</b><span>What each card counts</span></div></li>
+                <li><div><b>Hard and soft totals</b><span>When the Ace is 1 or 11</span></div></li>
+                <li><div><b>The dealer's hand</b><span>Hit or stand, house rule</span></div></li>
+                <li><div><b>Paying a Blackjack</b><span>3 to 2</span></div></li>
+                <li><div><b>Side wagers</b><span>21 + 3, then Lucky Ladies</span></div></li>
+            </ol>
+            break;
+
+        case 1:
+            <h2 class="tu-title">Card values</h2>
+            <p>Suits don't matter in Blackjack. Only the number counts.</p>
+            <div class="tu-grid">
+                <div class="tu-vt">
+                    <div class="tu-vt-cards"><img src="images/cards/2D.png" alt="2" /><img src="images/cards/9C.png" alt="9" /></div>
+                    <b>2 – 9</b><span>count as shown</span>
+                </div>
+                <div class="tu-vt">
+                    <div class="tu-vt-cards"><img src="images/cards/TS.png" alt="10" /><img src="images/cards/JH.png" alt="Jack" /><img src="images/cards/QC.png" alt="Queen" /><img src="images/cards/KD.png" alt="King" /></div>
+                    <b>10</b><span>10, J, Q, K</span>
+                </div>
+                <div class="tu-vt">
+                    <div class="tu-vt-cards"><img src="images/cards/AH.png" alt="Ace" /></div>
+                    <b>1 or 11</b><span>Ace</span>
+                </div>
+            </div>
+            <div class="felt tu-felt">
+                <div class="tu-cap">EXAMPLE</div>
+                <div class="tu-cards"><img src="images/cards/8C.png" alt="8 of Clubs" /><img src="images/cards/QH.png" alt="Queen of Hearts" /></div>
+                <div class="tu-tot">8 + 10 = 18</div>
+            </div>
+            <div class="tu-tip">Count from the left the same way every time. Speed comes from a steady habit, not from rushing.</div>
+            break;
+
+        case 2:
+            <h2 class="tu-title">Hard and soft totals</h2>
+            <p>An Ace counts as <b>11</b> unless that would go over 21; then it counts as <b>1</b>. A hand with an Ace counted as 11 is <b>soft</b>.</p>
+            <div class="tu-row2">
+                <div class="felt tu-felt">
+                    <div class="tu-cap">SOFT</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/AS.png" alt="Ace" /><img src="images/cards/6H.png" alt="6" /></div>
+                    <div class="tu-tot">Soft 17<small>7 or 17</small></div>
+                </div>
+                <div class="felt tu-felt">
+                    <div class="tu-cap">HARD</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/AS.png" alt="Ace" /><img src="images/cards/6H.png" alt="6" /><img src="images/cards/9C.png" alt="9" /></div>
+                    <div class="tu-tot">16<small>Ace now counts 1</small></div>
+                </div>
+            </div>
+            <div class="tu-row2">
+                <div class="felt tu-felt">
+                    <div class="tu-cap">BLACKJACK</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/AD.png" alt="Ace" /><img src="images/cards/KS.png" alt="King" /></div>
+                    <div class="tu-tot">21<small>first 2 cards only</small></div>
+                </div>
+                <div class="felt tu-felt">
+                    <div class="tu-cap">BUST</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/KC.png" alt="King" /><img src="images/cards/7D.png" alt="7" /><img src="images/cards/5S.png" alt="5" /></div>
+                    <div class="tu-tot">22<small>over 21 loses</small></div>
+                </div>
+            </div>
+            <a class="tu-practice" href="blackjack-trainer?open=flash">Practice this: Flash Cards <span aria-hidden="true">›</span></a>
+            break;
+
+        case 3:
+            <h2 class="tu-title">The dealer's hand</h2>
+            <p>The dealer has no choices. The rule printed on the felt decides every hit.</p>
+            <div class="felt tu-felt">
+                <div class="tu-cards"><img src="images/cards/AC.png" alt="Ace of Clubs" /><img src="images/cards/6D.png" alt="6 of Diamonds" /></div>
+                <div class="tu-tot">Soft 17 → <span class="tu-gold">HIT</span></div>
+                <div class="tu-rule">DEALER MUST HIT SOFT 17</div>
+            </div>
+            <div class="tu-line"><div><b>16 or less</b><span>Hit</span></div><em class="tu-hit">HIT</em></div>
+            <div class="tu-line"><div><b>Soft 17</b><span>Hit (house rule)</span></div><em class="tu-hit">HIT</em></div>
+            <div class="tu-line"><div><b>Hard 17 or more, soft 18 or more</b><span>Stand</span></div><em class="tu-stand">STAND</em></div>
+            <a class="tu-practice" href="blackjack-trainer?open=flash">Practice this: Flash Cards <span aria-hidden="true">›</span></a>
+            break;
+
+        case 4:
+            <h2 class="tu-title">Paying a Blackjack</h2>
+            <p>A player Blackjack is paid 3 to 2. Every other win pays even money.</p>
+            <div class="felt tu-felt">
+                <div class="tu-cards"><img src="images/cards/AH.png" alt="Ace of Hearts" /><img src="images/cards/QS.png" alt="Queen of Spades" /></div>
+                <div class="tu-rule">BLACKJACK PAYS 3 TO 2</div>
+            </div>
+            <div class="tu-line"><span class="tu-chip">$20</span><div><b>$20 wager</b><span>20 + half (10)</span></div><em>$30</em></div>
+            <div class="tu-line"><span class="tu-chip">$25</span><div><b>$25 wager</b><span>25 + half (12.50)</span></div><em>$37.50</em></div>
+            <div class="tu-tip">3 to 2 is the wager plus half the wager. An odd dollar amount always ends in 50¢.</div>
+            <a class="tu-practice" href="blackjack-trainer?open=payouts">Practice this: Blackjack Payouts <span aria-hidden="true">›</span></a>
+            break;
+
+        case 5:
+            <h2 class="tu-title">Side wagers</h2>
+            <p>Once all cards are dealt, settle <b>21 + 3</b>, then <b>Lucky Ladies</b>, then progressives, <b>before</b> the dealer checks for Blackjack.</p>
+            <div class="felt tu-felt tu-sw">
+                <div>
+                    <div class="tu-cap">PLAYER</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/9H.png" alt="9 of Hearts" /><img src="images/cards/TH.png" alt="10 of Hearts" /></div>
+                </div>
+                <div>
+                    <div class="tu-cap">DEALER UP</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/JH.png" alt="Jack of Hearts" /></div>
+                </div>
+            </div>
+            <div class="tu-line"><div><div><b>21 + 3</b>: player's 2 cards + dealer's up-card</div><span><SuitText Text="9♥ 10♥ J♥ = Straight Flush, 30 to 1" /></span></div></div>
+            <div class="tu-line"><div><div><b>Lucky Ladies</b>: player's 2 cards total 20</div><span><SuitText Text="9♥ 10♥ = 19, loses" /></span></div></div>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">CALL SUPERVISOR</span> A Queen of Hearts pair with an Ace or 10-value card up: a supervisor approves the peek before Lucky Ladies is settled.</div>
+            <a class="tu-practice" href="blackjack-trainer?open=side">Practice this: Side Wagers <span aria-hidden="true">›</span></a>
+            break;
+
+        default:
+            <div class="felt tu-felt tu-finish">
+                <div class="tu-spade">♠</div>
+                <div class="tu-tot">Nice work!<small>You've covered the basics of Blackjack.</small></div>
+            </div>
+            <p><b>Suggested practice order</b></p>
+            <div class="tu-order">
+                <a class="tu-next" href="blackjack-trainer?open=flash"><i>1</i><b>Flash Cards</b><small>totals, soft hands</small></a>
+                <a href="blackjack-trainer?open=payouts"><i>2</i><b>Blackjack Payouts</b><small>3:2</small></a>
+                <a href="blackjack-trainer?open=side"><i>3</i><b>Side Wagers</b><small>21 + 3, Lucky Ladies</small></a>
+                <a href="challenge"><i>4</i><b>Challenge Mode</b><small>when you're ready</small></a>
+            </div>
+            <p class="tu-muted">Next in the course: <b>Three Card Prime</b>. You can reopen this tutorial any time from the Blackjack page.</p>
+            break;
+    }
+
+    <div class="game-bar tu-bar">
+        @if (_step == 0)
+        {
+            <button type="button" @onclick='() => Nav.NavigateTo("blackjack-trainer")'>Close</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">Start</button>
+        }
+        else if (_step == LastStep)
+        {
+            <button type="button" @onclick="() => Go(0)">Review</button>
+            <button type="button" class="game-bar-main" @onclick='() => Nav.NavigateTo("blackjack-trainer?open=flash")'>Start Flash Cards</button>
+        }
+        else
+        {
+            <button type="button" @onclick="() => Go(_step - 1)">Back</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">@(_step == StepCount ? "Finish" : "Next")</button>
+        }
+    </div>
+</div>
+
+@code {
+    private const int StepCount = 5;
+    private const int LastStep = StepCount + 1;
+
+    // 0 = intro, 1-5 = the steps, 6 = finish
+    private int _step;
+
+    private void NextStep() => Go(_step + 1);
+
+    private async Task Go(int step)
+    {
+        _step = Math.Clamp(step, 0, LastStep);
+        try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+    }
+}
