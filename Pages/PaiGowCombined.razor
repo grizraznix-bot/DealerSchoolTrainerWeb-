@@ -12,12 +12,24 @@
     <div class="start-screen">
         <h1>PAI GOW</h1>
 
+        <a class="tu-entry" href="pai-gow-tutorial">
+            <span class="tu-entry-cards">
+                <img src="images/cards/JOKER.png" alt="" />
+                <img src="images/cards/AS.png" alt="" />
+            </span>
+            <span class="tu-entry-text">
+                <b>New to Pai Gow?</b>
+                <span>Start with the 5-minute tutorial.</span>
+            </span>
+            <span class="tu-entry-btn">Tutorial</span>
+        </a>
+
         @* Each mode is a collapsible card: tap its title to open its
            settings and its own Start button (one card open at a time).
            Settling Bets is played Call Only or Call & Pay. Each mode keeps
            its own Joker Frequency rather than one shared value. *@
         <div class="mode-list">
-            <ModeCard Title="Hand Setting"
+            <ModeCard Title="Hand Setting" Number="1"
                       Description="Arrange your 7 cards into a 5-card High hand and a 2-card Low hand per the House Way, then Submit."
                       Expanded="@IsModeOpen(PaiGowMode.HandSetting)"
                       OnToggle="() => ToggleMode(PaiGowMode.HandSetting)"
@@ -46,7 +58,7 @@
                 </div>
             </ModeCard>
 
-            <ModeCard Title="Settling Bets"
+            <ModeCard Title="Settling Bets" Number="2"
                       Description="Both hands are dealt and set. Settle Insurance, the Main Wager and Emperor's Treasure in order, then Submit."
                       Expanded="@IsModeOpen(PaiGowMode.SettlingBets)"
                       OnToggle="() => ToggleMode(PaiGowMode.SettlingBets)"
@@ -630,8 +642,25 @@ else
 @code {
     // Menu link for this game tapped while it's already open: return to
     // the start screen, same as the Back button (hidden on phones).
+    // ?open=hand, ?open=call or ?open=pay (from the tutorial's practice
+    // links): open that mode's card on the start screen (call / pay =
+    // Settling Bets with Call Only or Call & Pay chosen)
+    [SupplyParameterFromQuery(Name = "open")] public string? Open { get; set; }
+
     protected override void OnInitialized()
     {
+        PaiGowMode? fromLink = Open switch
+        {
+            "hand" => PaiGowMode.HandSetting,
+            "call" or "pay" => PaiGowMode.SettlingBets,
+            _ => null
+        };
+        if (fromLink is PaiGowMode m)
+        {
+            _openMode = m;
+            _mode = m;
+            _pgPay = Open == "pay";
+        }
         GameReset.ResetRequested += OnResetRequested;
     }
 

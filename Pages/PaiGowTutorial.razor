@@ -1,0 +1,260 @@
+@page "/pai-gow-tutorial"
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Pai Gow Tutorial</PageTitle>
+
+@* Pai Gow Tutorial: game 3 of the Dealer School course. An intro screen,
+   seven short illustrated steps (two hands, rankings and the Joker, the
+   House Way, the Main Wager, Insurance, Emperor's Treasure, settling
+   order), then a finish screen with the suggested practice order.
+   Practice links open the Pai Gow page with that mode's card open
+   (Settling Bets with Call Only or Call & Pay chosen). Back / Next sit in
+   the same pinned bottom bar as the games. Opened from the "New to Pai
+   Gow?" card on the Pai Gow page. *@
+<div class="play-screen tu-screen has-game-bar">
+    <div class="tu-head">
+        <b>Pai Gow Tutorial</b>
+        <span>@(_step == 0 ? "About 5 minutes" : _step == LastStep ? "Complete" : $"Step {_step} of {StepCount}")</span>
+    </div>
+    @if (_step > 0)
+    {
+        <div class="tu-dots" aria-hidden="true">
+            @for (int i = 1; i <= StepCount; i++)
+            {
+                <i class="@(i < _step || _step == LastStep ? "tu-done" : i == _step ? "tu-on" : "")"></i>
+            }
+        </div>
+    }
+
+    @switch (_step)
+    {
+        case 0:
+            <div class="felt tu-felt">
+                <div class="tu-hero tu-hero3">
+                    <img src="images/cards/AH.png" alt="Ace of Hearts" />
+                    <img src="images/cards/JOKER.png" alt="Joker" />
+                    <img src="images/cards/AS.png" alt="Ace of Spades" />
+                </div>
+                <div class="tu-tot">Pai Gow<small>Game 3 of the Dealer School course</small></div>
+            </div>
+            <p>Seven cards, set into two hands. You'll set hands the House Way, then settle up to three wagers, always in the same order.</p>
+            <ol class="tu-steps">
+                <li><div><b>Two hands</b><span>Low (2 cards) and High (5 cards)</span></div></li>
+                <li><div><b>Rankings and the Joker</b><span>Five Aces is the top hand</span></div></li>
+                <li><div><b>The House Way</b><span>How the dealer sets a hand</span></div></li>
+                <li><div><b>The Main Wager</b><span>Win both, push one, lose both</span></div></li>
+                <li><div><b>Pai Gow Insurance</b><span>Pays on no hand at all</span></div></li>
+                <li><div><b>Emperor's Treasure</b><span>Best hand in all 7 cards</span></div></li>
+                <li><div><b>Settling order</b><span>Insurance first, Emperor's last</span></div></li>
+            </ol>
+            break;
+
+        case 1:
+            <h2 class="tu-title">Two hands</h2>
+            <p>The 7 cards are set into a <b>Low hand</b> of 2 cards (in front) and a <b>High hand</b> of 5 cards (in back).</p>
+            <div class="felt tu-felt">
+                <div class="tu-cap">DEALT</div>
+                @Cards("tu-xs", "KS", "9H", "9C", "7D", "5S", "3H", "2C")
+            </div>
+            @Hand("tu-felt", "ONE PAIR", new[] { "KS", "7D" }, new[] { "9H", "9C", "5S", "3H", "2C" }, "Pair of 9s High, King-7 Low")
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">FOUL</span> The High hand must outrank the Low hand. If it doesn't, the hand is fouled: call the floor.</div>
+            break;
+
+        case 2:
+            <h2 class="tu-title">Rankings and the Joker</h2>
+            <p>The High hand uses five-card poker rankings, with <b>Five Aces</b> on top. The Low hand counts only pairs and high cards.</p>
+            <table class="tu-pt">
+                <tr><td>Five Aces</td><td>1</td></tr>
+                <tr><td>Royal Flush</td><td>2</td></tr>
+                <tr><td>Straight Flush</td><td>3</td></tr>
+                <tr><td>Four of a Kind, Full House, Flush</td><td>4 – 6</td></tr>
+                <tr><td>Straight (A-2-3-4-5 is the 2nd highest)</td><td>7</td></tr>
+                <tr><td>Three of a Kind, Two Pair, One Pair</td><td>8 – 10</td></tr>
+                <tr><td>High card</td><td>11</td></tr>
+            </table>
+            <p>The <b>Joker</b> counts as an Ace, or completes a Straight, Flush, Straight Flush or Royal Flush.</p>
+            <div class="felt tu-felt tu-stack">
+                <div>
+                    <div class="tu-cap">AS AN ACE</div>
+                    @Cards("tu-sm", "JOKER", "AH", "AD")
+                    <div class="tu-tot">Three Aces</div>
+                </div>
+                <div>
+                    <div class="tu-cap">FILLS A STRAIGHT</div>
+                    @Cards("tu-sm", "5C", "6D", "JOKER", "8S", "9H")
+                    <div class="tu-tot">5 to 9 Straight</div>
+                </div>
+            </div>
+            break;
+
+        case 3:
+            <h2 class="tu-title">The House Way</h2>
+            <p>The dealer always sets a hand the same way, by the <b>House Way</b>. The most common hands:</p>
+            <div class="tu-line"><div><b>No pair (Pai Gow)</b><span>Highest card High; 2nd and 3rd highest Low</span></div></div>
+            <div class="tu-line"><div><b>One pair</b><span>Pair High; the two highest other cards Low</span></div></div>
+            <div class="tu-line"><div><b>Two pair, no Ace</b><span>Split if a pair is 7s or better: the lower pair goes Low</span></div></div>
+            @Hand("tu-felt", "TWO PAIR, KINGS AND 4s", new[] { "4D", "4S" }, new[] { "KH", "KC", "QS", "8D", "3C" }, "Kings are 7s or better: split")
+            <div class="tu-tip">The rest of the House Way is in Hand Setting's Help, and Advanced deals more of those special-rule hands.</div>
+            <a class="tu-practice" href="pai-gow?open=hand">Practice this: Hand Setting <span aria-hidden="true">›</span></a>
+            break;
+
+        case 4:
+            <h2 class="tu-title">The Main Wager</h2>
+            <p>Each player's High hand plays the dealer's High hand, and Low plays Low. <b>No commission.</b></p>
+            <table class="tu-pt">
+                <tr><td>Player wins both hands</td><td>1 to 1</td></tr>
+                <tr><td>Player wins one hand</td><td>PUSH</td></tr>
+                <tr><td>Dealer wins both hands</td><td class="tu-lose">LOSE</td></tr>
+            </table>
+            <div class="felt tu-felt tu-two">
+                <div>
+                    <div class="tu-cap">PLAYER LOW</div>
+                    @Cards("tu-sm", "KD", "QC")
+                </div>
+                <div>
+                    <div class="tu-cap">DEALER LOW</div>
+                    @Cards("tu-sm", "KS", "QH")
+                </div>
+            </div>
+            <div class="tu-tip"><b>A copy goes to the dealer.</b> When a hand ties exactly (a copy), the dealer wins that hand.</div>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">HOUSE RULE</span> Dealer has an Ace-high Pai Gow (no pair, Ace high): every Main Wager pushes.</div>
+            <a class="tu-practice" href="pai-gow?open=call">Practice this: Settling Bets <span aria-hidden="true">›</span></a>
+            break;
+
+        case 5:
+            <h2 class="tu-title">Pai Gow Insurance</h2>
+            <p>Pays when the <b>player's 7 cards</b> make no hand at all: no pair, Straight or Flush (a Pai Gow). The highest card sets the pay. The Joker counts as an Ace.</p>
+            <div class="felt tu-felt">
+                @Cards("tu-xs", "TS", "8H", "7C", "5D", "4S", "3H", "2C")
+                <div class="tu-tot">10 high Pai Gow<small>Insurance 25 to 1</small></div>
+            </div>
+            <table class="tu-pt">
+                <tr><td>9 high</td><td>100 to 1</td></tr>
+                <tr class="tu-hl"><td>10 high</td><td>25 to 1</td></tr>
+                <tr><td>Jack high</td><td>15 to 1</td></tr>
+                <tr><td>Queen high</td><td>6 to 1</td></tr>
+                <tr><td>King high</td><td>5 to 1</td></tr>
+                <tr><td>Ace high</td><td>3 to 1</td></tr>
+            </table>
+            break;
+
+        case 6:
+            <h2 class="tu-title">Emperor's Treasure</h2>
+            <p>The <b>best hand in the player's 7 cards</b>, however the hand is set.</p>
+            <div class="felt tu-felt">
+                @Cards("tu-xs", "QS", "QH", "QD", "6C", "6S", "9H", "2D")
+                <div class="tu-tot">Full House<small>Emperor's Treasure 5 to 1</small></div>
+            </div>
+            <table class="tu-pt">
+                <tr><td>7-Card Straight Flush, no Joker</td><td>2,500 to 1</td></tr>
+                <tr><td>Royal Flush + A-K suited</td><td>1,000 to 1</td></tr>
+                <tr><td>7-Card Straight Flush with Joker</td><td>750 to 1</td></tr>
+                <tr><td>Five Aces</td><td>250 to 1</td></tr>
+                <tr><td>Royal Flush</td><td>125 to 1</td></tr>
+                <tr><td>Straight Flush</td><td>50 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
+                <tr class="tu-hl"><td>Full House</td><td>5 to 1</td></tr>
+                <tr><td>Flush</td><td>4 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
+                <tr><td>Straight</td><td>2 to 1</td></tr>
+            </table>
+            <div class="tu-tip">The top seven hands also carry an Envy Bonus. The trainer shows it as a tip after Submit.</div>
+            break;
+
+        case 7:
+            <h2 class="tu-title">Settling order</h2>
+            <p>Settle every hand the same way, top to bottom, so nothing is missed.</p>
+            <ol class="tu-ord">
+                <li><b>Pai Gow Insurance</b><small>player's 7 cards</small></li>
+                <li><b>Main Wager</b><small>1 to 1</small></li>
+                <li><b>Emperor's Treasure</b><small>player's 7 cards</small></li>
+            </ol>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">CALL THE FLOOR</span> A fouled hand stops the game. Call the floor before going any further.</div>
+            <a class="tu-practice" href="pai-gow?open=pay">Practice this: Settling Bets, Call &amp; Pay <span aria-hidden="true">›</span></a>
+            break;
+
+        default:
+            <div class="felt tu-felt tu-finish">
+                <div class="tu-spade">♦</div>
+                <div class="tu-tot">Nice work!<small>You've covered the basics of Pai Gow.</small></div>
+            </div>
+            <p><b>Suggested practice order</b></p>
+            <div class="tu-order">
+                <a class="tu-next" href="pai-gow?open=hand"><i>1</i><b>Hand Setting</b><small>Normal, then Advanced</small></a>
+                <a href="pai-gow?open=call"><i>2</i><b>Settling Bets</b><small>Call Only</small></a>
+                <a href="pai-gow?open=pay"><i>3</i><b>Settling Bets</b><small>Call &amp; Pay</small></a>
+            </div>
+            <p class="tu-muted">That's all three Dealer School course games. When you're ready, try Challenge Mode or a game from Beyond Dealer School. You can reopen this tutorial any time from the Pai Gow page.</p>
+            break;
+    }
+
+    <div class="game-bar tu-bar">
+        @if (_step == 0)
+        {
+            <button type="button" @onclick='() => Nav.NavigateTo("pai-gow")'>Close</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">Start</button>
+        }
+        else if (_step == LastStep)
+        {
+            <button type="button" @onclick="() => Go(0)">Review</button>
+            <button type="button" class="game-bar-main" @onclick='() => Nav.NavigateTo("pai-gow?open=hand")'>Start Hand Setting</button>
+        }
+        else
+        {
+            <button type="button" @onclick="() => Go(_step - 1)">Back</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">@(_step == StepCount ? "Finish" : "Next")</button>
+        }
+    </div>
+</div>
+
+@code {
+    private const int StepCount = 7;
+    private const int LastStep = StepCount + 1;
+
+    // 0 = intro, 1-7 = the steps, 8 = finish
+    private int _step;
+
+    private void NextStep() => Go(_step + 1);
+
+    private async Task Go(int step)
+    {
+        _step = Math.Clamp(step, 0, LastStep);
+        try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+    }
+
+    // A row of cards by image name ("KS", "JOKER"); size = tu-sm or tu-xs
+    private static RenderFragment Cards(string size, params string[] codes) => __builder =>
+    {
+        <div class="tu-cards @size">
+            @foreach (var c in codes)
+            {
+                <img src="images/cards/@(c).png" alt="@CardName(c)" />
+            }
+        </div>
+    };
+
+    // A set hand on felt: Low row over High row (the same order as the
+    // Pai Gow zoom), with a caption and a note under it
+    private static RenderFragment Hand(string cls, string caption, string[] low, string[] high, string note) => __builder =>
+    {
+        <div class="felt @cls tu-pg">
+            <div class="tu-cap">@caption</div>
+            <div class="tu-pg-row"><span>LOW</span>@Cards("tu-sm", low)</div>
+            <div class="tu-pg-row"><span>HIGH</span>@Cards("tu-sm", high)</div>
+            <div class="tu-tot"><small>@note</small></div>
+        </div>
+    };
+
+    private static string CardName(string code)
+    {
+        if (code == "JOKER") return "Joker";
+        string rank = code[0] switch
+        {
+            'A' => "Ace", 'K' => "King", 'Q' => "Queen", 'J' => "Jack", 'T' => "10",
+            char d => d.ToString()
+        };
+        string suit = code[1] switch { 'S' => "Spades", 'H' => "Hearts", 'D' => "Diamonds", _ => "Clubs" };
+        return $"{rank} of {suit}";
+    }
+}
