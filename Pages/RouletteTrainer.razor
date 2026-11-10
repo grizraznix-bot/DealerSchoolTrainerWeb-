@@ -20,6 +20,15 @@
     <div class="start-screen">
         <h1>ROULETTE</h1>
 
+        <a class="tu-entry" href="roulette-tutorial">
+            <span class="tu-entry-chips" aria-hidden="true"><i>35</i><i>17</i></span>
+            <span class="tu-entry-text">
+                <b>New to Roulette?</b>
+                <span>Start with the 3-minute tutorial.</span>
+            </span>
+            <span class="tu-entry-btn">Tutorial</span>
+        </a>
+
         <div class="mode-list">
             <ModeCard Title="Roulette Payouts"
                       Description="The winning chips around the winning number are shown. Enter the total payout in chips."
@@ -219,8 +228,18 @@ else
     private bool _focusNext;
     private bool _lastRenderedStarted;
 
+    // ?level=beginner / intermediate / advanced (from the tutorial's
+    // practice links): choose that Level on the start screen
+    [SupplyParameterFromQuery(Name = "level")] public string? LevelFromLink { get; set; }
+
     protected override void OnInitialized()
     {
+        _level = LevelFromLink switch
+        {
+            "intermediate" => RouletteLevel.Intermediate,
+            "advanced" => RouletteLevel.Advanced,
+            _ => _level
+        };
         GameReset.ResetRequested += OnResetRequested;
     }
 

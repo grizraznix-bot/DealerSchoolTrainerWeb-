@@ -1,0 +1,159 @@
+@page "/roulette-tutorial"
+@using DealerSchoolTrainerWeb.Games.RouletteTrainer
+@using static DealerSchoolTrainerWeb.Games.RouletteTrainer.RouletteLayout
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Roulette Tutorial</PageTitle>
+
+@* Roulette Tutorial: a Beyond Dealer School game. An intro screen, four
+   short steps (the close-up around 17, the inside bets and what they pay,
+   paying in chips, math tricks), then a finish screen with the suggested
+   practice order (Beginner, Intermediate, Advanced). The layout pictures
+   are the game's own board (Shared/RouletteBoard). Back / Next sit in the
+   same pinned bottom bar as the games. Opened from the "New to Roulette?"
+   card on the Roulette page. *@
+<div class="play-screen tu-screen has-game-bar">
+    <div class="tu-head">
+        <b>Roulette Tutorial</b>
+        <span>@(_step == 0 ? "About 3 minutes" : _step == LastStep ? "Complete" : $"Step {_step} of {StepCount}")</span>
+    </div>
+    @if (_step > 0)
+    {
+        <div class="tu-dots" aria-hidden="true">
+            @for (int i = 1; i <= StepCount; i++)
+            {
+                <i class="@(i < _step || _step == LastStep ? "tu-done" : i == _step ? "tu-on" : "")"></i>
+            }
+        </div>
+    }
+
+    @switch (_step)
+    {
+        case 0:
+            <div class="felt tu-felt">
+                <div class="tu-rl-hero" aria-hidden="true">
+                    <span class="rl-num rl-black">17</span>
+                    <i class="rl-chip">35</i>
+                </div>
+                <div class="tu-tot">Roulette<small>Beyond Dealer School</small></div>
+            </div>
+            <p>The ball lands, the losing chips come off, and you pay the winners. Roulette Payouts drills the inside bets around the winning number, paid in chips.</p>
+            <ol class="tu-steps">
+                <li><div><b>The close-up</b><span>The rows around the winning number</span></div></li>
+                <li><div><b>The inside bets</b><span>Straight up 35, down to Six-line 5</span></div></li>
+                <li><div><b>Paying in chips</b><span>Winnings only, added up</span></div></li>
+                <li><div><b>Math tricks</b><span>More than one way to each pay</span></div></li>
+            </ol>
+            break;
+
+        case 1:
+            <h2 class="tu-title">The close-up</h2>
+            <p>The trainer always uses <b>17</b> as the winning number and shows the rows around it. Only the <b>winning chips</b> are left on the layout.</p>
+            <RouletteBoard Wagers="@(new[] { new PlacedWager(Spots[0], 2) })" />
+            <p>A chip sits on the spot it bets: in the middle of a number, on a line between numbers, or on the outside line for a row. The number on each chip is <b>how many chips</b> are in that stack.</p>
+            break;
+
+        case 2:
+            <h2 class="tu-title">The inside bets</h2>
+            <p>Every spot that wins on 17. The fewer numbers a bet covers, the more it pays. The chips here show what each spot pays.</p>
+            <RouletteBoard Wagers="ExampleBets" ChipText="@(w => w.Spot.Pays.ToString())" />
+            <table class="tu-pt">
+                <tr><td><b>Straight up</b>: 17 alone</td><td>35 to 1</td></tr>
+                <tr><td><b>Split</b>: 2 numbers, on a line</td><td>17 to 1</td></tr>
+                <tr><td><b>Street</b>: a row of 3, outside line</td><td>11 to 1</td></tr>
+                <tr><td><b>Corner</b>: 4 numbers, where lines cross</td><td>8 to 1</td></tr>
+                <tr><td><b>Six-line</b>: 2 rows, outside line</td><td>5 to 1</td></tr>
+            </table>
+            <div class="tu-tip">17 has 4 splits and 4 corners around it, a street and 2 six-lines: 12 winning spots in all.</div>
+            break;
+
+        case 3:
+            <h2 class="tu-title">Paying in chips</h2>
+            <p>Pay each stack by what its spot pays, then add them up. Answer in <b>chips</b>, <b>winnings only</b>: the chips on the layout stay with the player and aren't counted.</p>
+            <RouletteBoard Wagers="PayExample" />
+            <table class="tu-pt">
+                @foreach (PlacedWager w in PayExample.OrderByDescending(w => w.Spot.Pays))
+                {
+                    <tr><td>@w.Spot.Name: @w.Chips × @w.Spot.Pays</td><td>@(w.Chips * w.Spot.Pays)</td></tr>
+                }
+                <tr class="tu-hl"><td><b>Total payout</b></td><td>@Total(PayExample) chips</td></tr>
+            </table>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">CALL THE FLOOR</span> A mistake is never fixed on your own. Call the floor before going any further.</div>
+            <a class="tu-practice" href="roulette">Practice this: Roulette Payouts <span aria-hidden="true">›</span></a>
+            break;
+
+        case 4:
+            <h2 class="tu-title">Math tricks</h2>
+            <p>There's more than one way to work out each pay. Learn two or three: if one doesn't come to you at the table, switch to another.</p>
+            <div class="tu-line"><span class="tu-rl-x">×35</span><div><b>Half the chips, times 70</b><span>4 chips: 2 × 70 = 140</span></div></div>
+            <div class="tu-line"><span class="tu-rl-x">×17</span><div><b>Twenty minus three</b><span>3 chips: 60 − 9 = 51</span></div></div>
+            <div class="tu-line"><span class="tu-rl-x">×11</span><div><b>Put the digit sum in the middle</b><span>23 chips: 2 (2+3) 3 = 253</span></div></div>
+            <div class="tu-line"><span class="tu-rl-x">×8</span><div><b>Double, double, double</b><span>5 chips: 10, 20, 40</span></div></div>
+            <div class="tu-line"><span class="tu-rl-x">×5</span><div><b>Times 10, then half</b><span>9 chips: 90, half is 45</span></div></div>
+            <a class="tu-practice" href="roulette-math">See every trick: Math Tricks <span aria-hidden="true">›</span></a>
+            break;
+
+        default:
+            <div class="felt tu-felt tu-finish">
+                <div class="tu-spade">♦</div>
+                <div class="tu-tot">Nice work!<small>You've covered the basics of Roulette Payouts.</small></div>
+            </div>
+            <p><b>Suggested practice order</b></p>
+            <div class="tu-order">
+                <a class="tu-next" href="roulette"><i>1</i><b>Beginner</b><small>single chips</small></a>
+                <a href="roulette?level=intermediate"><i>2</i><b>Intermediate</b><small>stacks up to 2</small></a>
+                <a href="roulette?level=advanced"><i>3</i><b>Advanced</b><small>stacks up to 5</small></a>
+                <a href="challenge"><i>4</i><b>Challenge Mode</b><small>when you're ready</small></a>
+            </div>
+            <p class="tu-muted">Start with a few wagers and add more as the pays come quicker. You can reopen this tutorial any time from the Roulette page.</p>
+            break;
+    }
+
+    <div class="game-bar tu-bar">
+        @if (_step == 0)
+        {
+            <button type="button" @onclick='() => Nav.NavigateTo("roulette")'>Close</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">Start</button>
+        }
+        else if (_step == LastStep)
+        {
+            <button type="button" @onclick="() => Go(0)">Review</button>
+            <button type="button" class="game-bar-main" @onclick='() => Nav.NavigateTo("roulette")'>Start Practice</button>
+        }
+        else
+        {
+            <button type="button" @onclick="() => Go(_step - 1)">Back</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">@(_step == StepCount ? "Finish" : "Next")</button>
+        }
+    </div>
+</div>
+
+@code {
+    private const int StepCount = 4;
+    private const int LastStep = StepCount + 1;
+
+    // 0 = intro, 1-4 = the steps, 5 = finish
+    private int _step;
+
+    // Step 2: one of each kind of bet (Straight up, Split 17/18, Street,
+    // Corner 17/18/20/21, Six-line 16-21)
+    private static readonly PlacedWager[] ExampleBets =
+    {
+        new(Spots[0], 1), new(Spots[3], 1), new(Spots[5], 1), new(Spots[9], 1), new(Spots[11], 1)
+    };
+
+    // Step 3: Straight up 3, Split 16/17 2, Corner 17/18/20/21 4
+    private static readonly PlacedWager[] PayExample =
+    {
+        new(Spots[0], 3), new(Spots[2], 2), new(Spots[9], 4)
+    };
+
+    private void NextStep() => Go(_step + 1);
+
+    private async Task Go(int step)
+    {
+        _step = Math.Clamp(step, 0, LastStep);
+        try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+    }
+}

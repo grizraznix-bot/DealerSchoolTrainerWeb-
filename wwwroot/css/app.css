@@ -7446,6 +7446,67 @@ body {
     margin-left: calc(var(--cw) * -0.42);
 }
 
+/* Roulette tutorial: the winning number with a chip on it (intro), the
+   two chips on the Roulette page's entry card, and the pay labels
+   beside the math tricks. The board pictures are Shared/RouletteBoard. */
+.tu-rl-hero {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    margin: 0.75rem 0 0.25rem 0;
+}
+
+.tu-rl-hero .rl-num {
+    width: 84px;
+    height: 84px;
+    font-size: 2.4rem;
+    box-shadow: 0 0 0 4px #ffd700;
+}
+
+.tu-rl-hero .rl-chip {
+    top: 70%;
+    left: calc(50% + 40px);
+    width: 44px;
+    height: 44px;
+    font-style: normal;
+}
+
+.tu-entry-chips {
+    display: flex;
+    flex: 0 0 auto;
+}
+
+.tu-entry-chips i {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 4px dashed white;
+    border-radius: 50%;
+    background-color: #f2c400;
+    box-shadow: 0 0 0 2px #7a5c00;
+    color: #222;
+    font-size: 0.85rem;
+    font-style: normal;
+    font-weight: 900;
+}
+
+.tu-entry-chips i + i {
+    margin-left: -8px;
+}
+
+.tu-rl-x {
+    flex: 0 0 2.6rem;
+    color: var(--c-felt);
+    font-size: 1.05rem;
+    font-weight: 900;
+}
+
+.tu-screen .rl-felt {
+    margin: 0.5rem 0;
+}
+
 /* A card that isn't part of the hand (Hold'em: the 2 unused of 7) */
 .tu-cards img.tu-dim {
     opacity: 0.4;

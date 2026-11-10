@@ -4,7 +4,7 @@
 @* The layout close-up (shared by Roulette and Roulette in Challenge
    Mode). Rows 10-12 and 22-24 are only partly shown and faded, so the
    eye goes to the rows around 17. Chips sit on the lines/centers of the
-   spots they bet on; the number on each is how many chips. *@
+   spots they bet on; the number on each is how many chips (or ChipText). *@
 
 <div class="rl-felt">
     <div class="rl-board">
@@ -22,13 +22,17 @@
         </div>
         @foreach (PlacedWager w in Wagers)
         {
-            <div class="rl-chip" style="left: @Px(2 + w.Spot.X * CellW); top: @Px(2 + EdgeRowH + (w.Spot.Y - 1) * CellH);">@w.Chips</div>
+            <div class="rl-chip" style="left: @Px(2 + w.Spot.X * CellW); top: @Px(2 + EdgeRowH + (w.Spot.Y - 1) * CellH);">@(ChipText?.Invoke(w) ?? w.Chips.ToString())</div>
         }
     </div>
 </div>
 
 @code {
     [Parameter] public IReadOnlyList<PlacedWager> Wagers { get; set; } = Array.Empty<PlacedWager>();
+
+    /// <summary>Optional text on each chip instead of its chip count (the
+    /// Roulette tutorial shows what each spot pays).</summary>
+    [Parameter] public Func<PlacedWager, string>? ChipText { get; set; }
 
     private static string Px(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "px";
 }
