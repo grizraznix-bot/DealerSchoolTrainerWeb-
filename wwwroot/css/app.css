@@ -7025,6 +7025,23 @@ body {
     transform: rotate(8deg);
 }
 
+/* Three-card fan: left tilts left, middle straight and raised, right tilts right */
+.tu-hero3 {
+    margin-bottom: 0.75rem;
+}
+
+.tu-hero3 img {
+    transform: rotate(-9deg) translateY(6px);
+}
+
+.tu-hero3 img + img {
+    transform: translateY(-2px);
+}
+
+.tu-hero3 img + img + img {
+    transform: rotate(9deg) translateY(6px);
+}
+
 .tu-steps {
     margin: 0.5rem 0;
     padding: 0;
