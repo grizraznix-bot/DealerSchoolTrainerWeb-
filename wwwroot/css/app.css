@@ -7423,10 +7423,6 @@ body {
     font-weight: 800;
 }
 
-.tu-ord li.tu-prog::before {
-    background-color: #9aa3ad;
-}
-
 .tu-ord li b {
     flex: 1;
 }
