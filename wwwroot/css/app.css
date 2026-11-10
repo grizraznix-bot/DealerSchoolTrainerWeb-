@@ -7446,6 +7446,11 @@ body {
     margin-left: calc(var(--cw) * -0.42);
 }
 
+/* A card that isn't part of the hand (Hold'em: the 2 unused of 7) */
+.tu-cards img.tu-dim {
+    opacity: 0.4;
+}
+
 /* Felt holding two examples stacked, with a rule between them */
 .tu-stack > div + div {
     margin-top: 0.5rem;

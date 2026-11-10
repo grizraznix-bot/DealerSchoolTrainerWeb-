@@ -1,0 +1,246 @@
+@page "/holdem-tutorial"
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Heads-Up Hold'em Tutorial</PageTitle>
+
+@* Heads-Up Hold'em Tutorial: a Beyond Dealer School game. An intro
+   screen, six short illustrated steps (best five of seven, Raise and
+   Ante, the Odds, the Bad Beat, Trips Plus and Pocket Bonus, settling
+   order), then a finish screen with the suggested practice order.
+   Practice links open the Hold'em page with that mode's card open
+   (Settle the Bets with Call Only or Call & Pay chosen). Back / Next sit
+   in the same pinned bottom bar as the games. Opened from the "New to
+   Heads-Up Hold'em?" card on the Hold'em page. *@
+<div class="play-screen tu-screen has-game-bar">
+    <div class="tu-head">
+        <b>Heads-Up Hold'em Tutorial</b>
+        <span>@(_step == 0 ? "About 5 minutes" : _step == LastStep ? "Complete" : $"Step {_step} of {StepCount}")</span>
+    </div>
+    @if (_step > 0)
+    {
+        <div class="tu-dots" aria-hidden="true">
+            @for (int i = 1; i <= StepCount; i++)
+            {
+                <i class="@(i < _step || _step == LastStep ? "tu-done" : i == _step ? "tu-on" : "")"></i>
+            }
+        </div>
+    }
+
+    @switch (_step)
+    {
+        case 0:
+            <div class="felt tu-felt">
+                <div class="tu-hero">
+                    <img src="images/cards/AS.png" alt="Ace of Spades" />
+                    <img src="images/cards/AH.png" alt="Ace of Hearts" />
+                </div>
+                <div class="tu-tot">Heads-Up Hold'em<small>Beyond Dealer School</small></div>
+            </div>
+            <p>The player and the dealer each get two cards and share a five-card board. You'll read both hands, then settle up to five wagers, always in the same order.</p>
+            <ol class="tu-steps">
+                <li><div><b>Best five of seven</b><span>Two hole cards plus the board</span></div></li>
+                <li><div><b>Raise and Ante</b><span>The dealer opens with a pair</span></div></li>
+                <li><div><b>The Odds</b><span>Pays on a Straight or better</span></div></li>
+                <li><div><b>The Bad Beat</b><span>The Odds can win when the player loses</span></div></li>
+                <li><div><b>Trips Plus and Pocket Bonus</b><span>The player's cards only</span></div></li>
+                <li><div><b>Settling order</b><span>Raise first, Pocket Bonus last</span></div></li>
+            </ol>
+            break;
+
+        case 1:
+            <h2 class="tu-title">Best five of seven</h2>
+            <p>Each hand is the <b>best five cards</b> from its two hole cards and the five board cards. Two of the seven always go unused.</p>
+            <div class="felt tu-felt tu-stack">
+                <div>
+                    <div class="tu-cap">BOARD</div>
+                    @Cards("tu-xs", "AH", "4C", "KD", "4S", "9C-")
+                </div>
+                <div>
+                    <div class="tu-cap">DEALER</div>
+                    @Cards("tu-sm", "AC", "7D-")
+                    <div class="tu-tot">Two Pair, A's and 4's<small>K kicker · dimmed cards don't play</small></div>
+                </div>
+            </div>
+            <div class="tu-tip">Call the hand the way a dealer says it: the hand, then the kicker when it matters.</div>
+            <a class="tu-practice" href="holdem-trainer?open=identify">Practice this: Identify the Hands <span aria-hidden="true">›</span></a>
+            break;
+
+        case 2:
+            <h2 class="tu-title">Raise and Ante</h2>
+            <p>The Raise is <b>3x</b> the Ante before the flop, <b>2x</b> after the flop, or <b>1x</b> after the river. The dealer needs a <b>pair or better to open</b>.</p>
+            <table class="tu-pt">
+                <tr><td><b>Player wins</b></td><td></td></tr>
+                <tr><td>Raise 1 to 1</td><td>WIN</td></tr>
+                <tr><td>Ante 1 to 1, dealer opens</td><td>WIN</td></tr>
+                <tr><td>Ante, dealer doesn't open</td><td>PUSH</td></tr>
+                <tr><td><b>Dealer wins</b></td><td></td></tr>
+                <tr><td>Raise</td><td class="tu-lose">LOSE</td></tr>
+                <tr><td>Ante, dealer opens</td><td class="tu-lose">LOSE</td></tr>
+                <tr><td>Ante, dealer doesn't open</td><td>PUSH</td></tr>
+                <tr><td><b>Tie</b>: everything pushes</td><td>PUSH</td></tr>
+            </table>
+            <a class="tu-practice" href="holdem-trainer?open=call">Practice this: Settle the Bets <span aria-hidden="true">›</span></a>
+            break;
+
+        case 3:
+            <h2 class="tu-title">The Odds</h2>
+            <p>The Odds always equals the Ante. It pays only when the <b>player wins with a Straight or better</b>. A smaller win pushes.</p>
+            <table class="tu-pt">
+                <tr><td>Royal Flush</td><td>500 to 1</td></tr>
+                <tr><td>Straight Flush</td><td>50 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>10 to 1</td></tr>
+                <tr><td>Full House</td><td>3 to 1</td></tr>
+                <tr class="tu-hl"><td>Flush</td><td>3 to 2</td></tr>
+                <tr><td>Straight</td><td>1 to 1</td></tr>
+                <tr><td>Less than a Straight</td><td>PUSH</td></tr>
+            </table>
+            <div class="tu-line"><span class="tu-chip">$10</span><div><b>Odds $10, player wins with a Flush</b><span>3 to 2: 10 + half (5)</span></div><em>$15</em></div>
+            <div class="tu-tip">A Flush pays 3 to 2, so an odd Odds amount ends in 50¢.</div>
+            break;
+
+        case 4:
+            <h2 class="tu-title">The Bad Beat</h2>
+            <p>When the <b>player loses with a Straight or better</b>, the Odds still wins, from the Bad Beat table. It pays even when the board makes the player's hand.</p>
+            <div class="felt tu-felt tu-stack">
+                <div>
+                    <div class="tu-cap">BOARD</div>
+                    @Cards("tu-xs", "8H", "8C", "2H", "9H", "KS")
+                </div>
+                <div class="tu-two">
+                    <div>
+                        <div class="tu-cap">PLAYER</div>
+                        @Cards("tu-sm", "JH", "5H")
+                        <div class="tu-tot">Flush</div>
+                    </div>
+                    <div>
+                        <div class="tu-cap">DEALER</div>
+                        @Cards("tu-sm", "8D", "9S")
+                        <div class="tu-tot">Full House</div>
+                    </div>
+                </div>
+            </div>
+            <table class="tu-pt">
+                <tr><td>Straight Flush</td><td>500 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>25 to 1</td></tr>
+                <tr><td>Full House</td><td>6 to 1</td></tr>
+                <tr class="tu-hl"><td>Flush</td><td>5 to 1</td></tr>
+                <tr><td>Straight</td><td>4 to 1</td></tr>
+            </table>
+            <div class="tu-tip">Raise and Ante lose, but the Odds wins: a $10 Odds pays <b>$50</b>.</div>
+            break;
+
+        case 5:
+            <h2 class="tu-title">Trips Plus and Pocket Bonus</h2>
+            <p>Both are paid on the <b>player's cards only</b>, win or lose against the dealer.</p>
+            <p><b>Trips Plus</b>: the player's best five of seven.</p>
+            <table class="tu-pt">
+                <tr><td>Royal Flush</td><td>100 to 1</td></tr>
+                <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>30 to 1</td></tr>
+                <tr><td>Full House</td><td>8 to 1</td></tr>
+                <tr><td>Flush</td><td>7 to 1</td></tr>
+                <tr><td>Straight</td><td>4 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>3 to 1</td></tr>
+            </table>
+            <p><b>Pocket Bonus</b>: the player's two hole cards.</p>
+            <div class="felt tu-felt">
+                @Cards("tu-sm", "AS", "KS")
+                <div class="tu-tot">Ace-King suited<small>Pocket Bonus 20 to 1</small></div>
+            </div>
+            <table class="tu-pt">
+                <tr><td>Pocket Aces</td><td>25 to 1</td></tr>
+                <tr class="tu-hl"><td>Ace-Face suited (A-K, A-Q, A-J)</td><td>20 to 1</td></tr>
+                <tr><td>Ace-Face</td><td>10 to 1</td></tr>
+                <tr><td>Pair</td><td>5 to 1</td></tr>
+            </table>
+            break;
+
+        case 6:
+            <h2 class="tu-title">Settling order</h2>
+            <p>Settle every hand the same way, top to bottom, so nothing is missed.</p>
+            <ol class="tu-ord">
+                <li><b>Raise</b><small>1 to 1</small></li>
+                <li><b>Ante</b><small>1 to 1, if dealer opens</small></li>
+                <li><b>Odds</b><small>Straight or better, Bad Beat</small></li>
+                <li><b>Trips Plus</b><small>player's best 5</small></li>
+                <li><b>Pocket Bonus</b><small>player's 2 cards</small></li>
+            </ol>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">CALL THE FLOOR</span> A mistake is never fixed on your own. Call the floor before going any further.</div>
+            <a class="tu-practice" href="holdem-trainer?open=pay">Practice this: Settle the Bets, Call &amp; Pay <span aria-hidden="true">›</span></a>
+            break;
+
+        default:
+            <div class="felt tu-felt tu-finish">
+                <div class="tu-spade">♣</div>
+                <div class="tu-tot">Nice work!<small>You've covered the basics of Heads-Up Hold'em.</small></div>
+            </div>
+            <p><b>Suggested practice order</b></p>
+            <div class="tu-order">
+                <a class="tu-next" href="holdem-trainer?open=identify"><i>1</i><b>Identify the Hands</b><small>best five of seven</small></a>
+                <a href="holdem-trainer?open=call"><i>2</i><b>Settle the Bets</b><small>Call Only</small></a>
+                <a href="holdem-trainer?open=pay"><i>3</i><b>Settle the Bets</b><small>Call &amp; Pay</small></a>
+            </div>
+            <p class="tu-muted">You can reopen this tutorial any time from the Heads-Up Hold'em page.</p>
+            break;
+    }
+
+    <div class="game-bar tu-bar">
+        @if (_step == 0)
+        {
+            <button type="button" @onclick='() => Nav.NavigateTo("holdem-trainer")'>Close</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">Start</button>
+        }
+        else if (_step == LastStep)
+        {
+            <button type="button" @onclick="() => Go(0)">Review</button>
+            <button type="button" class="game-bar-main" @onclick='() => Nav.NavigateTo("holdem-trainer?open=identify")'>Start Practice</button>
+        }
+        else
+        {
+            <button type="button" @onclick="() => Go(_step - 1)">Back</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">@(_step == StepCount ? "Finish" : "Next")</button>
+        }
+    </div>
+</div>
+
+@code {
+    private const int StepCount = 6;
+    private const int LastStep = StepCount + 1;
+
+    // 0 = intro, 1-6 = the steps, 7 = finish
+    private int _step;
+
+    private void NextStep() => Go(_step + 1);
+
+    private async Task Go(int step)
+    {
+        _step = Math.Clamp(step, 0, LastStep);
+        try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+    }
+
+    // A row of cards by image name ("KS"); a trailing "-" dims the card
+    // (not part of the hand); size = tu-sm or tu-xs
+    private static RenderFragment Cards(string size, params string[] codes) => __builder =>
+    {
+        <div class="tu-cards @size">
+            @foreach (var raw in codes)
+            {
+                bool dim = raw.EndsWith('-');
+                string c = raw.TrimEnd('-');
+                <img src="images/cards/@(c).png" alt="@(CardName(c) + (dim ? ", not used" : ""))" class="@(dim ? "tu-dim" : "")" />
+            }
+        </div>
+    };
+
+    private static string CardName(string code)
+    {
+        string rank = code[0] switch
+        {
+            'A' => "Ace", 'K' => "King", 'Q' => "Queen", 'J' => "Jack", 'T' => "10",
+            char d => d.ToString()
+        };
+        string suit = code[1] switch { 'S' => "Spades", 'H' => "Hearts", 'D' => "Diamonds", _ => "Clubs" };
+        return $"{rank} of {suit}";
+    }
+}

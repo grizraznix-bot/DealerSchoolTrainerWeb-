@@ -12,17 +12,29 @@
     <div class="start-screen">
         <h1>HEADS-UP HOLD'EM</h1>
 
+        <a class="tu-entry" href="holdem-tutorial">
+            <span class="tu-entry-cards">
+                <img src="images/cards/AS.png" alt="" />
+                <img src="images/cards/AH.png" alt="" />
+            </span>
+            <span class="tu-entry-text">
+                <b>New to Heads-Up Hold'em?</b>
+                <span>Start with the 5-minute tutorial.</span>
+            </span>
+            <span class="tu-entry-btn">Tutorial</span>
+        </a>
+
         @* Each mode is a collapsible card: tap its title to open its
            settings and its own Start button (one card open at a time).
            Settle the Bets is played Call Only or Call & Pay. *@
         <div class="mode-list">
-            <ModeCard Title="Identify the Hands"
+            <ModeCard Title="Identify the Hands" Number="1"
                       Description="The board and the dealer's 2 cards are dealt. Tap the 2 cards that are NOT part of the dealer's best 5-card hand, then Submit."
                       Expanded="@IsModeOpen(TrainerMode.IdentifyHands)"
                       OnToggle="() => ToggleMode(TrainerMode.IdentifyHands)"
                       OnStart="StartGame" />
 
-            <ModeCard Title="Settle the Bets"
+            <ModeCard Title="Settle the Bets" Number="2"
                       Description="The board and both hands are dealt; the dealer's 2 unused cards are dimmed. Settle the Raise, Ante, Odds, Trips Plus and Pocket Bonus in order, then Submit."
                       Expanded="@IsModeOpen(TrainerMode.Settle)"
                       OnToggle="() => ToggleMode(TrainerMode.Settle)"
@@ -457,8 +469,25 @@ else
 @code {
     // Menu link for this game tapped while it's already open: return to
     // the start screen, same as the Back button (hidden on phones).
+    // ?open=identify, ?open=call or ?open=pay (from the tutorial's practice
+    // links): open that mode's card on the start screen (call / pay =
+    // Settle the Bets with Call Only or Call & Pay chosen)
+    [SupplyParameterFromQuery(Name = "open")] public string? Open { get; set; }
+
     protected override void OnInitialized()
     {
+        TrainerMode? fromLink = Open switch
+        {
+            "identify" => TrainerMode.IdentifyHands,
+            "call" or "pay" => TrainerMode.Settle,
+            _ => null
+        };
+        if (fromLink is TrainerMode m)
+        {
+            _openMode = m;
+            _mode = m;
+            _hpPay = Open == "pay";
+        }
         GameReset.ResetRequested += OnResetRequested;
     }
 
