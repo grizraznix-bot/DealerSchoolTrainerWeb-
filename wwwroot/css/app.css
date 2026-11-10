@@ -6808,6 +6808,12 @@ body {
     vertical-align: 0.1em;
 }
 
+.pc-order-note {
+    margin: 0.4rem 0 0 0;
+    color: #5b6470;
+    font-size: 0.8rem;
+}
+
 .mode-choice-note {
     margin-left: 0.35rem;
     color: #666;
@@ -6815,7 +6821,7 @@ body {
 }
 
 /* ------------------------------------------------------------------
-   Tutorials (Pages/BlackjackTutorial): the entry card on the game's
+   Tutorials (Pages/BlackjackTutorial, ThreeCardTutorial): the entry card on the game's
    start screen, then short illustrated steps on felt with Back / Next
    in the pinned bottom bar
    ------------------------------------------------------------------ */
@@ -6942,30 +6948,36 @@ body {
     letter-spacing: 0.08em;
 }
 
+/* Tutorial cards: large, with the top two-thirds in view and a soft
+   fade at the cut, so the corner rank and suit read easily on a phone.
+   --cw sets the card width; tu-sm is the smaller size for two hands
+   side by side. */
 .tu-cards {
+    --cw: 84px;
     display: flex;
     justify-content: center;
+    align-items: flex-start;
+    height: calc(var(--cw) * 1.4 * 0.67);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(#000 78%, transparent);
+    mask-image: linear-gradient(#000 78%, transparent);
 }
 
 .tu-cards img {
-    width: 62px;
-    height: 87px;
+    flex: none;
+    width: var(--cw);
+    height: calc(var(--cw) * 1.4);
     border-radius: 5px;
     background-color: white;
     box-shadow: -1px 0 3px rgba(0, 0, 0, 0.35);
 }
 
 .tu-cards img + img {
-    margin-left: -14px;
+    margin-left: calc(var(--cw) * -0.22);
 }
 
-.tu-cards.tu-sm img {
-    width: 48px;
-    height: 67px;
-}
-
-.tu-cards.tu-sm img + img {
-    margin-left: -12px;
+.tu-cards.tu-sm {
+    --cw: 62px;
 }
 
 .tu-tot {
@@ -7000,8 +7012,8 @@ body {
 }
 
 .tu-hero img {
-    width: 70px;
-    height: 98px;
+    width: 92px;
+    height: 129px;
     border-radius: 6px;
     background-color: white;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
@@ -7070,19 +7082,26 @@ body {
 }
 
 .tu-vt-cards {
+    --cw: 46px;
     display: flex;
     justify-content: center;
+    align-items: flex-start;
+    height: calc(var(--cw) * 1.4 * 0.67);
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(#000 78%, transparent);
+    mask-image: linear-gradient(#000 78%, transparent);
 }
 
 .tu-vt-cards img {
-    width: 38px;
-    height: 53px;
+    flex: none;
+    width: var(--cw);
+    height: calc(var(--cw) * 1.4);
     border-radius: 4px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .tu-vt-cards img + img {
-    margin-left: -14px;
+    margin-left: calc(var(--cw) * -0.52);
 }
 
 .tu-vt b {
@@ -7243,6 +7262,189 @@ body {
 .tu-order a.tu-next i {
     background-color: var(--c-primary);
     color: white;
+}
+
+/* Three Card Prime tutorial: hand-ranking rows, pay tables, the
+   dealer-qualifies tags and the settling-order list */
+.tu-hr {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.3rem 0;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+}
+
+.tu-hr > i {
+    display: flex;
+    flex: 0 0 20px;
+    align-items: center;
+    justify-content: center;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--c-felt);
+    color: white;
+    font-size: 0.7rem;
+    font-style: normal;
+    font-weight: 800;
+}
+
+.tu-hr .tu-cards {
+    --cw: 50px;
+    flex: none;
+}
+
+.tu-hr .tu-cards img + img {
+    margin-left: calc(var(--cw) * -0.3);
+}
+
+.tu-hr > div:last-child {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tu-hr b {
+    font-size: 0.9rem;
+}
+
+.tu-hr span {
+    color: #5b6470;
+    font-size: 0.75rem;
+}
+
+.tu-pt {
+    width: 100%;
+    margin: 0.25rem 0;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.tu-pt td {
+    padding: 0.25rem 0.4rem;
+    border-bottom: 1px solid #eceff2;
+}
+
+.tu-pt td:last-child {
+    color: var(--c-primary-dark);
+    font-weight: 700;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tu-pt td.tu-lose {
+    color: #c62828;
+}
+
+.tu-pt tr.tu-hl td {
+    background-color: #fff6dd;
+}
+
+.tu-two {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.tu-two .tu-cards + .tu-cards {
+    margin-top: 0.25rem;
+}
+
+.tu-two .tu-tot {
+    font-size: 0.85rem;
+}
+
+.tu-qtag {
+    display: inline-block;
+    margin-top: 0.3rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    background-color: white;
+    color: var(--c-felt);
+    font-size: 0.65rem;
+    font-weight: 800;
+}
+
+.tu-qtag.tu-no {
+    background-color: #f8d7d7;
+    color: #a00;
+}
+
+.tu-ord {
+    margin: 0.4rem 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: tuo;
+}
+
+.tu-ord li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.3rem 0;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    counter-increment: tuo;
+}
+
+.tu-ord li::before {
+    content: counter(tuo);
+    display: flex;
+    flex: 0 0 24px;
+    align-items: center;
+    justify-content: center;
+    height: 24px;
+    border-radius: 50%;
+    background-color: var(--c-felt);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.tu-ord li.tu-prog::before {
+    background-color: #9aa3ad;
+}
+
+.tu-ord li b {
+    flex: 1;
+}
+
+.tu-ord li small {
+    color: #5b6470;
+}
+
+.tu-chip.tu-chip-blue {
+    background-color: #1565c0;
+    box-shadow: 0 0 0 2px #1565c0;
+}
+
+/* Narrow phones: smaller tutorial cards so two hands still fit side by side */
+@media (max-width: 380px) {
+    .tu-cards {
+        --cw: 72px;
+    }
+
+    .tu-cards.tu-sm {
+        --cw: 50px;
+    }
+
+    .tu-vt-cards {
+        --cw: 34px;
+    }
+
+    .tu-hr .tu-cards {
+        --cw: 42px;
+    }
+
+    /* Entry card: two cards at most, so its text keeps room */
+    .tu-entry-cards img:nth-child(n + 3) {
+        display: none;
+    }
 }
 
 /* Tutorial bar: Back (outline) and Next (main), no Help / End */

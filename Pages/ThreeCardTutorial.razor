@@ -1,0 +1,242 @@
+@page "/three-card-tutorial"
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Three Card Prime Tutorial</PageTitle>
+
+@* Three Card Prime Tutorial: game 2 of the Dealer School course. An intro
+   screen, six short illustrated steps (hand rankings, dealer qualifies,
+   Ante Bonus, Pair Bonus and Prime, All 6, settling order), then a
+   finish screen with the suggested practice order. Practice links open
+   the Three Card Prime page with Call Only or Call & Pay chosen. Back /
+   Next sit in the same pinned bottom bar as the games. Opened from the
+   "New to Three Card Prime?" card on the Three Card Prime page. *@
+<div class="play-screen tu-screen has-game-bar">
+    <div class="tu-head">
+        <b>Three Card Prime Tutorial</b>
+        <span>@(_step == 0 ? "About 4 minutes" : _step == LastStep ? "Complete" : $"Step {_step} of {StepCount}")</span>
+    </div>
+    @if (_step > 0)
+    {
+        <div class="tu-dots" aria-hidden="true">
+            @for (int i = 1; i <= StepCount; i++)
+            {
+                <i class="@(i < _step || _step == LastStep ? "tu-done" : i == _step ? "tu-on" : "")"></i>
+            }
+        </div>
+    }
+
+    @switch (_step)
+    {
+        case 0:
+            <div class="felt tu-felt">
+                <div class="tu-hero">
+                    <img src="images/cards/QH.png" alt="Queen of Hearts" />
+                    <img src="images/cards/KH.png" alt="King of Hearts" />
+                </div>
+                <div class="tu-tot">Three Card Prime<small>Game 2 of the Dealer School course</small></div>
+            </div>
+            <p>Player and dealer each get three cards. You'll settle up to five wagers, always in the same order.</p>
+            <ol class="tu-steps">
+                <li><div><b>Three-card hand rankings</b><span>A Straight beats a Flush</span></div></li>
+                <li><div><b>Dealer qualifies, Play and Ante</b><span>Queen high or better</span></div></li>
+                <li><div><b>Ante Bonus</b><span>Pays on the player's hand alone</span></div></li>
+                <li><div><b>Pair Bonus and Prime</b><span>Player's cards, and colors</span></div></li>
+                <li><div><b>All 6</b><span>Best 5 of all six cards</span></div></li>
+                <li><div><b>Settling order</b><span>Play first, progressives last</span></div></li>
+            </ol>
+            break;
+
+        case 1:
+            <h2 class="tu-title">Three-card hand rankings</h2>
+            <p>With only three cards, a <b>Straight beats a Flush</b>, the opposite of five-card poker.</p>
+            @for (int r = 0; r < Rankings.Length; r++)
+            {
+                var (cards, name, note) = Rankings[r];
+                <div class="tu-hr">
+                    <i>@(r + 1)</i>
+                    <div class="tu-cards">
+                        @foreach (var c in cards)
+                        {
+                            <img src="images/cards/@(c).png" alt="" />
+                        }
+                    </div>
+                    <div><b>@name</b><span>@note</span></div>
+                </div>
+            }
+            <div class="tu-tip">A-2-3 is the lowest Straight; Q-K-A is the highest.</div>
+            break;
+
+        case 2:
+            <h2 class="tu-title">Dealer qualifies, Play and Ante</h2>
+            <p>The dealer needs <b>Queen high or better</b> to qualify.</p>
+            <div class="felt tu-felt tu-two">
+                <div>
+                    <div class="tu-cap">DEALER</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/QD.png" alt="Queen of Diamonds" /><img src="images/cards/7C.png" alt="7 of Clubs" /><img src="images/cards/3S.png" alt="3 of Spades" /></div>
+                    <span class="tu-qtag">QUALIFIES</span>
+                </div>
+                <div>
+                    <div class="tu-cap">DEALER</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/JH.png" alt="Jack of Hearts" /><img src="images/cards/8S.png" alt="8 of Spades" /><img src="images/cards/5D.png" alt="5 of Diamonds" /></div>
+                    <span class="tu-qtag tu-no">DOESN'T QUALIFY</span>
+                </div>
+            </div>
+            <table class="tu-pt">
+                <tr><td><b>Dealer doesn't qualify</b></td><td></td></tr>
+                <tr><td>Ante pays 1 to 1</td><td>WIN</td></tr>
+                <tr><td>Play pushes</td><td>PUSH</td></tr>
+                <tr><td><b>Dealer qualifies</b></td><td></td></tr>
+                <tr><td>Player's hand wins: Ante and Play 1 to 1</td><td>WIN</td></tr>
+                <tr><td>Dealer's hand wins: Ante and Play lose</td><td class="tu-lose">LOSE</td></tr>
+                <tr><td>Tie: Ante and Play push</td><td>PUSH</td></tr>
+            </table>
+            <a class="tu-practice" href="three-card-trainer?open=call">Practice this: Call Only <span aria-hidden="true">›</span></a>
+            break;
+
+        case 3:
+            <h2 class="tu-title">Ante Bonus</h2>
+            <p>Paid on the <b>player's hand alone</b>, whether the Ante wins, pushes or loses. Pay it together with the Ante.</p>
+            <div class="felt tu-felt">
+                <div class="tu-cards"><img src="images/cards/8C.png" alt="8 of Clubs" /><img src="images/cards/8D.png" alt="8 of Diamonds" /><img src="images/cards/8H.png" alt="8 of Hearts" /></div>
+                <div class="tu-tot">Three of a Kind<small>Ante Bonus 4 to 1</small></div>
+            </div>
+            <table class="tu-pt">
+                <tr><td>Straight Flush</td><td>5 to 1</td></tr>
+                <tr class="tu-hl"><td>Three of a Kind</td><td>4 to 1</td></tr>
+                <tr><td>Straight</td><td>1 to 1</td></tr>
+            </table>
+            <div class="tu-line"><span class="tu-chip tu-chip-blue">$10</span><div><b>Ante $10, dealer wins</b><span>Ante loses, Bonus 4 × $10 still pays</span></div><em>$40</em></div>
+            <div class="tu-tip">In Call Only, tap <b>+ Bonus</b> on the Ante when the Ante Bonus pays.</div>
+            break;
+
+        case 4:
+            <h2 class="tu-title">Pair Bonus and Prime</h2>
+            <p><b>Pair Bonus</b> uses the player's three cards only, win or lose.</p>
+            <table class="tu-pt">
+                <tr><td>Straight Flush</td><td>40 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>30 to 1</td></tr>
+                <tr><td>Straight</td><td>6 to 1</td></tr>
+                <tr><td>Flush</td><td>3 to 1</td></tr>
+                <tr><td>Pair</td><td>1 to 1</td></tr>
+            </table>
+            <p><b>Prime</b> pays on card colors: the player's three cards one color, or all six cards one color.</p>
+            <div class="felt tu-felt tu-two">
+                <div>
+                    <div class="tu-cap">PLAYER ALL BLACK</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/4S.png" alt="4 of Spades" /><img src="images/cards/TC.png" alt="10 of Clubs" /><img src="images/cards/AS.png" alt="Ace of Spades" /></div>
+                    <div class="tu-tot">3 to 1</div>
+                </div>
+                <div>
+                    <div class="tu-cap">ALL 6 RED</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/3H.png" alt="3 of Hearts" /><img src="images/cards/9D.png" alt="9 of Diamonds" /><img src="images/cards/KH.png" alt="King of Hearts" /></div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/5D.png" alt="5 of Diamonds" /><img src="images/cards/JH.png" alt="Jack of Hearts" /><img src="images/cards/2D.png" alt="2 of Diamonds" /></div>
+                    <div class="tu-tot">4 to 1</div>
+                </div>
+            </div>
+            <a class="tu-practice" href="three-card-trainer?open=call">Practice this: Call Only <span aria-hidden="true">›</span></a>
+            break;
+
+        case 5:
+            <h2 class="tu-title">All 6</h2>
+            <p>The <b>best five-card hand</b> from the player's three and the dealer's three cards together. Five-card rankings apply here.</p>
+            <div class="felt tu-felt tu-two">
+                <div>
+                    <div class="tu-cap">PLAYER</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/9S.png" alt="9 of Spades" /><img src="images/cards/9H.png" alt="9 of Hearts" /><img src="images/cards/4C.png" alt="4 of Clubs" /></div>
+                </div>
+                <div>
+                    <div class="tu-cap">DEALER</div>
+                    <div class="tu-cards tu-sm"><img src="images/cards/9D.png" alt="9 of Diamonds" /><img src="images/cards/4S.png" alt="4 of Spades" /><img src="images/cards/KC.png" alt="King of Clubs" /></div>
+                </div>
+            </div>
+            <div class="felt tu-felt">
+                <div class="tu-cap">BEST FIVE</div>
+                <div class="tu-cards tu-sm"><img src="images/cards/9S.png" alt="9 of Spades" /><img src="images/cards/9H.png" alt="9 of Hearts" /><img src="images/cards/9D.png" alt="9 of Diamonds" /><img src="images/cards/4C.png" alt="4 of Clubs" /><img src="images/cards/4S.png" alt="4 of Spades" /></div>
+                <div class="tu-tot">Full House<small>25 to 1</small></div>
+            </div>
+            <table class="tu-pt">
+                <tr><td>Royal Flush</td><td>1,000 to 1</td></tr>
+                <tr><td>Straight Flush</td><td>200 to 1</td></tr>
+                <tr><td>Four of a Kind</td><td>50 to 1</td></tr>
+                <tr class="tu-hl"><td>Full House</td><td>25 to 1</td></tr>
+                <tr><td>Flush</td><td>20 to 1</td></tr>
+                <tr><td>Straight</td><td>10 to 1</td></tr>
+                <tr><td>Three of a Kind</td><td>5 to 1</td></tr>
+            </table>
+            break;
+
+        case 6:
+            <h2 class="tu-title">Settling order</h2>
+            <p>Settle every hand the same way, top to bottom, so nothing is missed.</p>
+            <ol class="tu-ord">
+                <li><b>Play</b><small>1 to 1</small></li>
+                <li><b>Ante + Ante Bonus</b><small>one payout</small></li>
+                <li><b>Pair Bonus</b><small>player's 3 cards</small></li>
+                <li><b>Prime</b><small>colors</small></li>
+                <li><b>All 6</b><small>best 5 of 6</small></li>
+                <li class="tu-prog"><b>Progressives</b><small>always last</small></li>
+            </ol>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">CALL THE FLOOR</span> A mistake is never fixed on your own. Call the floor before going any further.</div>
+            <a class="tu-practice" href="three-card-trainer?open=pay">Practice this: Call &amp; Pay <span aria-hidden="true">›</span></a>
+            break;
+
+        default:
+            <div class="felt tu-felt tu-finish">
+                <div class="tu-spade">♥</div>
+                <div class="tu-tot">Nice work!<small>You've covered the basics of Three Card Prime.</small></div>
+            </div>
+            <p><b>Suggested practice order</b></p>
+            <div class="tu-order">
+                <a class="tu-next" href="three-card-trainer?open=call"><i>1</i><b>Call Only</b><small>who wins each wager</small></a>
+                <a href="three-card-trainer?open=pay"><i>2</i><b>Call &amp; Pay</b><small>add the payouts</small></a>
+            </div>
+            <p class="tu-muted">Next in the course: <b>Pai Gow</b>. You can reopen this tutorial any time from the Three Card Prime page.</p>
+            break;
+    }
+
+    <div class="game-bar tu-bar">
+        @if (_step == 0)
+        {
+            <button type="button" @onclick='() => Nav.NavigateTo("three-card-trainer")'>Close</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">Start</button>
+        }
+        else if (_step == LastStep)
+        {
+            <button type="button" @onclick="() => Go(0)">Review</button>
+            <button type="button" class="game-bar-main" @onclick='() => Nav.NavigateTo("three-card-trainer?open=call")'>Start Call Only</button>
+        }
+        else
+        {
+            <button type="button" @onclick="() => Go(_step - 1)">Back</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">@(_step == StepCount ? "Finish" : "Next")</button>
+        }
+    </div>
+</div>
+
+@code {
+    private const int StepCount = 6;
+    private const int LastStep = StepCount + 1;
+
+    // 0 = intro, 1-6 = the steps, 7 = finish
+    private int _step;
+
+    // Step 1: the three-card hands, highest first (card image names)
+    private static readonly (string[] Cards, string Name, string Note)[] Rankings =
+    {
+        (new[] { "QS", "KS", "AS" }, "Straight Flush", "same suit, in order"),
+        (new[] { "8C", "8D", "8H" }, "Three of a Kind", "three alike"),
+        (new[] { "4D", "5C", "6S" }, "Straight", "in order"),
+        (new[] { "2H", "9H", "JH" }, "Flush", "same suit"),
+        (new[] { "KC", "KD", "3S" }, "Pair", "two alike"),
+        (new[] { "AD", "9S", "4C" }, "High Card", "\"Ace high\"")
+    };
+
+    private void NextStep() => Go(_step + 1);
+
+    private async Task Go(int step)
+    {
+        _step = Math.Clamp(step, 0, LastStep);
+        try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+    }
+}

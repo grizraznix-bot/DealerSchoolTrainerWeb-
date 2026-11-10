@@ -2,19 +2,21 @@
    two tiles: Call Only (a blue chip with a check) and Call &
    Pay (the same chip with a green $ chip beside it). The chosen tile is
    lit felt with a gold edge and gold check; the other is plain grey. Each tile carries its own
-   short line, so switching doesn't move anything on the screen. *@
+   short line, so switching doesn't move anything on the screen. Numbered
+   puts 1 and 2 on the titles for the suggested order (learn the calls,
+   then add the payouts). *@
 
 <div class="pc-choice" role="radiogroup" aria-label="How to play the wagers">
     <button type="button" class="pc-tile @(Pay ? "" : "pc-on")" role="radio" aria-checked="@(!Pay)"
             @onclick="() => Set(false)">
         <span class="pc-icon">@Chip("#2f6fd6", "✓", 0)</span>
-        <span class="pc-title">Call Only</span>
+        <span class="pc-title">@(Numbered ? "1 · " : "")Call Only</span>
         <span class="pc-desc">@CallText</span>
     </button>
     <button type="button" class="pc-tile @(Pay ? "pc-on" : "")" role="radio" aria-checked="@Pay"
             @onclick="() => Set(true)">
         <span class="pc-icon pc-icon-two">@Chip("#2f6fd6", "✓", 0)@Chip("#1e8a4c", "$", 24)</span>
-        <span class="pc-title">Call &amp; Pay</span>
+        <span class="pc-title">@(Numbered ? "2 · " : "")Call &amp; Pay</span>
         <span class="pc-desc">@PayText</span>
     </button>
 </div>
@@ -25,6 +27,8 @@
     [Parameter] public EventCallback<bool> PayChanged { get; set; }
     [Parameter] public string CallText { get; set; } = "Call each wager Win, Lose or Push.";
     [Parameter] public string PayText { get; set; } = "Call each wager, then pay the winners.";
+    /// <summary>True = number the tiles 1 and 2 (the suggested order).</summary>
+    [Parameter] public bool Numbered { get; set; }
 
     private async Task Set(bool pay)
     {

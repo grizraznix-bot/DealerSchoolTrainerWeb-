@@ -13,13 +13,28 @@
     <div class="start-screen">
         <h1>THREE CARD PRIME</h1>
 
+        <a class="tu-entry" href="three-card-tutorial">
+            <span class="tu-entry-cards">
+                <img src="images/cards/QH.png" alt="" />
+                <img src="images/cards/QD.png" alt="" />
+                <img src="images/cards/QS.png" alt="" />
+            </span>
+            <span class="tu-entry-text">
+                <b>New to Three Card Prime?</b>
+                <span>Start with the 4-minute tutorial.</span>
+            </span>
+            <span class="tu-entry-btn">Tutorial</span>
+        </a>
+
         @* One mode, played Call Only (the default) or Call & Pay (winning
-           bonus wagers are also paid) *@
+           bonus wagers are also paid), numbered in the suggested order *@
         <div class="mode-list">
             <ModeCard Title="Three Card Prime" Collapsible="false"
                       Description="Both hands are dealt. Settle each wager in order, then Submit."
                       OnStart="StartGame">
-                <PayoutChoice @bind-Pay="_pay" />
+                <PayoutChoice @bind-Pay="_pay" Numbered="true"
+                              CallText="Start here" PayText="When calls are solid" />
+                <p class="pc-order-note">Numbers show the suggested order: learn the calls first, then add the payouts.</p>
             </ModeCard>
         </div>
     </div>
@@ -276,9 +291,15 @@ else
 @code {
     // Menu link for this game tapped while it's already open: return to
     // the start screen, same as the Back button (hidden on phones).
+    // ?open=call or ?open=pay (from the tutorial's practice links):
+    // choose Call Only or Call & Pay on the start screen
+    [SupplyParameterFromQuery(Name = "open")] public string? Open { get; set; }
+
     protected override void OnInitialized()
     {
         GameReset.ResetRequested += OnResetRequested;
+        if (Open == "pay") _pay = true;
+        else if (Open == "call") _pay = false;
     }
 
     private void OnResetRequested()
