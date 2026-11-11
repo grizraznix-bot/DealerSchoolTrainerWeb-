@@ -7788,3 +7788,35 @@ body {
     color: #0b3a8c;
     font-weight: 700;
 }
+
+/* Home: each group's title in a coloured header band -- felt green for the
+   Dealer School course, deep burgundy for Beyond Dealer School -- with a
+   gold edge underneath, like the felt tiles */
+.home-sec {
+    margin: 1.5rem 0 0.6rem 0;
+    padding: 0.6rem 0.85rem 0.65rem 0.85rem;
+    border-bottom: 3px solid #c9a227;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    color: white;
+}
+
+.home-sec .home-heading {
+    margin: 0;
+    color: white;
+}
+
+.home-sec .home-sub {
+    margin: 0.15rem 0 0 0;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.home-sec-course {
+    background-color: var(--c-felt);
+    background-image: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
+}
+
+.home-sec-beyond {
+    background-color: #7a1f2b;
+    background-image: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
+}
