@@ -7927,3 +7927,42 @@ body {
 .gs-cheer {
     align-self: stretch;
 }
+
+/* Home: "scan to open on your phone" -- computers only (wide screen with
+   a mouse); phones and tablets never see it */
+.home-qr {
+    display: none;
+}
+
+@media (min-width: 769px) and (pointer: fine) {
+    .home-qr {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 0.85rem 1rem;
+        border: 1px solid var(--c-border);
+        border-radius: 12px;
+        background-color: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    }
+
+    .home-qr img {
+        flex: none;
+        width: 132px;
+        height: 132px;
+        border: 6px solid white;
+        border-radius: 6px;
+        image-rendering: pixelated;
+    }
+
+    .home-qr b {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 1.1rem;
+    }
+
+    .home-qr span {
+        color: #444b53;
+    }
+}
