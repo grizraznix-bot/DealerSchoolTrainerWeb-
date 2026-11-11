@@ -1,4 +1,5 @@
 ﻿@page "/"
+@inject IJSRuntime JS
 
 <PageTitle>Dealer School Trainer</PageTitle>
 
@@ -7,6 +8,21 @@
    find the menu. *@
 <div class="home">
     <h1>Dealer School Trainer</h1>
+
+    @* Returning visitor: the mode last practised in this browser, one tap
+       back to its start screen (saved by Shared/GameStatus). Not shown
+       until something has been played. *@
+    @if (_continue is not null)
+    {
+        <a class="home-continue" href="@_continue.Url">
+            <span class="home-continue-text">
+                <span class="home-continue-key">CONTINUE</span>
+                <b>@_continue.Title</b>
+                <small>Last practised @Ago(_continue.At)</small>
+            </span>
+            <span class="home-continue-go">Go &rsaquo;</span>
+        </a>
+    }
 
     <p class="home-lead">Practice the skills you're learning in dealer school: card totals, payouts, hand rankings and settling bets. Go at your own pace, on your phone or computer.</p>
 
@@ -83,3 +99,39 @@
 
     <p class="home-note">Games and procedures vary from casino to casino. Always follow the procedures taught at your property.</p>
 </div>
+
+@code {
+    private sealed record LastMode(string Title, string Url, DateTime At);
+
+    private LastMode? _continue;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            string? json = await JS.InvokeAsync<string?>("localStorage.getItem", GameStatus.ContinueKey);
+            if (string.IsNullOrEmpty(json)) return;
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            string title = root.GetProperty("title").GetString() ?? "";
+            string url = root.GetProperty("url").GetString() ?? "";
+            DateTime at = DateTime.TryParse(root.GetProperty("at").GetString(), null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out DateTime t) ? t : DateTime.Now;
+            // Only links inside the site
+            if (title.Length == 0 || url.Length == 0 || url.Contains("://") || url.StartsWith("/")) return;
+            _continue = new LastMode(title, url, at);
+            StateHasChanged();
+        }
+        catch
+        {
+            // Nothing saved, storage blocked, or an old format: no card
+        }
+    }
+
+    private static string Ago(DateTime at)
+    {
+        int days = (DateTime.Now.Date - at.Date).Days;
+        return days <= 0 ? "today" : days == 1 ? "yesterday" : $"{days} days ago";
+    }
+}

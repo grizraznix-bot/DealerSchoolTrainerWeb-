@@ -1,6 +1,18 @@
+@using DealerSchoolTrainerWeb.Core
+@inject IJSRuntime JS
+
 @* The score line at the top of every play screen: the game or mode on
    the left (or ChildContent, e.g. Roulette's winning number), "Score
-   6 / 7" on the right. Same place and format in every game. *@
+   6 / 7" on the right. Same place and format in every game.
+
+   Also, quietly:
+   - A streak badge ("★ 4 in a row") once 3 or more in a row are right.
+     It disappears on a miss with no message. Phones 380px wide or less
+     show just "★ 4".
+   - Every 10 hands, a short encouraging line under the score until the
+     next hand is scored. Never a readiness or hiring-style label.
+   - When ContinueTitle / ContinueUrl are set, the mode is saved in this
+     browser (localStorage) as the Home page's "Continue" card. *@
 
 <div class="game-status">
     @if (ChildContent is not null)
@@ -11,12 +23,57 @@
     {
         <span class="game-status-title">@Title</span>
     }
-    <span>Score <strong>@Correct / @Played</strong></span>
+    <span>
+        Score <strong>@Correct / @Played</strong>
+        @if (_streak.Show)
+        {
+            <span class="gs-streak">&#x2605; @_streak.Count<span class="gs-streak-txt">&nbsp;in a row</span></span>
+        }
+    </span>
 </div>
+@{ string cheer = PracticeStreak.Cheer(Correct, Played); }
+@if (cheer.Length > 0)
+{
+    <p class="gs-cheer">@cheer</p>
+}
 
 @code {
+    /// <summary>localStorage key for Home's "Continue" card.</summary>
+    public const string ContinueKey = "dst-continue";
+
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public int Correct { get; set; }
     [Parameter] public int Played { get; set; }
+
+    /// <summary>For Home's Continue card, e.g. "Three Card Prime · Call &amp; Pay".</summary>
+    [Parameter] public string? ContinueTitle { get; set; }
+
+    /// <summary>Opens that mode's start screen with its option chosen, e.g. "three-card-trainer?open=pay".</summary>
+    [Parameter] public string? ContinueUrl { get; set; }
+
+    private readonly PracticeStreak _streak = new();
+    private bool _saved;
+
+    protected override void OnParametersSet() => _streak.Update(Correct, Played);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_saved || string.IsNullOrEmpty(ContinueTitle) || string.IsNullOrEmpty(ContinueUrl)) return;
+        _saved = true;
+        try
+        {
+            string json = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                title = ContinueTitle,
+                url = ContinueUrl,
+                at = DateTime.Now.ToString("o")
+            });
+            await JS.InvokeVoidAsync("localStorage.setItem", ContinueKey, json);
+        }
+        catch
+        {
+            // Storage blocked (private mode etc.): Continue just won't show
+        }
+    }
 }

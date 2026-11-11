@@ -7820,3 +7820,110 @@ body {
     background-color: #7a1f2b;
     background-image: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
 }
+
+/* Hand Setting: an empty Low Hand slot is a dashed card outline with
+   "Tap a card below" inside, so it reads as waiting for a card */
+.hs-low-slot:not(:has(img)) {
+    border: 2px dashed rgba(255, 255, 255, 0.55);
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.hs-slot-hint {
+    padding: 0 0.3rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+}
+
+/* Home: "Continue" -- the mode last practised in this browser */
+.home-continue {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.25rem 0 1rem 0;
+    padding: 0.75rem 0.85rem;
+    border: 2px solid #c9a227;
+    border-radius: 12px;
+    background-color: var(--c-felt);
+    background-image: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    color: white;
+    text-decoration: none;
+}
+
+.home-continue:hover {
+    color: white;
+}
+
+.home-continue-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.home-continue-text b {
+    display: block;
+    font-size: 1.05rem;
+}
+
+.home-continue-text small {
+    display: block;
+    margin-top: 0.1rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.8rem;
+}
+
+.home-continue-key {
+    display: block;
+    color: #f2d06b;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.home-continue-go {
+    flex: none;
+    padding: 0.45rem 0.8rem;
+    border-radius: 8px;
+    background-color: #f2c94c;
+    color: #222;
+    font-weight: 800;
+}
+
+/* Score line: streak badge (3+ right in a row) and the every-10-hands
+   line (Shared/GameStatus) */
+.gs-streak {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.4rem;
+    padding: 0 0.45rem;
+    border: 1.5px solid #c9a227;
+    border-radius: 999px;
+    background-color: #fff6dd;
+    color: #6b5000;
+    font-size: 0.8rem;
+    font-weight: 800;
+    vertical-align: middle;
+}
+
+.gs-cheer {
+    margin: -0.25rem 0 0.5rem 0;
+    padding: 0.35rem 0.65rem;
+    border-left: 4px solid #c9a227;
+    border-radius: 6px;
+    background-color: #fff9e8;
+    color: #4a3b00;
+    font-size: 0.88rem;
+}
+
+@media (max-width: 380px) {
+    .gs-streak-txt {
+        display: none;
+    }
+}
+
+.gs-cheer {
+    align-self: stretch;
+}

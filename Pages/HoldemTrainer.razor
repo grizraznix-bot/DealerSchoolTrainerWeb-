@@ -61,7 +61,9 @@ else if (_mode == TrainerMode.Settle)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Settle the Bets" Correct="_hpCorrect" Played="_hpPlayed" />
+        <GameStatus Title="Settle the Bets" Correct="_hpCorrect" Played="_hpPlayed"
+                    ContinueTitle="@($"Heads-Up Hold'em · Settle the Bets · {(_hpPay ? "Call & Pay" : "Call Only")}")"
+                    ContinueUrl="@(_hpPay ? "holdem-trainer?open=pay" : "holdem-trainer?open=call")" />
 
         <div class="felt hp-felt">
             @if (!_hpPay || _hpPeekUsed || _hpScored)
@@ -335,7 +337,8 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Identify the Hands" Correct="_correctCount" Played="_totalRounds" />
+        <GameStatus Title="Identify the Hands" Correct="_correctCount" Played="_totalRounds"
+                    ContinueTitle="Heads-Up Hold'em · Identify the Hands" ContinueUrl="holdem-trainer?open=identify" />
 
         @* One stage: the board on top, the dealer's 2 cards below (the
            same felt as the other Hold'em modes). Tap the 2 cards the dealer

@@ -70,7 +70,9 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Correct="_correct" Played="_played">
+        <GameStatus Correct="_correct" Played="_played"
+                    ContinueTitle="@($"Roulette · {_level}")"
+                    ContinueUrl="@($"roulette?level={_level.ToString().ToLowerInvariant()}")">
             <span class="rl-winner">Winning number <span class="rl-num @(RedNumbers.Contains(WinningNumber) ? "rl-red" : "rl-black") rl-winner-num">@WinningNumber</span></span>
         </GameStatus>
 

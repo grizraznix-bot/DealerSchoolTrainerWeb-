@@ -116,7 +116,9 @@ else if (_mode == PaiGowMode.HandSetting)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Hand Setting" Correct="_hsCorrectCount" Played="_hsTotalRounds" />
+        <GameStatus Title="Hand Setting" Correct="_hsCorrectCount" Played="_hsTotalRounds"
+                    ContinueTitle="@($"Pai Gow · Hand Setting · {(_hsAdvanced ? "Advanced" : "Normal")}")"
+                    ContinueUrl="@(_hsAdvanced ? "pai-gow?open=hand-adv" : "pai-gow?open=hand")" />
 
         <div class="hs-top">
             <div class="hs-low felt">
@@ -132,6 +134,12 @@ else if (_mode == PaiGowMode.HandSetting)
                             @if (cardAtSlot >= 0)
                             {
                                 <img src="images/cards/@(_hsCards[cardAtSlot].ImageCode).png" alt="@_hsCards[cardAtSlot].Name" class="pg-slot-img" />
+                            }
+                            else
+                            {
+                                @* Empty: a dashed card outline that says what
+                                   to do, so the box doesn't look unfinished *@
+                                <span class="hs-slot-hint">Tap a card below</span>
                             }
                         </div>
                     }
@@ -264,7 +272,8 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Settling Bets" Correct="_ppCorrect" Played="_ppPlayed" />
+        <GameStatus Title="Settling Bets" Correct="_ppCorrect" Played="_ppPlayed"
+                    ContinueTitle="Pai Gow · Settling Bets · Call & Pay" ContinueUrl="pai-gow?open=pay" />
 
         <div class="felt pg-felt">
             @foreach (bool isDealer in new[] { false, true })
@@ -483,7 +492,8 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Settling Bets" Correct="_sbCorrectCount" Played="_sbTotalRounds" />
+        <GameStatus Title="Settling Bets" Correct="_sbCorrectCount" Played="_sbTotalRounds"
+                    ContinueTitle="Pai Gow · Settling Bets · Call Only" ContinueUrl="pai-gow?open=call" />
 
         @* Laid out from the dealer's side of the table: the player's hand
            on top, the dealer's at the bottom, each set into Low beside High
@@ -654,7 +664,7 @@ else
     {
         PaiGowMode? fromLink = Open switch
         {
-            "hand" => PaiGowMode.HandSetting,
+            "hand" or "hand-adv" => PaiGowMode.HandSetting,
             "call" or "pay" => PaiGowMode.SettlingBets,
             _ => null
         };
@@ -663,6 +673,7 @@ else
             _openMode = m;
             _mode = m;
             _pgPay = Open == "pay";
+            _hsAdvanced = Open == "hand-adv";
         }
         GameReset.ResetRequested += OnResetRequested;
     }

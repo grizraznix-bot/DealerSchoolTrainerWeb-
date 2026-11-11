@@ -96,7 +96,9 @@ else if (_mode == BlackjackMode.FlashCards)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Flash Cards" Correct="_fcRoundsCorrect" Played="_fcRoundsPlayed" />
+        <GameStatus Title="Flash Cards" Correct="_fcRoundsCorrect" Played="_fcRoundsPlayed"
+                    ContinueTitle="@($"Blackjack · Flash Cards{(_fcRemoveTens ? ", No 10's" : "")}")"
+                    ContinueUrl="@(_fcRemoveTens ? "blackjack-trainer?open=flash-no10" : "blackjack-trainer?open=flash")" />
 
         @* On the felt: the cards fanned (each overlaps the previous one by
            30%, leaving every card's rank/suit corner visible; --n, the card
@@ -199,7 +201,9 @@ else if (_mode == BlackjackMode.Payouts)
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="@($"Payouts {(_poRatio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5")}")" Correct="_poCorrectCount" Played="_poTotalRounds" />
+        <GameStatus Title="@($"Payouts {(_poRatio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5")}")" Correct="_poCorrectCount" Played="_poTotalRounds"
+                    ContinueTitle="@($"Blackjack · Payouts {(_poRatio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5")}")"
+                    ContinueUrl="@(_poRatio == PayoutRatio.ThreeToTwo ? "blackjack-trainer?open=payouts" : "blackjack-trainer?open=payouts-65")" />
 
         @* On the felt: the blackjack, two cards side by side, and the
            table's printed payout *@
@@ -298,7 +302,9 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Side Wagers" Correct="_swCorrect" Played="_swPlayed" />
+        <GameStatus Title="Side Wagers" Correct="_swCorrect" Played="_swPlayed"
+                    ContinueTitle="@($"Blackjack · Side Wagers · {(_swPay ? "Call & Pay" : "Call Only")}")"
+                    ContinueUrl="@(_swPay ? "blackjack-trainer?open=side-pay" : "blackjack-trainer?open=side")" />
 
         <div class="felt sp-felt">
             <div class="sp-col">
@@ -528,7 +534,9 @@ else
     // Menu link for this game tapped while it's already open: return to
     // the start screen, same as the Back button (hidden on phones).
     // ?open=flash / payouts / side (from the Tutorial's "Practice this"
-    // links): that mode's card opens on the start screen
+    // links): that mode's card opens on the start screen. flash-no10,
+    // payouts-65 and side-pay (Home's Continue card) also choose the
+    // option last played.
     [SupplyParameterFromQuery(Name = "open")] public string? Open { get; set; }
 
     protected override void OnInitialized()
@@ -536,11 +544,14 @@ else
         GameReset.ResetRequested += OnResetRequested;
         BlackjackMode? fromLink = Open switch
         {
-            "flash" => BlackjackMode.FlashCards,
-            "payouts" => BlackjackMode.Payouts,
-            "side" => BlackjackMode.SideWagers,
+            "flash" or "flash-no10" => BlackjackMode.FlashCards,
+            "payouts" or "payouts-65" => BlackjackMode.Payouts,
+            "side" or "side-pay" => BlackjackMode.SideWagers,
             _ => null
         };
+        if (Open == "flash-no10") _fcRemoveTens = true;
+        if (Open == "payouts-65") _poRatio = PayoutRatio.SixToFive;
+        if (Open == "side-pay") _swPay = true;
         if (fromLink is BlackjackMode m)
         {
             _openMode = m;

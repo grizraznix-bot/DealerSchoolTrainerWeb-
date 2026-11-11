@@ -51,7 +51,9 @@ else
             <button class="back-button" @onclick="BackToStart">Back</button>
         </div>
 
-        <GameStatus Title="Three Card Prime" Correct="_correct" Played="_played" />
+        <GameStatus Title="Three Card Prime" Correct="_correct" Played="_played"
+                    ContinueTitle="@($"Three Card Prime · {(_pay ? "Call & Pay" : "Call Only")}")"
+                    ContinueUrl="@(_pay ? "three-card-trainer?open=pay" : "three-card-trainer?open=call")" />
 
         @* Payouts on: hand names and whether the dealer qualifies are shown
            (paying is the skill). Call only: no hand names -- that's the answer.
