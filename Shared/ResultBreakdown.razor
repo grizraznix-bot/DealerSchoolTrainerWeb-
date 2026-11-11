@@ -4,7 +4,9 @@
    incorrect: "INCORRECT — Call the floor", with
    the detail such as "1 of 3 wrong" on the line under it), then
    a box with one line per wager -- a check and the answer, or a cross
-   with what was picked and the right answer -- and the reason under it. *@
+   with what was picked and the right answer -- and the reason under it.
+   The right answer on a missed wager sits in a blue box (fb-ans: blue =
+   correct), so it stands out from the red. *@
 
 @* One feedback card: the result as a solid bar (blue CORRECT, red
    INCORRECT, white text) joined to the top of the wager box, the whole
@@ -42,7 +44,8 @@
                             }
                             else
                             {
-                                <text>&#x2717; You: <SuitText Text="@row.You" /> &middot; Answer: <SuitText Text="@row.Answer" /></text>
+                                <text>&#x2717; You: <SuitText Text="@row.You" /></text>
+                                <span class="fb-ans">Answer: <SuitText Text="@row.Answer" /></span>
                             }
                         </td>
                     </tr>

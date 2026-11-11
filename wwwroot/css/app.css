@@ -7760,3 +7760,31 @@ body {
         font-size: 0.68rem;
     }
 }
+
+/* Incorrect feedback: the right answer in a blue box (blue = correct), so
+   it stands out from the red "You" part. Used in the result breakdown,
+   Blackjack Payouts and Roulette. */
+.fb-ans {
+    display: inline-block;
+    margin: 0.15rem 0 0 0;
+    padding: 0.05rem 0.45rem;
+    border: 1.5px solid var(--c-ok);
+    border-radius: 6px;
+    background-color: #e8f0fd;
+    color: #0b3a8c;
+    font-weight: 700;
+    white-space: normal;
+}
+
+/* On a wager row, the right call after a miss: a small blue box beside the
+   red "✗ Lose" */
+.cr-ans-right {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 0 0.35rem;
+    border: 1.5px solid var(--c-ok);
+    border-radius: 5px;
+    background-color: #e8f0fd;
+    color: #0b3a8c;
+    font-weight: 700;
+}

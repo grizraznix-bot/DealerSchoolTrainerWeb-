@@ -221,7 +221,19 @@ else if (_mode == BlackjackMode.Payouts)
                 @if (_poPromptText.Length > 0)
                 {
                     <div class="po-display-result">@_poPromptText</div>
-                    <div class="po-display-detail">@_poPromptDetailText</div>
+                    <div class="po-display-detail">
+                        @if (_poYouText.Length > 0)
+                        {
+                            @* Missed: what was entered (red), then the right
+                               payout in a blue box so it stands out *@
+                            <span>@_poYouText</span>
+                            <span class="fb-ans">@_poPromptDetailText</span>
+                        }
+                        else
+                        {
+                            @_poPromptDetailText
+                        }
+                    </div>
                 }
                 else if (_poAnswerText.Length > 0)
                 {
@@ -948,6 +960,7 @@ else
     private bool _poNewRoundEnabled;
     private string _poPromptText = string.Empty;
     private string _poPromptDetailText = string.Empty;
+    private string _poYouText = string.Empty;   // "You entered $X." on a miss
     private bool _poIsCorrect;
 
     private Microsoft.AspNetCore.Components.ElementReference _poAnswerInputRef;
@@ -968,6 +981,7 @@ else
 
         _poPromptText = string.Empty;
         _poPromptDetailText = string.Empty;
+        _poYouText = string.Empty;
         _poAnswerText = string.Empty;
 
         _poNewRoundEnabled = false;
@@ -1059,7 +1073,8 @@ else
                 PayoutWager.FormatShort(userCents), PayoutWager.FormatShort(correctCents));
             _poIsCorrect = false;
             _poPromptText = $"INCORRECT \u2014 {BreakdownRow.FloorCall}";
-            _poPromptDetailText = $"You entered {PayoutWager.FormatShort(userCents)}. {PayoutWager.ExplainPayout(_poWagerCents, _poRatio)}";
+            _poYouText = $"You entered {PayoutWager.FormatShort(userCents)}.";
+            _poPromptDetailText = PayoutWager.ExplainPayout(_poWagerCents, _poRatio);
         }
 
         _poAnswerEnabled = false;

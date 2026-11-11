@@ -10,7 +10,8 @@
    anywhere else closes it unchanged.
 
    After Submit (Locked) the button becomes the answer box, the same as
-   the payout modes: "✓ Win", or "✗ Win · Ans: Lose".
+   the payout modes: "✓ Win", or "✗ Win" then the right call in a small
+   blue box (blue = correct), so it stands out from the red.
 
    PickedText replaces the pick's own text on the button and in the
    answer box once a payout has been entered, e.g. "Win $30" (the
@@ -48,7 +49,8 @@
         <div class="sp-ans cr-ans @(Wrong ? "sp-ans-bad" : "sp-ans-ok")">
             @if (Wrong)
             {
-                <text>&#x2717; @(PickedText ?? Selected?.Text ?? "")@YouSuffix &middot; Ans: @AnswerText</text>
+                <text>&#x2717; @(PickedText ?? Selected?.Text ?? "")@YouSuffix</text>
+                <span class="cr-ans-right">@AnswerText</span>
             }
             else
             {
