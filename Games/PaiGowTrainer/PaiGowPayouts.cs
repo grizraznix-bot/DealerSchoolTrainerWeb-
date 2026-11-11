@@ -161,7 +161,7 @@ public static class PaiGowPayouts
         }
 
         string envyTip = envy > 0
-            ? $"At a full table, every other player with an Emperor's Treasure wager would also be paid a {Money(envy)} Envy Bonus for this {etName}."
+            ? $"At a full table, every other player with an Envy button ($5 or more on Emperor's Treasure) would be paid a {Money(envy)} Envy Bonus for this {etName}. This hand gets none."
             : "";
 
         return new PgPayoutRound

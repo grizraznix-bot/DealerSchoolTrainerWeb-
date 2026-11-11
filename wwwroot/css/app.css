@@ -5174,8 +5174,26 @@ body {
     margin-left: auto;
 }
 
+/* The caption wraps after "DEALER ·" when space is short (narrow
+   phones, long hand names); the hand name itself stays on one line */
 .tp-hand .sp-cap {
+    text-align: center;
+}
+
+.tp-hname {
     white-space: nowrap;
+}
+
+/* Hand names showing (Call & Pay): both captions get two lines of room,
+   text sitting at the bottom, so the two hands' cards stay level whether
+   or not a name wraps */
+.tp-hand .sp-cap:has(.tp-hname) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-end;
+    column-gap: 0.3em;
+    min-height: 2.5em;
 }
 
 .tp-cards {
@@ -7582,5 +7600,150 @@ body {
     .tu-screen {
         max-width: 520px;
         margin: 0 auto;
+    }
+}
+
+/* ===== Start screens: felt-and-gold look (aesthetics pass) =====
+   Scoped to the start screens' mode cards so in-game colours (blue =
+   Win etc.) are unchanged.
+   1. The open card's bar is pale felt green (Start stays blue: blue = go)
+   2. Option radio lists become chip buttons that match the felt tiles
+   3. Mode descriptions in regular type, darker grey */
+.content .mode-list .mode-card-open .mode-header {
+    background-color: #e3f1e8;
+    border-bottom: 1px solid #a8cfb5;
+}
+
+@media (hover: hover) {
+    .content .mode-list .mode-card-open button.mode-header:hover {
+        background-color: #d6eadd;
+    }
+}
+
+.mode-list .mode-desc {
+    font-style: normal;
+    color: #444b53;
+}
+
+.mode-list .mode-option-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.mode-list .mode-option-label {
+    flex-basis: 100%;
+}
+
+.mode-list .mode-choice {
+    position: relative;
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.35rem 0.5rem;
+    box-sizing: border-box;
+    border: 1px solid #c4cbd2;
+    border-radius: 10px;
+    background-color: #f6f7f8;
+    color: #39414a;
+    font-size: 0.9rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mode-list .mode-choice input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mode-list .mode-choice:has(input:checked) {
+    border: 2px solid #c9a227;
+    background-color: var(--c-felt);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mode-list .mode-choice:has(input:focus-visible) {
+    outline: 2px solid var(--c-primary);
+    outline-offset: 2px;
+}
+
+.mode-list .mode-choice .rl-level {
+    align-items: center;
+    padding: 0;
+}
+
+.mode-list .mode-choice:has(input:checked) .rl-level-desc,
+.mode-list .mode-choice:has(input:checked) .mode-choice-note {
+    color: #d7eadf;
+}
+
+.content .mode-list .count-btn {
+    border-color: #a8cfb5;
+    color: var(--c-felt);
+}
+
+.mode-list .count-value {
+    border-color: #a8cfb5;
+    background-color: #e3f1e8;
+}
+
+/* Narrow phones: the chips stay on one row */
+@media (max-width: 380px) {
+    .mode-list .mode-choice {
+        padding: 0.3rem 0.2rem;
+        font-size: 0.78rem;
+    }
+
+    .mode-list .mode-choice .rl-level-desc {
+        font-size: 0.72rem;
+    }
+}
+
+.mode-list .mode-options + .count-stepper {
+    margin-top: 0.75rem;
+}
+
+/* Readability pass (review "fix first"): larger, brighter felt captions
+   (DEALER, PLAYER, BOARD), larger wager sub-lines ("wager $5"), and a
+   readable "N wagers left" on the disabled main button */
+.sp-cap {
+    font-size: 0.85rem;
+    opacity: 1;
+}
+
+.cr-cap {
+    font-size: 0.78rem;
+    color: white;
+}
+
+.sp-wname small {
+    color: #444b53;
+    font-size: 0.8rem;
+}
+
+.content .game-bar .game-bar-main:disabled {
+    border: 1px dashed #7d9cc8;
+    background-color: #eef3fb;
+    color: #1d3f73;
+    opacity: 1;
+}
+
+/* Narrow phones: captions a step smaller so two captions share one line
+   and the Hold'em board caption doesn't wrap */
+@media (max-width: 380px) {
+    .sp-cap {
+        font-size: 0.74rem;
+    }
+
+    .cr-cap {
+        font-size: 0.68rem;
     }
 }
