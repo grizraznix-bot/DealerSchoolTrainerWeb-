@@ -44,7 +44,7 @@
                         <p class="mode-option-label">Joker Frequency</p>
                         <label class="mode-choice">
                             <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 0)" @onchange="() => _hsJokerFrequencyLevel = 0" />
-                            Default (about 1 in 8 hands)
+                            Default
                         </label>
                         <label class="mode-choice">
                             <input type="radio" name="hsJoker" checked="@(_hsJokerFrequencyLevel == 1)" @onchange="() => _hsJokerFrequencyLevel = 1" />
@@ -71,7 +71,7 @@
                         <p class="mode-option-label">Joker Frequency</p>
                         <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 0)" @onchange="() => _sbJokerFrequencyLevel = 0" />
-                            Default (about 1 in 4 deals)
+                            Default
                         </label>
                         <label class="mode-choice">
                             <input type="radio" name="sbJoker" checked="@(_sbJokerFrequencyLevel == 1)" @onchange="() => _sbJokerFrequencyLevel = 1" />
@@ -196,6 +196,7 @@ else if (_mode == PaiGowMode.HandSetting)
             <HelpContent>
                 <p class="hw-key">Front = Low hand (2 cards) &middot; Back = High hand (5 cards)</p>
                 <p>Advanced deals more hands that need one of the House Way's special rules.</p>
+                <p>Joker Frequency: Default deals the Joker in about 1 in 8 hands.</p>
                 <table class="help-table sp-help-table hw-table">
                     <tr class="sp-pt-hd"><td colspan="2">Two Pair</td></tr>
                     <tr><td>1</td><td>No Ace: split only if one pair is 7s or better.</td></tr>
@@ -465,6 +466,7 @@ else if (_mode == PaiGowMode.SettlingBets && _pgPay)
                 @PgPayTables
                 <p>Call the Main Wager Win, Lose or Push (it pays even money). Win on Insurance or Emperor's Treasure opens its payout box: enter the winnings only, then Enter. Entering 0 counts as Lose; Cancel puts the wager back to Call. Envy Bonuses are shown as a tip after Submit; they are not entered.</p>
                 <p>For practice, big Emperor's Treasure hands come up more often than at a live table.</p>
+                <p>Joker Frequency: Default deals the Joker in about 1 in 4 deals.</p>
             </HelpContent>
         </GameBar>
     </div>
@@ -610,6 +612,7 @@ else
                 @PgPayTables
                 <p>Insurance and Emperor's Treasure win with any hand on their tables; otherwise they lose. A fouled hand stops the game: call the floor (supervisor) before going any further. Tap Call Floor and pick Foul instead of calling the wagers.</p>
                 <p>Tap a hand to see it enlarged (ranks show after Submit).</p>
+                <p>Joker Frequency: Default deals the Joker in about 1 in 4 deals.</p>
             </HelpContent>
         </GameBar>
     </div>

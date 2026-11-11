@@ -38,19 +38,14 @@
                       Expanded="@(_openCard == ChallengeGame.Payouts)"
                       OnToggle="() => ToggleCard(ChallengeGame.Payouts)"
                       OnStart="() => StartRun(ChallengeGame.Payouts)">
-                <div class="mode-options">
-                    <div class="mode-option-group">
-                        <p class="mode-option-label">Payout</p>
-                        <label class="mode-choice">
-                            <input type="radio" name="ch-ratio" checked="@(_ratio == PayoutRatio.ThreeToTwo)" @onchange="() => _ratio = PayoutRatio.ThreeToTwo" />
-                            3:2 Payouts
-                        </label>
-                        <label class="mode-choice">
-                            <input type="radio" name="ch-ratio" checked="@(_ratio == PayoutRatio.SixToFive)" @onchange="() => _ratio = PayoutRatio.SixToFive" />
-                            6:5 Payouts <span class="mode-choice-note">Single Deck Blackjack only</span>
-                        </label>
-                    </div>
-                </div>
+                @* The same felt tiles as Blackjack Payouts' start screen *@
+                <TileChoice Second="@(_ratio == PayoutRatio.SixToFive)"
+                            SecondChanged="@(v => _ratio = v ? PayoutRatio.SixToFive : PayoutRatio.ThreeToTwo)"
+                            Label="Payout"
+                            FirstTitle="3:2 Payouts" FirstText="Pays 3 to 2."
+                            FirstIcon="@TileChoice.Chip("#1e8a4c", "3:2")"
+                            SecondTitle="6:5 Payouts" SecondText="Single Deck Blackjack only."
+                            SecondIcon="@TileChoice.Chip("#c62828", "6:5")" />
                 @RenderTopFive(_ratio == PayoutRatio.ThreeToTwo ? _po32Top : _po65Top, _ratio == PayoutRatio.ThreeToTwo ? "3:2" : "6:5", -1, _ratio == PayoutRatio.ThreeToTwo ? Po32Key : Po65Key)
             </ModeCard>
 
