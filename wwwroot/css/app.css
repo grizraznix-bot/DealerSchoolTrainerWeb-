@@ -7663,6 +7663,19 @@ body {
     pointer-events: none;
 }
 
+/* A chip with a note (Challenge Mode's 6:5 "Single Deck Blackjack only")
+   stacks the note under its label */
+.mode-list .mode-choice {
+    flex-direction: column;
+    align-items: center;
+}
+
+.mode-list .mode-choice .mode-choice-note {
+    margin: 0.1rem 0 0 0;
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
 .mode-list .mode-choice:has(input:checked) {
     border: 2px solid #c9a227;
     background-color: var(--c-felt);
