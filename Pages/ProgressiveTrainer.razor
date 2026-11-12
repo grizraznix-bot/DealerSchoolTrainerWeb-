@@ -17,7 +17,7 @@
      Call Supervisor instead) -> back to the pay tables
      END GAME ends every round (resets the sensors).
    Each wager is paid on its own. A wrong step ends the hand with
-   "INCORRECT - Call the floor". About half the hands qualify (practice
+   "INCORRECT - Call the floor". About 3 hands in 4 qualify (practice
    boost). Pay tables: the house's base tables, no Dynamic Pays. *@
 
 @if (_def is null || !_started)
@@ -38,7 +38,7 @@
             }
         </div>
 
-        <p class="pr-note">About half the hands qualify, so the payout routine gets plenty of practice. A metered pay (a percentage of the meter) is a Call Supervisor.</p>
+        <p class="pr-note">About 3 hands in 4 qualify, so the payout routine gets plenty of practice. A metered pay (a percentage of the meter) is a Call Supervisor.</p>
     </div>
 }
 else
@@ -104,8 +104,14 @@ else
             }
         </div>
 
+        @* What to do on this screen *@
+        @if (!_over)
+        {
+            <p class="cr-howto pr-howto">@Instruction</p>
+        }
+
         @* The practice touchscreen *@
-        <div class="pr-ts">
+        <div class="pr-ts @(_screen == Screen.Confirm ? "pr-ts-short" : "")">
             <div class="pr-ts-top">
                 @if (!_over && _screen is Screen.Wager or Screen.Rank or Screen.Position or Screen.Confirm)
                 {
@@ -123,7 +129,7 @@ else
                             @for (int s = 1; s <= 6; s++)
                             {
                                 bool lit = s == h.Seat && h.Placed[wi];
-                                <span class="pr-chip @(lit ? "pr-lit" : "")">@_def.Wagers[wi].ChipTop<small>@_def.Wagers[wi].ChipSub</small></span>
+                                <span class="pr-chip @(lit ? "pr-lit" : "")">@_def.Wagers[wi].ChipTop</span>
                             }
                         </div>
                     }
@@ -160,7 +166,7 @@ else
                         ProgWager pw = _def.Wagers[w];
                         <button type="button" class="pr-wline @(_selWager == wi ? "pr-on" : "")" @onclick="() => _selWager = wi">
                             <span class="pr-box">@(_selWager == wi ? "✓" : "")</span>
-                            <span class="pr-wline-pill"><small>@pw.ChipTop<br />@pw.ChipSub</small><b>@pw.Header</b></span>
+                            <span class="pr-wline-pill"><small>@pw.Tag<br />@pw.ChipSub</small><b>@pw.Header</b></span>
                         </button>
                     }
                     <div class="pr-ts-btns">
@@ -193,7 +199,7 @@ else
                             bool lit = s == h.Seat;
                             <button type="button" class="pr-chip @(lit ? "pr-lit" : "") @(_selPos == si ? "pr-sel" : "")"
                                     disabled="@(!lit)" aria-label="@($"Position {si}")" @onclick="() => _selPos = si">
-                                @_def.Wagers[_selWager].ChipTop<small>@_def.Wagers[_selWager].ChipSub</small>
+                                @_def.Wagers[_selWager].ChipTop
                             </button>
                         }
                     </div>
@@ -228,7 +234,7 @@ else
         @if (_screen == Screen.Confirm && !_def.Wagers[_selWager].Rows[_selRank].IsMetered)
         {
             <div class="pr-keypad">
-                <NumericKeypad AllowDecimal="false" @bind-Value="_amount" />
+                <NumericKeypad AllowDecimal="false" @bind-Value="_amount" OnEnter="Confirm" EnterLabel="Confirm" EnterDisabled="@(_amount.Length == 0)" />
             </div>
         }
 
@@ -238,21 +244,14 @@ else
             <p class="pr-paid">Paid: @string.Join(" · ", _paidLog)</p>
         }
 
-        @if (_over)
-        {
-            <p class="result-line pr-result @(_ok ? "txt-ok" : "txt-bad")">
-                @if (_ok)
-                {
-                    @("CORRECT")
-                    <span class="result-detail">@_okText</span>
-                }
-                else
-                {
-                    @($"INCORRECT — {BreakdownRow.FloorCall}")
-                    <span class="result-detail">@_youText <span class="fb-ans">@_answerText</span></span>
-                }
-            </p>
-        }
+        @* Feedback: the same card as every other game (Shared/ResultBreakdown),
+           one line per wager *@
+        <div class="feedback-area pr-feedback">
+            @if (_over)
+            {
+                <ResultBreakdown ResultText="@(_ok ? "CORRECT" : "INCORRECT")" IsCorrect="_ok" Rows="_rows" />
+            }
+        </div>
 
         <GameBar HelpTitle="@($"{_def.Name} Progressive")" OnEnd="EndSession">
             <ChildContent>
@@ -296,7 +295,8 @@ else
     private readonly List<string> _paidLog = new();
 
     private bool _over, _ok;
-    private string _okText = "", _youText = "", _answerText = "";
+    private readonly List<BreakdownRow> _rows = new();
+    private bool _scrollToFeedback, _scrollToKeypad;
     private int _correct, _played;
     private SessionLog _log = new();
     private bool _showSessionSummary, _scrollToSummary, _lastRenderedStarted;
@@ -379,6 +379,7 @@ else
         _screen = Screen.Lock;
         _paid[0] = _paid[1] = false;
         _paidLog.Clear();
+        _rows.Clear();
         _over = false;
         ResetPicks();
     }
@@ -413,15 +414,23 @@ else
     private void EndGame()
     {
         if (_over) return;
-        if (Unpaid.Any())
+        List<int> owed = Unpaid.ToList();
+        if (owed.Count > 0)
         {
-            Fail("Tapped END GAME with a pay owed.", $"{_hand!.HandName}: pay {Owed}.", "END GAME with a pay owed");
+            foreach (int w in owed)
+                _rows.Add(new BreakdownRow(_def!.Wagers[w].Header, "Not paid (tapped END GAME)", PayAnswer(w), false,
+                                           $"{_hand!.HandName} pays. Pay it before END GAME."));
+            Fail("END GAME with a pay owed", "Tapped END GAME", $"pay {Owed}");
             return;
         }
+        // Wagers made that the hand doesn't pay
+        for (int w = 0; w < 2; w++)
+        {
+            if (_hand!.Placed[w] && _hand.Row[w] < 0)
+                _rows.Add(new BreakdownRow(_def!.Wagers[w].Header, "", "No pay", true, $"{_hand.HandName}: no progressive pay."));
+        }
+        _rows.Add(new BreakdownRow("END GAME", "", "Sensors reset", true, ""));
         _ok = true;
-        _okText = _paidLog.Count == 0
-            ? $"{_hand!.HandName}: no progressive pay. END GAME resets the sensors."
-            : $"Paid {string.Join(" and ", _paidLog)}. END GAME resets the sensors.";
         Finish();
     }
 
@@ -430,9 +439,9 @@ else
         if (_over) return;
         if (!Unpaid.Any())
         {
-            Fail("Tapped PAYOUT.",
-                 _paidLog.Count == 0 ? $"{_hand!.HandName}: no progressive pay. Tap END GAME." : "Every pay was made. Tap END GAME.",
-                 "PAYOUT with nothing to pay");
+            _rows.Add(new BreakdownRow("PAYOUT", "Tapped PAYOUT", "END GAME", false,
+                _paidLog.Count == 0 ? $"{_hand!.HandName}: no progressive pay." : "Every pay was already made."));
+            Fail("PAYOUT with nothing to pay", "Tapped PAYOUT", "END GAME");
             return;
         }
         ResetPicks();
@@ -443,14 +452,11 @@ else
     {
         if (_selWager < 0) return;
         ProgWager pw = _def!.Wagers[_selWager];
-        if (_paid[_selWager])
+        if (_paid[_selWager] || _hand!.Row[_selWager] < 0)
         {
-            Fail($"Picked {pw.Header}.", $"{pw.Header} was already paid. Pay {Owed}.", "Wrong wager");
-            return;
-        }
-        if (_hand!.Row[_selWager] < 0)
-        {
-            Fail($"Picked {pw.Header}.", $"{_hand.HandName} doesn't pay the {pw.Header}. Pay {Owed}.", "Wrong wager");
+            string why = _paid[_selWager] ? $"{pw.Header} was already paid." : $"{_hand!.HandName} doesn't pay the {pw.Header}.";
+            _rows.Add(new BreakdownRow("Wager", $"Picked {pw.Header}", $"Pay {Owed}", false, why));
+            Fail("Wrong wager", $"Picked {pw.Header}", $"Pay {Owed}");
             return;
         }
         _selRank = -1;
@@ -461,10 +467,10 @@ else
     {
         if (_selRank < 0) return;
         ProgWager pw = _def!.Wagers[_selWager];
-        ProgRow right = pw.Rows[_hand!.Row[_selWager]];
-        if (_selRank != _hand.Row[_selWager])
+        if (_selRank != _hand!.Row[_selWager])
         {
-            Fail($"Picked {pw.Rows[_selRank].Name}.", $"{right.Name}, {right.PayText}.", "Wrong rank");
+            _rows.Add(new BreakdownRow(pw.Header, pw.Rows[_selRank].Name, PayAnswer(_selWager), false, ""));
+            Fail("Wrong rank", pw.Rows[_selRank].Name, PayAnswer(_selWager));
             return;
         }
         _selPos = -1;
@@ -476,6 +482,7 @@ else
         if (_selPos != _hand!.Seat) return;
         _amount = "";
         _screen = Screen.Confirm;
+        _scrollToKeypad = !_def!.Wagers[_selWager].Rows[_selRank].IsMetered;
     }
 
     private void Confirm()
@@ -485,7 +492,8 @@ else
         ProgRow row = pw.Rows[_selRank];
         if (paid != row.Pay)
         {
-            Fail($"Paid ${paid:N0}.", $"{row.Name} on the {pw.Header} pays {row.PayText}.", "Wrong amount");
+            _rows.Add(new BreakdownRow(pw.Header, $"${paid:N0}", PayAnswer(_selWager), false, ""));
+            Fail("Wrong amount", $"${paid:N0}", PayAnswer(_selWager));
             return;
         }
         MarkPaid($"{pw.Header} {row.PayText}");
@@ -501,9 +509,31 @@ else
     {
         _paid[_selWager] = true;
         _paidLog.Add(what);
+        _rows.Add(new BreakdownRow(_def!.Wagers[_selWager].Header, "", PayAnswer(_selWager), true, ""));
         ResetPicks();
         _screen = Screen.Tables;
     }
+
+    // "Full House · $20" / "Royal Flush · Call Supervisor"
+    private string PayAnswer(int w)
+    {
+        ProgRow r = _def!.Wagers[w].Rows[_hand!.Row[w]];
+        return r.IsMetered ? $"{r.Name} · Call Supervisor" : $"{r.Name} · {r.PayText}";
+    }
+
+    // What to do on the screen showing (the touchscreen is what's being
+    // practised, so this says how, never the answer)
+    private string Instruction => _screen switch
+    {
+        Screen.Lock => "The wagers are on the sensors. Tap PLAY to lock them in.",
+        Screen.Tables when _paidLog.Count > 0 => "Another wager to pay? Tap PAYOUT. Everything paid? Tap END GAME.",
+        Screen.Tables => "Check the hand against the pay tables. Tap PAYOUT if it qualifies, END GAME if it doesn't.",
+        Screen.Wager => "Tap the wager to pay, then NEXT.",
+        Screen.Rank => "Tap the hand's rank, then NEXT.",
+        Screen.Position => "Tap the player's position (the lit chip), then NEXT.",
+        Screen.Confirm when _def!.Wagers[_selWager].Rows[_selRank].IsMetered => "A metered pay: tap CALL SUPERVISOR.",
+        _ => "Enter the amount paid, then CONFIRM."
+    };
 
     private void BackStep()
     {
@@ -519,11 +549,9 @@ else
 
     // ---- Scoring -----------------------------------------------------------
 
-    private void Fail(string you, string answer, string why)
+    private void Fail(string why, string you, string answer)
     {
         _ok = false;
-        _youText = you;
-        _answerText = answer;
         _log.Miss(_hand!.HandName, why, you, answer);
         _screen = Screen.Tables;
         Finish();
@@ -532,6 +560,7 @@ else
     private void Finish()
     {
         _over = true;
+        _scrollToFeedback = true;
         _played++;
         if (_ok) _correct++;
     }
@@ -542,6 +571,18 @@ else
         {
             _scrollToSummary = false;
             try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
+        }
+
+        if (_scrollToFeedback && _over)
+        {
+            _scrollToFeedback = false;
+            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
+        }
+
+        if (_scrollToKeypad && _screen == Screen.Confirm)
+        {
+            _scrollToKeypad = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".pr-howto"); } catch { }
         }
 
         if (_started != _lastRenderedStarted)

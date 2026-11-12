@@ -1,0 +1,594 @@
+@page "/progressives"
+@using DealerSchoolTrainerWeb.Core
+@using DealerSchoolTrainerWeb.Games.ProgressiveTrainer
+@implements IDisposable
+@inject GameResetService GameReset
+@inject IJSRuntime JS
+
+<PageTitle>Progressives</PageTitle>
+
+@* Progressives: the table's progressive touchscreen routine, for
+   Blackjack, Three Card Prime, Pai Gow and Hold'em. The felt shows only
+   the cards the progressive pays on; below it, a practice touchscreen
+   drawn like the real one at the table:
+     PLAY (locks in the wagers) -> pay tables with END GAME / PAYOUT
+     PAYOUT -> pick the wager, NEXT -> pick the rank, NEXT -> pick the
+     position, NEXT -> enter the amount paid, CONFIRM (a metered pay:
+     Call Supervisor instead) -> back to the pay tables
+     END GAME ends every round (resets the sensors).
+   Each wager is paid on its own. A wrong step ends the hand with
+   "INCORRECT - Call the floor". About 3 hands in 4 qualify (practice
+   boost). Pay tables: the house's base tables, no Dynamic Pays. *@
+
+@if (_def is null || !_started)
+{
+    <div class="start-screen">
+        <h1>PROGRESSIVES</h1>
+        <p class="pr-intro">Practice the progressive touchscreen at the table: lock in the wagers, recognize a qualifying hand, and pay it the way the screen walks you through.</p>
+
+        <div class="mode-list">
+            @foreach (ProgGameDef g in ProgressiveGames.All)
+            {
+                ProgGameDef game = g;
+                <ModeCard Title="@game.Name"
+                          Description="@game.Description"
+                          Expanded="@(_openKey == game.Key)"
+                          OnToggle="() => _openKey = _openKey == game.Key ? null : game.Key"
+                          OnStart="() => StartGame(game)" />
+            }
+        </div>
+
+        <p class="pr-note">About 3 hands in 4 qualify, so the payout routine gets plenty of practice. A metered pay (a percentage of the meter) is a Call Supervisor.</p>
+    </div>
+}
+else
+{
+    ProgHand h = _hand!;
+    <div class="play-screen pr-screen has-game-bar">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        <GameStatus Title="@_def.Title" Correct="_correct" Played="_played"
+                    ContinueTitle="@($"Progressives · {_def.Name}")"
+                    ContinueUrl="@($"progressives?open={_def.Key}")" />
+
+        @* The felt: only the cards the progressive pays on *@
+        <div class="felt pr-felt">
+            @if (_def.Game is ProgGame.Blackjack or ProgGame.Holdem)
+            {
+                <div class="pr-cap">@_def.FeltLabel</div>
+                @if (_screen == Screen.Lock)
+                {
+                    <div class="pr-wait">Cards are dealt after PLAY</div>
+                }
+                else
+                {
+                    <div class="pr-cards">
+                        @foreach (var c in _def.Game == ProgGame.Blackjack ? h.Dealer : h.Board)
+                        {
+                            <img class="pr-card" src="images/cards/@(c.Code).png" alt="@c.Name" />
+                        }
+                    </div>
+                }
+                <div class="pr-seatrow">
+                    @Seat(h)
+                    @if (_screen != Screen.Lock)
+                    {
+                        <div class="pr-cards">
+                            @foreach (var c in h.Player)
+                            {
+                                <img class="pr-card" src="images/cards/@(c.Code).png" alt="@c.Name" />
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="pr-cap">PLAYER</div>
+                @if (_screen == Screen.Lock)
+                {
+                    <div class="pr-wait">Cards are dealt after PLAY</div>
+                }
+                else
+                {
+                    <div class="pr-cards @(_def.Game == ProgGame.PaiGow ? "pr-fan" : "")">
+                        @foreach (var c in h.Player)
+                        {
+                            <img class="pr-card" src="images/cards/@(c.Code).png" alt="@c.Name" />
+                        }
+                    </div>
+                }
+                <div class="pr-seatrow">@Seat(h)</div>
+            }
+        </div>
+
+        @* What to do on this screen *@
+        @if (!_over)
+        {
+            <p class="cr-howto pr-howto">@Instruction</p>
+        }
+
+        @* The practice touchscreen *@
+        <div class="pr-ts @(_screen == Screen.Confirm ? "pr-ts-short" : "")">
+            <div class="pr-ts-top">
+                @if (!_over && _screen is Screen.Wager or Screen.Rank or Screen.Position or Screen.Confirm)
+                {
+                    <button type="button" class="pr-back" aria-label="Back" @onclick="BackStep">&lsaquo;</button>
+                }
+            </div>
+
+            @switch (_screen)
+            {
+                case Screen.Lock:
+                    @for (int w = 0; w < 2; w++)
+                    {
+                        int wi = w;
+                        <div class="pr-grid">
+                            @for (int s = 1; s <= 6; s++)
+                            {
+                                bool lit = s == h.Seat && h.Placed[wi];
+                                <span class="pr-chip @(lit ? "pr-lit" : "")">@_def.Wagers[wi].ChipTop</span>
+                            }
+                        </div>
+                    }
+                    <div class="pr-ts-btns">
+                        <button type="button" class="pr-btn pr-play" @onclick="Play">PLAY</button>
+                    </div>
+                    break;
+
+                case Screen.Tables:
+                    <div class="pr-pts">
+                        @for (int w = 0; w < 2; w++)
+                        {
+                            ProgWager pw = _def.Wagers[w];
+                            <div class="pr-pt">
+                                <div class="pr-pt-hd @pw.HeaderClass">@pw.Header</div>
+                                @foreach (ProgRow r in pw.Rows)
+                                {
+                                    <div class="pr-pt-row"><span>@r.Name</span><b>@r.PayText</b></div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="pr-ts-btns">
+                        <button type="button" class="pr-btn pr-end" disabled="@_over" @onclick="EndGame">END GAME</button>
+                        <button type="button" class="pr-btn pr-pay" disabled="@_over" @onclick="Payout">PAYOUT</button>
+                    </div>
+                    break;
+
+                case Screen.Wager:
+                    @for (int w = 0; w < 2; w++)
+                    {
+                        if (!h.Placed[w]) continue;
+                        int wi = w;
+                        ProgWager pw = _def.Wagers[w];
+                        <button type="button" class="pr-wline @(_selWager == wi ? "pr-on" : "")" @onclick="() => _selWager = wi">
+                            <span class="pr-box">@(_selWager == wi ? "✓" : "")</span>
+                            <span class="pr-wline-pill"><small>@pw.Tag<br />@pw.ChipSub</small><b>@pw.Header</b></span>
+                        </button>
+                    }
+                    <div class="pr-ts-btns">
+                        <button type="button" class="pr-btn pr-next" disabled="@(_selWager < 0)" @onclick="NextFromWager">NEXT</button>
+                    </div>
+                    break;
+
+                case Screen.Rank:
+                    {
+                        ProgWager pw = _def.Wagers[_selWager];
+                        <div class="pr-rank-hd">@pw.Header</div>
+                        @for (int r = 0; r < pw.Rows.Length; r++)
+                        {
+                            int ri = r;
+                            <button type="button" class="pr-rank @(_selRank == ri ? "pr-on" : "")" @onclick="() => _selRank = ri">
+                                <span>@pw.Rows[ri].Name</span><b>@pw.Rows[ri].PayText</b>
+                            </button>
+                        }
+                        <div class="pr-ts-btns">
+                            <button type="button" class="pr-btn pr-next" disabled="@(_selRank < 0)" @onclick="NextFromRank">NEXT</button>
+                        </div>
+                    }
+                    break;
+
+                case Screen.Position:
+                    <div class="pr-grid pr-grid-pos">
+                        @for (int s = 1; s <= 6; s++)
+                        {
+                            int si = s;
+                            bool lit = s == h.Seat;
+                            <button type="button" class="pr-chip @(lit ? "pr-lit" : "") @(_selPos == si ? "pr-sel" : "")"
+                                    disabled="@(!lit)" aria-label="@($"Position {si}")" @onclick="() => _selPos = si">
+                                @_def.Wagers[_selWager].ChipTop
+                            </button>
+                        }
+                    </div>
+                    <div class="pr-ts-btns">
+                        <button type="button" class="pr-btn pr-next" disabled="@(_selPos < 0)" @onclick="NextFromPosition">NEXT</button>
+                    </div>
+                    break;
+
+                case Screen.Confirm:
+                    {
+                        ProgRow row = _def.Wagers[_selWager].Rows[_selRank];
+                        <div class="pr-cf">@_def.Wagers[_selWager].Header · @row.Name · Position @_selPos</div>
+                        @if (row.IsMetered)
+                        {
+                            <div class="pr-sup">&#x2605; @row.Meter of meter<br />Supervisor required</div>
+                            <div class="pr-ts-btns">
+                                <button type="button" class="pr-btn pr-supb" @onclick="CallSupervisor">CALL SUPERVISOR</button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="pr-amt">@(_amount.Length > 0 ? "$" + _amount : "Amount paid")</div>
+                            <div class="pr-ts-btns">
+                                <button type="button" class="pr-btn pr-next" disabled="@(_amount.Length == 0)" @onclick="Confirm">CONFIRM</button>
+                            </div>
+                        }
+                    }
+                    break;
+            }
+        </div>
+
+        @if (_screen == Screen.Confirm && !_def.Wagers[_selWager].Rows[_selRank].IsMetered)
+        {
+            <div class="pr-keypad">
+                <NumericKeypad AllowDecimal="false" @bind-Value="_amount" OnEnter="Confirm" EnterLabel="Confirm" EnterDisabled="@(_amount.Length == 0)" />
+            </div>
+        }
+
+        @* What's been paid this hand (not what's left: deciding that is the job) *@
+        @if (!_over && _paidLog.Count > 0 && _screen == Screen.Tables)
+        {
+            <p class="pr-paid">Paid: @string.Join(" · ", _paidLog)</p>
+        }
+
+        @* Feedback: the same card as every other game (Shared/ResultBreakdown),
+           one line per wager *@
+        <div class="feedback-area pr-feedback">
+            @if (_over)
+            {
+                <ResultBreakdown ResultText="@(_ok ? "CORRECT" : "INCORRECT")" IsCorrect="_ok" Rows="_rows" />
+            }
+        </div>
+
+        <GameBar HelpTitle="@($"{_def.Name} Progressive")" OnEnd="EndSession">
+            <ChildContent>
+                <button class="game-bar-main" disabled="@(!_over)" @onclick="NextHand">Next Hand</button>
+            </ChildContent>
+            <HelpContent>
+                <p><b>Pays on:</b> @_def.Description</p>
+                <ol class="pr-help-steps">
+                    <li>Before the deal, players put $1 / $5 on the progressive sensors. Tap <b>PLAY</b> to lock in the wagers (the sensor lights go solid), then collect the chips and lock them up. Then deal the game.</li>
+                    <li>A qualifying hand: tap <b>PAYOUT</b>, pick the wager, the rank, then the player's position (only played positions light up). Pay it, then <b>CONFIRM</b>.</li>
+                    <li>Each wager is paid on its own: with both wagers winning, go through <b>PAYOUT</b> twice.</li>
+                    <li>A metered pay (a percentage of the meter) needs a supervisor: <b>Call Supervisor</b>.</li>
+                    <li>Every round ends with <b>END GAME</b>, paid or not. It resets the sensors.</li>
+                </ol>
+                <p>Progressives are settled after the game's other wagers.</p>
+            </HelpContent>
+        </GameBar>
+    </div>
+}
+
+@if (_showSessionSummary && _def is not null)
+{
+    <SessionSummary ModeKey="@($"pr-{_def.Key}")" Rounds="_played" Correct="_correct" Log="_log"
+                    RightText="handled right" YouVerb="did"
+                    OnAgain="PracticeAgain" OnDone="CloseSummary" />
+}
+
+@code {
+    private enum Screen { Lock, Tables, Wager, Rank, Position, Confirm }
+
+    private static readonly Random Rng = new();
+
+    private ProgGameDef? _def;
+    private string? _openKey;
+    private bool _started;
+    private ProgHand? _hand;
+    private Screen _screen;
+    private int _selWager = -1, _selRank = -1, _selPos = -1;
+    private string _amount = "";
+    private readonly bool[] _paid = new bool[2];
+    private readonly List<string> _paidLog = new();
+
+    private bool _over, _ok;
+    private readonly List<BreakdownRow> _rows = new();
+    private bool _scrollToFeedback, _scrollToKeypad;
+    private int _correct, _played;
+    private SessionLog _log = new();
+    private bool _showSessionSummary, _scrollToSummary, _lastRenderedStarted;
+
+    // ?open=bj / tc / pg / hd: that game's card open on the start screen
+    [SupplyParameterFromQuery(Name = "open")] public string? OpenFromLink { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _openKey = ProgressiveGames.ByKey(OpenFromLink)?.Key;
+        GameReset.ResetRequested += OnResetRequested;
+    }
+
+    private void OnResetRequested()
+    {
+        _showSessionSummary = false;
+        _started = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => GameReset.ResetRequested -= OnResetRequested;
+
+    private RenderFragment Seat(ProgHand h) => __builder =>
+    {
+        <div class="pr-seat">
+            <b>Seat @h.Seat</b>
+            <span class="pr-tags">
+                @for (int w = 0; w < 2; w++)
+                {
+                    if (h.Placed[w])
+                    {
+                        <i>@_def!.Wagers[w].Tag</i>
+                    }
+                }
+            </span>
+        </div>
+    };
+
+    // ---- Session -----------------------------------------------------------
+
+    private void StartGame(ProgGameDef game)
+    {
+        _def = game;
+        _openKey = game.Key;
+        _log = new SessionLog();
+        _correct = 0;
+        _played = 0;
+        _started = true;
+        DealHand();
+    }
+
+    private void BackToStart() => _started = false;
+
+    private void EndSession()
+    {
+        if (_played > 0)
+        {
+            _showSessionSummary = true;
+            _scrollToSummary = true;
+        }
+        else BackToStart();
+    }
+
+    private void CloseSummary()
+    {
+        _showSessionSummary = false;
+        BackToStart();
+    }
+
+    private void PracticeAgain()
+    {
+        _showSessionSummary = false;
+        StartGame(_def!);
+        _lastRenderedStarted = false;
+    }
+
+    private void DealHand()
+    {
+        _hand = ProgressiveGames.Deal(_def!, Rng);
+        _screen = Screen.Lock;
+        _paid[0] = _paid[1] = false;
+        _paidLog.Clear();
+        _rows.Clear();
+        _over = false;
+        ResetPicks();
+    }
+
+    private void NextHand()
+    {
+        if (_over) DealHand();
+    }
+
+    private void ResetPicks()
+    {
+        _selWager = _selRank = _selPos = -1;
+        _amount = "";
+    }
+
+    // ---- The touchscreen ---------------------------------------------------
+
+    private void Play() => _screen = Screen.Tables;
+
+    private IEnumerable<int> Unpaid => _hand!.Winners.Where(w => !_paid[w]);
+
+    // e.g. "HUH $5 · Full House · $20", "HUH $1 · Royal Flush · 100% of meter, Call Supervisor"
+    private string PayLine(int w)
+    {
+        ProgRow r = _def!.Wagers[w].Rows[_hand!.Row[w]];
+        return r.IsMetered ? $"{_def.Wagers[w].Header} · {r.Name} · {r.Meter} of meter, Call Supervisor"
+                           : $"{_def.Wagers[w].Header} · {r.Name} · {r.PayText}";
+    }
+
+    private string Owed => string.Join(" and ", Unpaid.Select(PayLine));
+
+    private void EndGame()
+    {
+        if (_over) return;
+        List<int> owed = Unpaid.ToList();
+        if (owed.Count > 0)
+        {
+            foreach (int w in owed)
+                _rows.Add(new BreakdownRow(_def!.Wagers[w].Header, "Not paid (tapped END GAME)", PayAnswer(w), false,
+                                           $"{_hand!.HandName} pays. Pay it before END GAME."));
+            Fail("END GAME with a pay owed", "Tapped END GAME", $"pay {Owed}");
+            return;
+        }
+        // Wagers made that the hand doesn't pay
+        for (int w = 0; w < 2; w++)
+        {
+            if (_hand!.Placed[w] && _hand.Row[w] < 0)
+                _rows.Add(new BreakdownRow(_def!.Wagers[w].Header, "", "No pay", true, $"{_hand.HandName}: no progressive pay."));
+        }
+        _rows.Add(new BreakdownRow("END GAME", "", "Sensors reset", true, ""));
+        _ok = true;
+        Finish();
+    }
+
+    private void Payout()
+    {
+        if (_over) return;
+        if (!Unpaid.Any())
+        {
+            _rows.Add(new BreakdownRow("PAYOUT", "Tapped PAYOUT", "END GAME", false,
+                _paidLog.Count == 0 ? $"{_hand!.HandName}: no progressive pay." : "Every pay was already made."));
+            Fail("PAYOUT with nothing to pay", "Tapped PAYOUT", "END GAME");
+            return;
+        }
+        ResetPicks();
+        _screen = Screen.Wager;
+    }
+
+    private void NextFromWager()
+    {
+        if (_selWager < 0) return;
+        ProgWager pw = _def!.Wagers[_selWager];
+        if (_paid[_selWager] || _hand!.Row[_selWager] < 0)
+        {
+            string why = _paid[_selWager] ? $"{pw.Header} was already paid." : $"{_hand!.HandName} doesn't pay the {pw.Header}.";
+            _rows.Add(new BreakdownRow("Wager", $"Picked {pw.Header}", $"Pay {Owed}", false, why));
+            Fail("Wrong wager", $"Picked {pw.Header}", $"Pay {Owed}");
+            return;
+        }
+        _selRank = -1;
+        _screen = Screen.Rank;
+    }
+
+    private void NextFromRank()
+    {
+        if (_selRank < 0) return;
+        ProgWager pw = _def!.Wagers[_selWager];
+        if (_selRank != _hand!.Row[_selWager])
+        {
+            _rows.Add(new BreakdownRow(pw.Header, pw.Rows[_selRank].Name, PayAnswer(_selWager), false, ""));
+            Fail("Wrong rank", pw.Rows[_selRank].Name, PayAnswer(_selWager));
+            return;
+        }
+        _selPos = -1;
+        _screen = Screen.Position;
+    }
+
+    private void NextFromPosition()
+    {
+        if (_selPos != _hand!.Seat) return;
+        _amount = "";
+        _screen = Screen.Confirm;
+        _scrollToKeypad = !_def!.Wagers[_selWager].Rows[_selRank].IsMetered;
+    }
+
+    private void Confirm()
+    {
+        if (!int.TryParse(_amount, out int paid)) return;
+        ProgWager pw = _def!.Wagers[_selWager];
+        ProgRow row = pw.Rows[_selRank];
+        if (paid != row.Pay)
+        {
+            _rows.Add(new BreakdownRow(pw.Header, $"${paid:N0}", PayAnswer(_selWager), false, ""));
+            Fail("Wrong amount", $"${paid:N0}", PayAnswer(_selWager));
+            return;
+        }
+        MarkPaid($"{pw.Header} {row.PayText}");
+    }
+
+    private void CallSupervisor()
+    {
+        ProgWager pw = _def!.Wagers[_selWager];
+        MarkPaid($"{pw.Header} {pw.Rows[_selRank].Name} (Supervisor called)");
+    }
+
+    private void MarkPaid(string what)
+    {
+        _paid[_selWager] = true;
+        _paidLog.Add(what);
+        _rows.Add(new BreakdownRow(_def!.Wagers[_selWager].Header, "", PayAnswer(_selWager), true, ""));
+        ResetPicks();
+        _screen = Screen.Tables;
+    }
+
+    // "Full House · $20" / "Royal Flush · Call Supervisor"
+    private string PayAnswer(int w)
+    {
+        ProgRow r = _def!.Wagers[w].Rows[_hand!.Row[w]];
+        return r.IsMetered ? $"{r.Name} · Call Supervisor" : $"{r.Name} · {r.PayText}";
+    }
+
+    // What to do on the screen showing (the touchscreen is what's being
+    // practised, so this says how, never the answer)
+    private string Instruction => _screen switch
+    {
+        Screen.Lock => "The wagers are on the sensors. Tap PLAY to lock them in.",
+        Screen.Tables when _paidLog.Count > 0 => "Another wager to pay? Tap PAYOUT. Everything paid? Tap END GAME.",
+        Screen.Tables => "Check the hand against the pay tables. Tap PAYOUT if it qualifies, END GAME if it doesn't.",
+        Screen.Wager => "Tap the wager to pay, then NEXT.",
+        Screen.Rank => "Tap the hand's rank, then NEXT.",
+        Screen.Position => "Tap the player's position (the lit chip), then NEXT.",
+        Screen.Confirm when _def!.Wagers[_selWager].Rows[_selRank].IsMetered => "A metered pay: tap CALL SUPERVISOR.",
+        _ => "Enter the amount paid, then CONFIRM."
+    };
+
+    private void BackStep()
+    {
+        _screen = _screen switch
+        {
+            Screen.Confirm => Screen.Position,
+            Screen.Position => Screen.Rank,
+            Screen.Rank => Screen.Wager,
+            _ => Screen.Tables
+        };
+        if (_screen == Screen.Tables) ResetPicks();
+    }
+
+    // ---- Scoring -----------------------------------------------------------
+
+    private void Fail(string why, string you, string answer)
+    {
+        _ok = false;
+        _log.Miss(_hand!.HandName, why, you, answer);
+        _screen = Screen.Tables;
+        Finish();
+    }
+
+    private void Finish()
+    {
+        _over = true;
+        _scrollToFeedback = true;
+        _played++;
+        if (_ok) _correct++;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollToSummary && _showSessionSummary)
+        {
+            _scrollToSummary = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".session-summary"); } catch { }
+        }
+
+        if (_scrollToFeedback && _over)
+        {
+            _scrollToFeedback = false;
+            try { await JS.InvokeVoidAsync("dstRevealFeedback"); } catch { }
+        }
+
+        if (_scrollToKeypad && _screen == Screen.Confirm)
+        {
+            _scrollToKeypad = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".pr-howto"); } catch { }
+        }
+
+        if (_started != _lastRenderedStarted)
+        {
+            _lastRenderedStarted = _started;
+            try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+        }
+    }
+}

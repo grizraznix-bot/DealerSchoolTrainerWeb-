@@ -58,10 +58,10 @@ public sealed class ProgGameDef
 
 public static class ProgressiveGames
 {
-    // Practice boost: about half the hands qualify (naturally far fewer,
+    // Practice boost: about 3 hands in 4 qualify (naturally far fewer,
     // e.g. about 1 in 36 for Hold'em's Full House or better), so the
     // payout routine gets practised and END GAME still has to be decided
-    private const double QualifyRate = 0.5;
+    private const double QualifyRate = 0.75;
 
     public static readonly ProgGameDef[] All =
     {
@@ -110,13 +110,13 @@ public static class ProgressiveGames
             FeltLabel = "PLAYER",
             Wagers = new[]
             {
-                new ProgWager("ET $1", "$1", "Emperor", "ET $1", "pr-h5", new ProgRow[]
+                new ProgWager("ET $1", "ET", "Emperor", "ET $1", "pr-h5", new ProgRow[]
                 {
                     new("7-Card SF (no Joker)", 0, "100%"), new("Royal + A-K Suited", 0, "50%"),
                     new("7-Card Straight Flush", 0, "25%"), new("Five Aces", 1000), new("Royal Flush", 175),
                     new("Straight Flush", 150), new("Four of a Kind", 75), new("Full House", 5)
                 }),
-                new ProgWager("INS $1", "$1", "Insurance", "Ins $1", "pr-h1", new ProgRow[]
+                new ProgWager("INS $1", "INS", "Insurance", "Ins $1", "pr-h1", new ProgRow[]
                 {
                     new("9-High Same Color", 0, "100%"), new("9-High Pai Gow", 250),
                     new("10-High Pai Gow", 125), new("Jack-High Pai Gow", 30), new("Queen-High Pai Gow", 7)

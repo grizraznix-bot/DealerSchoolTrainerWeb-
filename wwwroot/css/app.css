@@ -8078,13 +8078,33 @@ body {
 }
 
 .pr-ts-top {
-    height: 24px;
-    margin-bottom: 0.2rem;
+    display: flex;
+    align-items: center;
+    min-height: 30px;
+    margin-bottom: 0.3rem;
+}
+
+.pr-ts-short {
+    min-height: 0;
+}
+
+/* The "what to do" line above the touchscreen; the page scrolls here
+   when the number pad opens (clear of the phone top bar) */
+.pr-howto {
+    margin-top: 0.5rem;
+    scroll-margin-top: 64px;
+}
+
+.pr-feedback {
+    margin-top: 0.6rem;
 }
 
 .pr-back {
-    width: 26px;
-    height: 24px;
+    flex: none;
+    width: 34px;
+    height: 30px;
+    min-height: 0;
+    min-width: 0;
     padding: 0;
     border: 1.5px solid #5d8cff;
     border-radius: 5px;
@@ -8115,8 +8135,19 @@ body {
     letter-spacing: 0.06em;
 }
 
+/* Ready to tap: a soft glow. Not yet (nothing picked): faded, dashed */
+.pr-btn:not(:disabled) {
+    box-shadow: 0 0 8px rgba(232, 240, 255, 0.45);
+}
+
+.pr-next:not(:disabled) {
+    color: #7aa2ff;
+}
+
 .pr-btn:disabled {
-    opacity: 0.4;
+    border-style: dashed;
+    box-shadow: none;
+    opacity: 0.3;
 }
 
 .pr-play { color: #2fe0a8; border-color: #2fe0a8; }
@@ -8150,7 +8181,7 @@ body {
     box-shadow: inset 0 0 0 4px #1e2c30, inset 0 0 0 6px #9aa4aa;
     color: #9aa4aa;
     font-weight: 800;
-    font-size: 0.8rem;
+    font-size: 0.95rem;
     line-height: 1;
     opacity: 0.4;
 }
