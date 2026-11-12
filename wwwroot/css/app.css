@@ -8498,3 +8498,30 @@ body {
     font-weight: 800;
     font-size: 1.3rem;
 }
+
+/* Progressives Tutorial (Pages/ProgressivesTutorial): touchscreen pictures */
+.pr-ts.pr-ts-pic {
+    min-height: 0;
+    margin: 0.4rem 0;
+}
+
+.tu-felt .pr-ts.pr-ts-pic {
+    margin: 0 0 0.4rem;
+}
+
+span.pr-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pr-rank {
+    box-sizing: border-box;
+}
+
+/* The player's wagers on the felt, above the touchscreen picture */
+.pr-tu-seat {
+    display: flex;
+    justify-content: center;
+    padding: 0.45rem;
+}

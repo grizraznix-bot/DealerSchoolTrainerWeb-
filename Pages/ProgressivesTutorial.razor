@@ -1,0 +1,179 @@
+@page "/progressives-tutorial"
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Progressives Tutorial</PageTitle>
+
+@* Progressives Tutorial: a Beyond Dealer School topic. An intro screen,
+   five short steps (what a progressive is, locking in -- checking the
+   wagers and the lit positions first, paying a winner, metered pays and
+   END GAME, what each game pays on), then a finish screen with a practice
+   link to each game. The touchscreen pictures use the Progressives game's
+   own styles (pr- classes). Opened from the "New to Progressives?" card on
+   the Progressives page. *@
+<div class="play-screen tu-screen has-game-bar">
+    <div class="tu-head">
+        <b>Progressives Tutorial</b>
+        <span>@(_step == 0 ? "About 4 minutes" : _step == LastStep ? "Complete" : $"Step {_step} of {StepCount}")</span>
+    </div>
+    @if (_step > 0)
+    {
+        <div class="tu-dots" aria-hidden="true">
+            @for (int i = 1; i <= StepCount; i++)
+            {
+                <i class="@(i < _step || _step == LastStep ? "tu-done" : i == _step ? "tu-on" : "")"></i>
+            }
+        </div>
+    }
+
+    @switch (_step)
+    {
+        case 0:
+            <div class="felt tu-felt">
+                <div class="pr-ts pr-ts-pic">@ChipGrid(4)</div>
+                <div class="tu-tot">Progressives<small>Beyond Dealer School</small></div>
+            </div>
+            <p>Players can add a $1 or $5 progressive wager. You lock it in on the table's touchscreen and pay the winners from it. Progressives practises that touchscreen routine for four games.</p>
+            <ol class="tu-steps">
+                <li><div><b>What a progressive is</b><span>$1 and $5 wagers, settled last</span></div></li>
+                <li><div><b>Lock in</b><span>Check the wagers, PLAY, collect the chips</span></div></li>
+                <li><div><b>Paying a winner</b><span>PAYOUT: wager, rank, position</span></div></li>
+                <li><div><b>Metered pays and END GAME</b><span>Call Supervisor; END GAME every round</span></div></li>
+                <li><div><b>What each game pays on</b><span>Blackjack, Three Card, Pai Gow, Hold'em</span></div></li>
+            </ol>
+            break;
+
+        case 1:
+            <h2 class="tu-title">What a progressive is</h2>
+            <p>An optional wager on top of the game: <b>$1</b> on the $1 sensor and/or <b>$5</b> on the $5 sensor at the player's position. Pai Gow's two are both $1: <b>Emperor's Treasure</b> (ET) and <b>Insurance</b> (INS).</p>
+            <p>It pays a fixed amount from its pay table, or for the top hands a <b>percentage of the meter</b>, the jackpot that keeps growing.</p>
+            <div class="tu-tip">Progressives are settled <b>after</b> the game's other wagers.</div>
+            break;
+
+        case 2:
+            <h2 class="tu-title">Lock in</h2>
+            <p>Before the deal, players put their chips on the progressive sensors.</p>
+            <div class="felt pr-tu-seat">
+                <div class="pr-seat"><b>Position 4</b><span class="pr-tags"><i>$5</i><i>$1</i></span></div>
+            </div>
+            <div class="pr-ts pr-ts-pic">
+                @ChipGrid(4)
+                <div class="pr-ts-btns"><span class="pr-btn pr-play">PLAY</span></div>
+            </div>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">CHECK FIRST</span> Before you tap PLAY, make sure the wagers are right ($1 on the $1 sensor, $5 on the $5) and that each of those positions is <b>lit on the screen</b>. Here, position 4 has both, and both are lit.</div>
+            <p>Tap <b>PLAY</b>: the wagers lock in and the sensor lights go solid.</p>
+            <div class="tu-tip">After PLAY, <b>collect the chips</b> from the sensors and <b>lock them up</b>. Then deal the game.</div>
+            break;
+
+        case 3:
+            <h2 class="tu-title">Paying a winner</h2>
+            <p>Settle the game's other wagers first. Then, for a qualifying hand, tap <b>PAYOUT</b> and follow the screens:</p>
+            <div class="tu-line"><span class="tu-rl-x">1</span><div><b>Wager</b><span>The $5 or the $1, then NEXT</span></div></div>
+            <div class="tu-line"><span class="tu-rl-x">2</span><div><b>Rank</b><span>The hand on the pay table, then NEXT</span></div></div>
+            <div class="pr-ts pr-ts-pic">
+                <div class="pr-rank-hd">21+3 $5</div>
+                @foreach (var (name, pay) in ExampleTable)
+                {
+                    <div class="pr-rank @(name == "3 of a Kind (Offsuit)" ? "pr-on" : "")"><span>@name</span><b>@pay</b></div>
+                }
+            </div>
+            <div class="tu-line"><span class="tu-rl-x">3</span><div><b>Position</b><span>The player's lit chip, then NEXT</span></div></div>
+            <div class="tu-line"><span class="tu-rl-x">4</span><div><b>Pay it</b><span>Pay the amount, then CONFIRM</span></div></div>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">EACH WAGER</span> Both wagers win? Each is paid on its own: go through PAYOUT twice. The second time, only the unpaid wager is listed.</div>
+            <a class="tu-practice" href="progressives?open=bj">Practice this: Blackjack Progressive <span aria-hidden="true">›</span></a>
+            break;
+
+        case 4:
+            <h2 class="tu-title">Metered pays and END GAME</h2>
+            <p>A top hand pays a <b>percentage of the meter</b> (100%, 50% or 25%). Pick it the same way, and the last screen asks for a supervisor.</p>
+            <div class="pr-ts pr-ts-pic">
+                <div class="pr-sup">&#x2605; 100% of meter<br />Supervisor required</div>
+                <div class="pr-ts-btns"><span class="pr-btn pr-supb">CALL SUPERVISOR</span></div>
+            </div>
+            <p>Every round ends with <b>END GAME</b>, paid or not. It resets the sensors for the next hand.</p>
+            <div class="tu-tip tu-tip-gold"><span class="tu-tag">CALL THE FLOOR</span> A mistake is never fixed on your own. Call the floor before going any further.</div>
+            break;
+
+        case 5:
+            <h2 class="tu-title">What each game pays on</h2>
+            <p>The touchscreen routine is the same in every game. What changes is the hand it pays on:</p>
+            <table class="tu-pt">
+                <tr><td><b>Blackjack</b> 21+3</td><td>Player's 2 cards + dealer's up card</td></tr>
+                <tr><td><b>Three Card</b> Mini Royal</td><td>Player's 3 cards</td></tr>
+                <tr><td><b>Pai Gow</b> ET and Insurance</td><td>Player's 7 cards</td></tr>
+                <tr><td><b>Hold'em</b></td><td>Player's best 5 of 7</td></tr>
+            </table>
+            <div class="tu-tip">Three Card: the jackpot Mini-Royal is <b>Diamonds</b> on the $5 and <b>Spades</b> on the $1.</div>
+            <div class="tu-tip">Hold'em: a Royal on the board alone is a <b>Community Royal</b>, its own line on the pay table.</div>
+            break;
+
+        default:
+            <div class="felt tu-felt tu-finish">
+                <div class="tu-spade">♦</div>
+                <div class="tu-tot">Nice work!<small>You've covered the progressive touchscreen.</small></div>
+            </div>
+            <p><b>Practice it</b></p>
+            <div class="tu-order">
+                <a class="tu-next" href="progressives?open=bj"><i>1</i><b>Blackjack</b><small>21+3</small></a>
+                <a href="progressives?open=tc"><i>2</i><b>Three Card Prime</b><small>Mini Royal</small></a>
+                <a href="progressives?open=pg"><i>3</i><b>Pai Gow</b><small>ET and Insurance</small></a>
+                <a href="progressives?open=hd"><i>4</i><b>Heads-Up Hold'em</b><small>best 5 of 7</small></a>
+            </div>
+            <p class="tu-muted">You can reopen this tutorial any time from the Progressives page.</p>
+            break;
+    }
+
+    <div class="game-bar tu-bar">
+        @if (_step == 0)
+        {
+            <button type="button" @onclick='() => Nav.NavigateTo("progressives")'>Close</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">Start</button>
+        }
+        else if (_step == LastStep)
+        {
+            <button type="button" @onclick="() => Go(0)">Review</button>
+            <button type="button" class="game-bar-main" @onclick='() => Nav.NavigateTo("progressives")'>Start Practice</button>
+        }
+        else
+        {
+            <button type="button" @onclick="() => Go(_step - 1)">Back</button>
+            <button type="button" class="game-bar-main" @onclick="NextStep">@(_step == StepCount ? "Finish" : "Next")</button>
+        }
+    </div>
+</div>
+
+@code {
+    private const int StepCount = 5;
+    private const int LastStep = StepCount + 1;
+
+    // 0 = intro, 1-5 = the steps, 6 = finish
+    private int _step;
+
+    private static readonly (string Name, string Pay)[] ExampleTable =
+    {
+        ("3 of a Kind Aces (Suited)", "100%"), ("3 of a Kind (Suited)", "$500"), ("Straight Flush", "$100"),
+        ("3 of a Kind (Offsuit)", "$50"), ("Straight", "$10")
+    };
+
+    // The touchscreen's chip grid ($5 row, $1 row) with one position lit
+    private static RenderFragment ChipGrid(int seat) => __builder =>
+    {
+        @foreach (string row in new[] { "$5", "$1" })
+        {
+            <div class="pr-grid">
+                @for (int s = 1; s <= 6; s++)
+                {
+                    <span class="pr-chip @(s == seat ? "pr-lit" : "")">@row</span>
+                }
+            </div>
+        }
+    };
+
+    private void NextStep() => Go(_step + 1);
+
+    private async Task Go(int step)
+    {
+        _step = Math.Clamp(step, 0, LastStep);
+        try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+    }
+}

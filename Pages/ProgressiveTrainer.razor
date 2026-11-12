@@ -24,6 +24,15 @@
 {
     <div class="start-screen">
         <h1>PROGRESSIVES</h1>
+
+        <a class="tu-entry" href="progressives-tutorial">
+            <span class="tu-entry-chips" aria-hidden="true"><i>$5</i><i>$1</i></span>
+            <span class="tu-entry-text">
+                <b>New to Progressives?</b>
+                <span>Start with the 4-minute tutorial.</span>
+            </span>
+            <span class="tu-entry-btn">Tutorial</span>
+        </a>
         <p class="pr-intro">Practice the progressive touchscreen at the table: lock in the wagers, recognize a qualifying hand, and pay it the way the screen walks you through.</p>
 
         <div class="mode-list">
@@ -264,7 +273,8 @@ else
             <HelpContent>
                 <p><b>Pays on:</b> @_def.Description</p>
                 <ol class="pr-help-steps">
-                    <li>Before the deal, players put $1 / $5 on the progressive sensors. Tap <b>PLAY</b> to lock in the wagers (the sensor lights go solid), then collect the chips and lock them up. Then deal the game.</li>
+                    <li>Before the deal, players put $1 / $5 on the progressive sensors. Check the wagers are right and each of those positions is lit on the screen.</li>
+                    <li>Tap <b>PLAY</b> to lock in the wagers (the sensor lights go solid), then collect the chips and lock them up. Then deal the game.</li>
                     <li>A qualifying hand: tap <b>PAYOUT</b>, pick the wager, the rank, then the player's position (only played positions light up). Pay it, then <b>CONFIRM</b>.</li>
                     <li>Each wager is paid on its own: with both wagers winning, go through <b>PAYOUT</b> twice.</li>
                     <li>A metered pay (a percentage of the meter) needs a supervisor: <b>Call Supervisor</b>.</li>
@@ -530,7 +540,7 @@ else
     // practised, so this says how, never the answer)
     private string Instruction => _screen switch
     {
-        Screen.Lock => "The wagers are on the sensors. Tap PLAY to lock them in.",
+        Screen.Lock => "Check the wagers on the felt match the lit positions on the screen, then tap PLAY to lock them in.",
         Screen.Tables => "Check the hand against the pay tables. Tap PAYOUT if it qualifies. If it doesn't, tap END GAME to finish the hand and see your result.",
         Screen.Wager => "Tap the wager to pay, then NEXT.",
         Screen.Rank => "Tap the hand's rank, then NEXT.",
