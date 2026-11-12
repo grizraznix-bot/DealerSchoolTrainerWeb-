@@ -8362,8 +8362,9 @@ body {
     margin-top: 0.5rem;
 }
 
-/* After a CONFIRM: what was paid, and END GAME is next (replaces the
-   blue instruction); END GAME glows so it stands out from the game bar */
+/* After a CONFIRM: what was paid, and the next choice (replaces the
+   blue instruction); PAYOUT and END GAME both glow, alike, so they stand
+   out from the game bar without giving the answer away */
 .pr-done {
     margin: 0.5rem 0 0;
     padding: 0.5rem 0.65rem;
@@ -8389,6 +8390,11 @@ body {
 .pr-btn.pr-end.pr-cue:not(:disabled) {
     border-color: #ff4b5c;
     box-shadow: 0 0 16px 4px rgba(255, 90, 100, 0.85);
+}
+
+.pr-btn.pr-pay.pr-cue:not(:disabled) {
+    border-color: #2fe0b8;
+    box-shadow: 0 0 16px 4px rgba(47, 224, 184, 0.8);
 }
 
 .pr-result {

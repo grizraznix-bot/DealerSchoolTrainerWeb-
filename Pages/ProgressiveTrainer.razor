@@ -107,10 +107,11 @@ else
         @* What to do on this screen *@
         @if (!_over && _screen == Screen.Tables && _paidLog.Count > 0)
         {
-            @* After a CONFIRM: what was recorded, and END GAME is next *@
+            @* After a CONFIRM: what was recorded, and the two choices (both
+               buttons glow alike, so neither one is given away) *@
             <div class="pr-done pr-howto">
                 <b>&#x2713; @string.Join(" · ", _paidLog)</b>
-                <span>Next: tap <strong>END GAME</strong> to finish the hand and see your result. Another wager still wins? Tap PAYOUT first.</span>
+                <span>Next: tap <strong>PAYOUT</strong> if another wager wins, or <strong>END GAME</strong> to finish the hand and see your result.</span>
             </div>
         }
         else if (!_over)
@@ -162,7 +163,7 @@ else
                     </div>
                     <div class="pr-ts-btns">
                         <button type="button" class="pr-btn pr-end @(!_over && _paidLog.Count > 0 ? "pr-cue" : "")" disabled="@_over" @onclick="EndGame">END GAME</button>
-                        <button type="button" class="pr-btn pr-pay" disabled="@_over" @onclick="Payout">PAYOUT</button>
+                        <button type="button" class="pr-btn pr-pay @(!_over && _paidLog.Count > 0 ? "pr-cue" : "")" disabled="@_over" @onclick="Payout">PAYOUT</button>
                     </div>
                     break;
 
