@@ -1,0 +1,103 @@
+@page "/tools/pai-gow-number"
+@inject NavigationManager Nav
+
+<PageTitle>Pai Gow Number</PageTitle>
+
+@* Pai Gow Number: a random number 1-7, or a roll of 3 dice with their
+   total, for the training table. Roll (or tap the number / the dice) for
+   a new one; the last few show underneath. *@
+<div class="play-screen tl-screen has-game-bar">
+    <h1 class="tl-h">PAI GOW NUMBER</h1>
+
+    <div class="tl-seg" role="radiogroup" aria-label="Mode">
+        <button type="button" class="@(!_dice ? "tl-on" : "")" role="radio" aria-checked="@(!_dice ? "true" : "false")" @onclick="() => SetMode(false)">Number 1-7</button>
+        <button type="button" class="@(_dice ? "tl-on" : "")" role="radio" aria-checked="@(_dice ? "true" : "false")" @onclick="() => SetMode(true)">3 Dice</button>
+    </div>
+
+    @if (!_dice)
+    {
+        <button type="button" class="tl-num @(_flash ? "tl-flash" : "")" @onclick="Roll" aria-label="@($"Number {_number}, tap to roll")">
+            <small>NUMBER</small>
+            <b>@(_number == 0 ? "?" : _number.ToString())</b>
+        </button>
+    }
+    else
+    {
+        <button type="button" class="tl-dice @(_flash ? "tl-flash" : "")" @onclick="Roll" aria-label="@(_die[0] == 0 ? "Tap to roll" : $"Dice {_die[0]}, {_die[1]}, {_die[2]}, total {_die.Sum()}")">
+            @foreach (int d in _die)
+            {
+                <span class="tl-die">
+                    @for (int p = 1; p <= 9; p++)
+                    {
+                        <i class="@(d > 0 && Pips[d].Contains(p) ? "tl-pip" : "")"></i>
+                    }
+                </span>
+            }
+        </button>
+        <p class="tl-total">Total<b>@(_die[0] == 0 ? "?" : _die.Sum().ToString())</b></p>
+    }
+
+    <button type="button" class="tl-big" @onclick="Roll">Roll</button>
+
+    @if (History.Count > 0)
+    {
+        <p class="tl-hist">Last: @string.Join(" · ", History)</p>
+    }
+
+    <GameBar HelpTitle="Pai Gow Number" OnEnd='() => Nav.NavigateTo("tools")' EndLabel="Exit">
+        <ChildContent>
+            <button type="button" class="game-bar-main" @onclick="Roll">Roll</button>
+        </ChildContent>
+        <HelpContent>
+            <p><b>Number 1-7</b>: a random number from 1 to 7.</p>
+            <p><b>3 Dice</b>: three dice and their total.</p>
+            <p>Tap Roll, the number or the dice for a new one.</p>
+        </HelpContent>
+    </GameBar>
+</div>
+
+@code {
+    private static readonly Random Rng = new();
+
+    // Pip positions on a 3x3 grid (1 = top left, 5 = center, 9 = bottom right)
+    private static readonly Dictionary<int, int[]> Pips = new()
+    {
+        [1] = new[] { 5 }, [2] = new[] { 1, 9 }, [3] = new[] { 1, 5, 9 },
+        [4] = new[] { 1, 3, 7, 9 }, [5] = new[] { 1, 3, 5, 7, 9 }, [6] = new[] { 1, 3, 4, 6, 7, 9 }
+    };
+
+    private bool _dice, _flash;
+    private int _number;
+    private readonly int[] _die = new int[3];
+    private readonly List<int> _numHistory = new(), _diceHistory = new();
+
+    private List<int> History => _dice ? _diceHistory : _numHistory;
+
+    private void SetMode(bool dice) => _dice = dice;
+
+    private async Task Roll()
+    {
+        if (_dice)
+        {
+            if (_die[0] > 0) Remember(_diceHistory, _die.Sum());
+            for (int i = 0; i < 3; i++) _die[i] = Rng.Next(1, 7);
+        }
+        else
+        {
+            if (_number > 0) Remember(_numHistory, _number);
+            _number = Rng.Next(1, 8);
+        }
+
+        // A short flash so a repeat of the same number still shows it rolled
+        _flash = true;
+        StateHasChanged();
+        await Task.Delay(250);
+        _flash = false;
+    }
+
+    private static void Remember(List<int> list, int value)
+    {
+        list.Insert(0, value);
+        if (list.Count > 5) list.RemoveAt(5);
+    }
+}

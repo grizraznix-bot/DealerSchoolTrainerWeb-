@@ -1,0 +1,101 @@
+@page "/tools/limit-sign"
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Table Limit Sign</PageTitle>
+
+@* Table Limit Sign: a felt sign with the table minimum and maximum. Tap
+   either number to step to the next value (Minimum $5, $10, $15, $25, $50;
+   Maximum $100, $300, $500). Full Screen, or the phone held sideways,
+   fills the screen with it (app.css, tl-stage). The last values shown are
+   remembered in this browser. *@
+<div class="play-screen tl-screen has-game-bar">
+    <div class="tl-stage @(_full ? "tl-full" : "")">
+        <div class="tl-strip">
+            <button type="button" class="tl-exit" @onclick="ExitStrip">&lsaquo; Exit</button>
+            <b>Table Limit Sign</b>
+            <span>Tap a number to change it</span>
+        </div>
+
+        <div class="tl-sign">
+            <button type="button" class="tl-sign-half" @onclick="NextMin" aria-label="@($"Minimum ${Mins[_min]}, tap to change")">
+                <span class="tl-k">MINIMUM</span>
+                <span class="tl-v">$@Mins[_min]</span>
+                <span class="tl-dots" aria-hidden="true">@for (int i = 0; i < Mins.Length; i++) { <i class="@(i == _min ? "tl-on" : "")"></i> }</span>
+                <span class="tl-tap">tap to change</span>
+            </button>
+            <span class="tl-sign-rule" aria-hidden="true"></span>
+            <button type="button" class="tl-sign-half" @onclick="NextMax" aria-label="@($"Maximum ${Maxes[_max]}, tap to change")">
+                <span class="tl-k">MAXIMUM</span>
+                <span class="tl-v">$@Maxes[_max]</span>
+                <span class="tl-dots" aria-hidden="true">@for (int i = 0; i < Maxes.Length; i++) { <i class="@(i == _max ? "tl-on" : "")"></i> }</span>
+                <span class="tl-tap">tap to change</span>
+            </button>
+        </div>
+    </div>
+
+    <GameBar HelpTitle="Table Limit Sign" OnEnd='() => Nav.NavigateTo("tools")' EndLabel="Exit">
+        <ChildContent>
+            <button type="button" class="game-bar-main" @onclick="() => _full = true">Full Screen</button>
+        </ChildContent>
+        <HelpContent>
+            <p>Tap <b>MINIMUM</b> or <b>MAXIMUM</b> to step to the next value. After the last value it starts over.</p>
+            <p>Minimum: $5, $10, $15, $25, $50. Maximum: $100, $300, $500.</p>
+            <p><b>Full Screen</b>, or turning your phone sideways, fills the screen with the sign.</p>
+        </HelpContent>
+    </GameBar>
+</div>
+
+@code {
+    private static readonly int[] Mins = { 5, 10, 15, 25, 50 };
+    private static readonly int[] Maxes = { 100, 300, 500 };
+    private const string StoreKey = "dst-limit-sign";
+
+    private int _min, _max;
+    private bool _full;
+
+    private void NextMin()
+    {
+        _min = (_min + 1) % Mins.Length;
+        _ = Save();
+    }
+
+    private void NextMax()
+    {
+        _max = (_max + 1) % Maxes.Length;
+        _ = Save();
+    }
+
+    // Full Screen on: back to the page. Sideways (not Full Screen): back to Tools.
+    private void ExitStrip()
+    {
+        if (_full) _full = false;
+        else Nav.NavigateTo("tools");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            string? saved = await JS.InvokeAsync<string?>("localStorage.getItem", StoreKey);
+            string[] parts = (saved ?? "").Split(',');
+            if (parts.Length == 2 && int.TryParse(parts[0], out int a) && int.TryParse(parts[1], out int b)
+                && a >= 0 && a < Mins.Length && b >= 0 && b < Maxes.Length)
+            {
+                _min = a;
+                _max = b;
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Storage blocked: start from $5 / $100
+        }
+    }
+
+    private async Task Save()
+    {
+        try { await JS.InvokeVoidAsync("localStorage.setItem", StoreKey, $"{_min},{_max}"); } catch { }
+    }
+}

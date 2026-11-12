@@ -8711,3 +8711,603 @@ html:has(.pr-simwrap) #rotate-msg {
     box-shadow: inset 0 0 0 4px #1f4fd1, inset 0 0 0 6px white, 0 0 10px rgba(80, 130, 255, 0.85);
     color: white;
 }
+
+/* ------------------------------------------------------------------
+   Tools (Pages/Tools*.razor): companions for the training table.
+   tl- classes. The limit sign and pay tables go full screen with Full
+   Screen or a phone held sideways (tl-stage); the "Turn your phone
+   upright" message is not shown on those two.
+   ------------------------------------------------------------------ */
+.tl-intro {
+    margin: 0 0 0.8rem;
+    color: #444b53;
+}
+
+.tl-h {
+    margin: 0.3rem 0 0.2rem;
+    font-size: 1.4rem;
+}
+
+.tl-tool {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 0.6rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #d6dbe0;
+    border-radius: 12px;
+    background-color: #f8f9fa;
+    color: inherit;
+    text-decoration: none;
+}
+
+.tl-ic {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background-color: var(--c-felt);
+    color: white;
+    font-weight: 800;
+    font-size: 1.3rem;
+}
+
+.tl-ic-chip {
+    background-color: #1e2c30;
+    font-size: 0.8rem;
+}
+
+.tl-tool-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.tl-tool-text b {
+    display: block;
+    font-size: 1rem;
+}
+
+.tl-tool-text span {
+    display: block;
+    color: #4a5560;
+    font-size: 0.86rem;
+}
+
+.tl-go {
+    color: #8a96a2;
+    font-size: 1.4rem;
+}
+
+.tl-tool-gold {
+    border-color: var(--c-gold-line);
+    background-color: var(--c-gold-bg);
+}
+
+/* Full screen stage (Full Screen button, or sideways) */
+.tl-strip {
+    display: none;
+}
+
+html:has(.tl-stage) #rotate-msg {
+    display: none !important;
+}
+
+.tl-stage.tl-full {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    padding: max(8px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+    box-sizing: border-box;
+    background-color: #0d1214;
+}
+
+.tl-stage.tl-full .tl-strip {
+    display: flex;
+}
+
+.tl-strip {
+    flex: none;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 34px;
+    margin-bottom: 6px;
+    color: #9fb0bc;
+    font-size: 0.85rem;
+}
+
+.tl-strip b {
+    color: white;
+}
+
+.tl-strip span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tl-exit {
+    flex: none;
+    min-height: 0;
+    padding: 0.3rem 0.7rem;
+    border: 1px solid #556;
+    border-radius: 8px;
+    background: transparent;
+    color: white;
+    font-size: 0.85rem;
+}
+
+/* Table limit sign */
+.tl-sign {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.4rem;
+    border: 6px solid #c9a227;
+    border-radius: 16px;
+    background: radial-gradient(ellipse at center, #14824a 0%, #0b5c33 100%);
+    box-shadow: inset 0 0 0 2px #f2d27a;
+    color: white;
+}
+
+.tl-sign-half {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 0.5rem;
+    border: none;
+    background: transparent;
+    color: white;
+}
+
+.tl-sign-rule {
+    height: 2px;
+    margin: 0 1.5rem;
+    background-color: rgba(242, 210, 122, 0.6);
+}
+
+.tl-k {
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 0.2em;
+    opacity: 0.9;
+}
+
+.tl-v {
+    font-weight: 900;
+    font-size: 4rem;
+    line-height: 1.05;
+}
+
+.tl-tap {
+    font-size: 0.75rem;
+    opacity: 0.75;
+}
+
+.tl-dots {
+    display: flex;
+    gap: 5px;
+    margin: 0.25rem 0 0.1rem;
+}
+
+.tl-dots i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.35);
+}
+
+.tl-dots i.tl-on {
+    background-color: #f2d27a;
+}
+
+.tl-stage.tl-full .tl-sign {
+    flex: 1;
+    margin-top: 0;
+}
+
+.tl-stage.tl-full .tl-v {
+    font-size: min(6rem, 22vw);
+}
+
+/* Pay tables */
+.tl-games {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 0.6rem;
+}
+
+.tl-game {
+    min-height: 36px;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid #c4ccd4;
+    border-radius: 18px;
+    background-color: white;
+    color: #1b2530;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.tl-game.tl-on {
+    border-color: var(--c-felt);
+    background-color: var(--c-felt);
+    color: white;
+}
+
+.tl-tabs {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 2px solid var(--c-felt);
+    background-color: white;
+}
+
+.tl-tab {
+    flex: 1 0 auto;
+    min-height: 38px;
+    padding: 0.35rem 0.55rem;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: #4a5560;
+    font-weight: 700;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.tl-tab.tl-on {
+    background-color: var(--c-felt);
+    color: white;
+}
+
+.tl-pt-body {
+    background-color: white;
+}
+
+.tl-cols {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.tl-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.tl-col-hd {
+    padding: 0.4rem 0.6rem 0.1rem;
+    font-weight: 900;
+}
+
+.tl-h5 { color: #c8102e; }
+.tl-h1 { color: #1f4fd1; }
+
+.tl-pt {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 1rem;
+}
+
+.tl-pt td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid #e3e7eb;
+}
+
+.tl-pt td:last-child {
+    font-weight: 800;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.tl-pt tr:nth-child(odd) td {
+    background-color: #f6f8f9;
+}
+
+/* House Way tab: the rules wrap (in Help the pay column stays on one line) */
+.tl-pt-body .hw-key {
+    margin: 0.4rem 0.2rem 0.2rem;
+}
+
+.tl-pt-body .help-table.hw-table td:last-child {
+    white-space: normal;
+}
+
+.tl-note {
+    margin: 0.5rem 0.1rem;
+    color: #4a5560;
+    font-size: 0.85rem;
+}
+
+.tl-stage-pt.tl-full .tl-tabs {
+    flex: none;
+    border-radius: 8px 8px 0 0;
+}
+
+.tl-stage-pt.tl-full .tl-pt-body {
+    flex: 1;
+    overflow: auto;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0 0 12px 12px;
+}
+
+.tl-stage-pt.tl-full .tl-cols {
+    flex-direction: row;
+    gap: 1.2rem;
+}
+
+/* Shuffle timer */
+.tl-timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.tl-ring {
+    --ring: var(--c-felt);
+    position: relative;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: conic-gradient(var(--ring) calc(var(--pct) * 1%), #e3e7eb 0);
+}
+
+.tl-ring.tl-ring-gold { --ring: #c9a227; }
+.tl-ring.tl-ring-over { --ring: #d98a00; }
+
+.tl-ring-in {
+    position: absolute;
+    inset: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: white;
+}
+
+.tl-time {
+    color: #1b2530;
+    font-weight: 900;
+    font-size: 3.6rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.tl-ring-sub {
+    margin-top: 0.3rem;
+    color: #4a5560;
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.tl-count {
+    color: var(--c-felt);
+    font-weight: 900;
+    font-size: 5.5rem;
+    line-height: 1;
+}
+
+.tl-count.tl-go-txt {
+    color: #1f8a4c;
+    font-size: 4.5rem;
+}
+
+.tl-result {
+    width: 85%;
+    margin: 0.8rem 0 0;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.tl-result.tl-ok {
+    background-color: #e3f1e8;
+    color: #0c5c34;
+}
+
+.tl-result.tl-over {
+    background-color: #fdf1dc;
+    color: #7a4b00;
+}
+
+.tl-big {
+    display: block;
+    width: 80%;
+    min-height: 54px;
+    margin: 1rem auto 0;
+    border: none;
+    border-radius: 12px;
+    background-color: #1d5fbf;
+    color: white;
+    font-weight: 900;
+    font-size: 1.2rem;
+}
+
+.tl-big.tl-big-red {
+    background-color: #c62828;
+}
+
+.tl-best {
+    margin: 0.5rem 0 0;
+    color: #4a5560;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Pai Gow number and dice */
+.tl-seg {
+    display: flex;
+    margin: 0.4rem 0 1rem;
+    overflow: hidden;
+    border: 2px solid var(--c-felt);
+    border-radius: 10px;
+}
+
+.tl-seg button {
+    flex: 1;
+    min-height: 40px;
+    border: none;
+    background: white;
+    color: var(--c-felt);
+    font-weight: 800;
+}
+
+.tl-seg button.tl-on {
+    background-color: var(--c-felt);
+    color: white;
+}
+
+.tl-num {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 190px;
+    height: 190px;
+    margin: 0 auto;
+    border: 5px solid #c9a227;
+    border-radius: 22px;
+    background: radial-gradient(ellipse at center, #14824a, #0b5c33);
+    color: white;
+}
+
+.tl-num small {
+    color: #f2d27a;
+    font-weight: 800;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+}
+
+.tl-num b {
+    font-size: 7rem;
+    line-height: 1;
+}
+
+.tl-dice {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+    margin: 0.4rem 0 0.4rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.tl-die {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 84px;
+    height: 84px;
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 14px;
+    background-color: #c62828;
+    box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.25);
+}
+
+.tl-die i {
+    align-self: center;
+    justify-self: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+}
+
+.tl-die i.tl-pip {
+    background-color: white;
+}
+
+.tl-total {
+    margin: 0;
+    color: #1b2530;
+    font-weight: 700;
+    text-align: center;
+}
+
+.tl-total b {
+    display: block;
+    font-size: 2.4rem;
+}
+
+.tl-flash {
+    animation: tl-flash 0.25s ease-out;
+}
+
+@keyframes tl-flash {
+    from { opacity: 0.25; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.tl-hist {
+    margin-top: 0.6rem;
+    color: #4a5560;
+    font-size: 0.88rem;
+    text-align: center;
+}
+
+/* A phone held sideways: the sign / pay tables fill the screen */
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) and (pointer: coarse) {
+    .tl-stage {
+        position: fixed;
+        inset: 0;
+        z-index: 1500;
+        display: flex;
+        flex-direction: column;
+        padding: max(8px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+        box-sizing: border-box;
+        background-color: #0d1214;
+    }
+
+    .tl-stage .tl-strip {
+        display: flex;
+    }
+
+    .tl-stage .tl-sign {
+        flex: 1;
+        flex-direction: row;
+        margin-top: 0;
+    }
+
+    .tl-stage .tl-sign-rule {
+        width: 2px;
+        height: auto;
+        margin: 1.2rem 0;
+    }
+
+    .tl-stage .tl-v {
+        font-size: min(5.5rem, 30vh);
+    }
+
+    .tl-stage-pt .tl-tabs {
+        flex: none;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .tl-stage-pt .tl-pt-body {
+        flex: 1;
+        overflow: auto;
+        padding: 0.2rem 0.6rem;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .tl-stage-pt .tl-cols {
+        flex-direction: row;
+        gap: 1.2rem;
+    }
+
+    .tl-stage-pt .tl-pt td {
+        padding: 0.3rem 0.6rem;
+    }
+}

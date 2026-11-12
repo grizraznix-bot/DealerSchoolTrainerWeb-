@@ -475,9 +475,13 @@ else
     // ?open=bj / tc / pg / hd: that game's card open on the start screen
     [SupplyParameterFromQuery(Name = "open")] public string? OpenFromLink { get; set; }
 
+    // ?mode=ts: Touchscreen only chosen on the start screen (from Tools)
+    [SupplyParameterFromQuery(Name = "mode")] public string? ModeFromLink { get; set; }
+
     protected override void OnInitialized()
     {
         _openKey = ProgressiveGames.ByKey(OpenFromLink)?.Key;
+        _simChoice = ModeFromLink == "ts";
         GameReset.ResetRequested += OnResetRequested;
     }
 
