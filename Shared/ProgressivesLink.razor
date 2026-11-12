@@ -1,0 +1,23 @@
+@* The gold Progressives card under a game's modes on its start screen
+   (Blackjack, Three Card Prime, Pai Gow, Hold'em): opens Progressives with
+   that game's card already open. Start screens only, never during play. *@
+
+<a class="pr-gamelink" href="@($"progressives?open={Key}")">
+    <span class="pr-gamelink-chips" aria-hidden="true"><i>@Chip1</i><i>@Chip2</i></span>
+    <span class="pr-gamelink-text">
+        <b>Progressives</b>
+        <span>Practice the @Game progressive touchscreen</span>
+    </span>
+    <span class="pr-gamelink-go" aria-hidden="true">&rsaquo;</span>
+</a>
+
+@code {
+    /// <summary>Progressives game key: bj, tc, pg or hd.</summary>
+    [Parameter, EditorRequired] public string Key { get; set; } = "";
+
+    /// <summary>e.g. "Blackjack", "Three Card"</summary>
+    [Parameter, EditorRequired] public string Game { get; set; } = "";
+
+    [Parameter] public string Chip1 { get; set; } = "$5";
+    [Parameter] public string Chip2 { get; set; } = "$1";
+}

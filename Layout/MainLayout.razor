@@ -38,13 +38,14 @@
             <li><NavLink href="blackjack-trainer" @onclick='() => MenuLinkClicked("blackjack-trainer")'>Blackjack</NavLink></li>
             <li><NavLink href="three-card-trainer" @onclick='() => MenuLinkClicked("three-card-trainer")'>Three Card Prime</NavLink></li>
             <li><NavLink href="pai-gow" @onclick='() => MenuLinkClicked("pai-gow")'>Pai Gow</NavLink></li>
-            <li><NavLink href="progressives" @onclick='() => MenuLinkClicked("progressives")'>Progressives</NavLink></li>
             <li><NavLink href="holdem-trainer" @onclick='() => MenuLinkClicked("holdem-trainer")'>Heads-Up Hold'em</NavLink></li>
             <li><NavLink href="roulette" @onclick='() => MenuLinkClicked("roulette")'>Roulette</NavLink></li>
         </ul>
 
-        @* Timed challenges, shaded so they stand apart from the trainers *@
+        @* Progressives and the timed challenges, shaded gold so they stand
+           apart from the game trainers *@
         <ul>
+            <li class="challenge-link"><NavLink href="progressives" @onclick='() => MenuLinkClicked("progressives")'>Progressives</NavLink></li>
             <li class="challenge-link"><NavLink href="challenge" @onclick='() => MenuLinkClicked("challenge")'>Challenge Mode</NavLink></li>
         </ul>
 
