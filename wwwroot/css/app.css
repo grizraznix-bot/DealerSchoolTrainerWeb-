@@ -7966,3 +7966,399 @@ body {
         color: #444b53;
     }
 }
+
+/* ------------------------------------------------------------------
+   Progressives (Pages/ProgressiveTrainer): the felt shows only the
+   cards the progressive pays on; below it a practice touchscreen drawn
+   like the table's real one (dark screen, outlined neon buttons, chip
+   grid of 6 positions, pay tables). pr- classes.
+   ------------------------------------------------------------------ */
+.pr-intro, .pr-note {
+    margin: 0 0 0.75rem;
+    color: #444b53;
+}
+
+.pr-note {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.pr-felt {
+    padding: 0.45rem 0.5rem 0.55rem;
+}
+
+.pr-cap {
+    margin-bottom: 0.25rem;
+    text-align: center;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    opacity: 0.9;
+}
+
+.pr-wait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 81px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.pr-cards {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+}
+
+.pr-card {
+    width: 56px;
+    height: 78px;
+    border-radius: 5px;
+    background-color: white;
+}
+
+/* Pai Gow's 7 cards overlap */
+.pr-fan {
+    gap: 0;
+}
+
+.pr-fan .pr-card {
+    width: 50px;
+    height: 70px;
+    box-shadow: -1px 0 3px rgba(0, 0, 0, 0.35);
+}
+
+.pr-fan .pr-card + .pr-card {
+    margin-left: -8px;
+}
+
+.pr-seatrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.45rem;
+}
+
+.pr-seat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.9rem;
+}
+
+.pr-tags {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.pr-tags i {
+    padding: 0.05rem 0.4rem;
+    border-radius: 9px;
+    background-color: white;
+    color: var(--c-felt);
+    font-style: normal;
+    font-weight: 800;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+/* The touchscreen */
+.pr-ts {
+    display: flex;
+    flex-direction: column;
+    min-height: 236px;
+    margin-top: 0.6rem;
+    padding: 0.4rem 0.45rem 0.55rem;
+    border: 7px solid #111;
+    border-radius: 12px;
+    background: linear-gradient(160deg, #2a3a40, #1a2428);
+    color: white;
+}
+
+.pr-ts-top {
+    height: 24px;
+    margin-bottom: 0.2rem;
+}
+
+.pr-back {
+    width: 26px;
+    height: 24px;
+    padding: 0;
+    border: 1.5px solid #5d8cff;
+    border-radius: 5px;
+    background: transparent;
+    color: #5d8cff;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.pr-ts-btns {
+    display: flex;
+    justify-content: center;
+    gap: 0.45rem;
+    margin-top: auto;
+    padding-top: 0.6rem;
+}
+
+.pr-btn {
+    flex: 0 1 60%;
+    min-height: 44px;
+    padding: 0.35rem 0.5rem;
+    border: 2.5px solid #e8f0ff;
+    border-radius: 22px;
+    background: transparent;
+    color: #4d7dff;
+    font-weight: 900;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+}
+
+.pr-btn:disabled {
+    opacity: 0.4;
+}
+
+.pr-play { color: #2fe0a8; border-color: #2fe0a8; }
+.pr-end { flex: 1; color: #ff4b5c; border-color: #ffd0d4; }
+.pr-pay { flex: 1; color: #2fe0b8; border-color: #d0fff0; }
+.pr-supb { flex-basis: 88%; color: #ffd84d; border-color: #ffd84d; white-space: nowrap; }
+
+/* Chip grid: 6 positions per row */
+.pr-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin: 0.3rem 0;
+}
+
+.pr-grid-pos {
+    margin-top: 1.4rem;
+}
+
+.pr-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: 0;
+    border: 2px solid #9aa4aa;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: inset 0 0 0 4px #1e2c30, inset 0 0 0 6px #9aa4aa;
+    color: #9aa4aa;
+    font-weight: 800;
+    font-size: 0.8rem;
+    line-height: 1;
+    opacity: 0.4;
+}
+
+.pr-chip small {
+    margin-top: 1px;
+    font-size: 0.45rem;
+    font-weight: 700;
+}
+
+.pr-chip.pr-lit {
+    border-color: white;
+    box-shadow: inset 0 0 0 4px #1e2c30, inset 0 0 0 6px white, 0 0 8px rgba(255, 255, 255, 0.75);
+    color: white;
+    opacity: 1;
+}
+
+.pr-chip.pr-sel {
+    border-color: #4d7dff;
+    box-shadow: inset 0 0 0 4px #1e2c30, inset 0 0 0 6px #4d7dff, 0 0 10px #4d7dff;
+}
+
+/* Both pay tables side by side (long names cut short, like the real screen) */
+.pr-pts {
+    display: flex;
+    gap: 0.45rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+.pr-pt {
+    flex: 1;
+    min-width: 0;
+}
+
+.pr-pt-hd {
+    margin-bottom: 0.15rem;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+.pr-h5 { color: #ff6a3d; }
+.pr-h1 { color: #4d8dff; }
+
+.pr-pt-row {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.12rem 0;
+}
+
+.pr-pt-row span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pr-pt-row b {
+    flex: none;
+}
+
+/* Pick the wager */
+.pr-wline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    margin: 0.3rem 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: white;
+    text-align: left;
+}
+
+.pr-box {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 2.5px solid white;
+    border-radius: 4px;
+    font-weight: 900;
+}
+
+.pr-wline-pill {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 46px;
+    padding: 0.3rem 0.7rem;
+    border: 2.5px solid #4d7dff;
+    border-radius: 16px;
+    font-size: 0.95rem;
+}
+
+.pr-wline-pill small {
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.15;
+}
+
+.pr-wline.pr-on .pr-wline-pill {
+    background-color: rgba(77, 125, 255, 0.28);
+}
+
+/* Pick the rank */
+.pr-rank-hd {
+    margin-bottom: 0.25rem;
+    padding: 0.15rem;
+    border-radius: 10px;
+    background-color: #2233dd;
+    text-align: center;
+    font-weight: 900;
+}
+
+.pr-rank {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 34px;
+    margin-bottom: 0.2rem;
+    padding: 0.2rem 0.6rem;
+    border: 2px solid #3048ff;
+    border-radius: 11px;
+    background: transparent;
+    color: white;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-align: left;
+}
+
+.pr-rank.pr-on {
+    background-color: #3048ff;
+}
+
+/* Confirm */
+.pr-cf {
+    margin: 0.3rem 0 0.5rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #c8d4dc;
+}
+
+.pr-amt {
+    width: 70%;
+    margin: 0 auto;
+    padding: 0.25rem;
+    border: 2px solid white;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 900;
+    font-size: 1.35rem;
+}
+
+.pr-sup {
+    margin: 0.4rem 0;
+    padding: 0.5rem;
+    border: 2px solid #ffd84d;
+    border-radius: 8px;
+    color: #ffd84d;
+    text-align: center;
+    font-weight: 800;
+}
+
+.pr-keypad {
+    margin-top: 0.5rem;
+}
+
+.pr-paid {
+    margin: 0.45rem 0 0;
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    background-color: #e3f1e8;
+    color: #0c5c34;
+    font-size: 0.9rem;
+}
+
+.pr-result {
+    margin-top: 0.6rem;
+}
+
+.pr-help-steps {
+    padding-left: 1.2rem;
+}
+
+.pr-help-steps li {
+    margin-bottom: 0.35rem;
+}
+
+@media (max-width: 360px) {
+    .pr-card {
+        width: 52px;
+        height: 73px;
+    }
+
+    .pr-fan .pr-card {
+        width: 46px;
+        height: 64px;
+    }
+
+    .pr-pts {
+        font-size: 0.66rem;
+    }
+}
