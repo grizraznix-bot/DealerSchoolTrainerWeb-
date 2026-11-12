@@ -162,7 +162,7 @@
             <div class="pr-grid">
                 @for (int s = 1; s <= 6; s++)
                 {
-                    <span class="pr-chip @(s == seat ? "pr-lit" : "")">@row</span>
+                    <span class="pr-chip @(s == seat ? "pr-lit" : "") @(row == "$5" ? "pr-c5" : "pr-c1")">@row</span>
                 }
             </div>
         }

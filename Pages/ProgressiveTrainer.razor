@@ -43,11 +43,169 @@
                           Description="@game.Description"
                           Expanded="@(_openKey == game.Key)"
                           OnToggle="() => _openKey = _openKey == game.Key ? null : game.Key"
-                          OnStart="() => StartGame(game)" />
+                          OnStart="() => StartGame(game)">
+                    <TileChoice @bind-Second="_simChoice" Label="Mode"
+                                FirstTitle="Practice" FirstText="Hands dealt and scored."
+                                FirstIcon="@(__b => { TileChoice.MiniCard("♠")(__b); TileChoice.MiniCard("♥")(__b); })"
+                                SecondTitle="Touchscreen only" SecondText="For the training table: no cards, no score."
+                                SecondIcon="@TileChoice.Chip("#1e2c30", "$5")" />
+                </ModeCard>
             }
         </div>
 
         <p class="pr-note">About 3 hands in 4 qualify, so the payout routine gets plenty of practice. A metered pay (a percentage of the meter) is a Call Supervisor.</p>
+    </div>
+}
+else if (_sim)
+{
+    @* Touchscreen only (for the training table): no cards, no score. Tap a
+       chip to place or remove that wager, PLAY locks them in, PAYOUT pays
+       any locked position, END GAME clears the sensors. A phone held
+       sideways gets the touchscreen full screen (app.css, pr-simwrap). *@
+    <div class="play-screen pr-screen has-game-bar">
+        <div class="button-row">
+            <button class="back-button" @onclick="BackToStart">Back</button>
+        </div>
+
+        <div class="game-status">
+            <span class="game-status-title">@_def.Name · Touchscreen</span>
+            <span>Training table</span>
+        </div>
+
+        <div class="pr-simwrap">
+            <div class="pr-simstrip">
+                <button type="button" class="pr-simexit" @onclick="BackToStart">&lsaquo; Exit</button>
+                <b>@_def.Name · Touchscreen</b>
+                <span>@SimInstruction</span>
+            </div>
+
+            <p class="cr-howto pr-howto pr-simhow">@SimInstruction</p>
+
+            <div class="pr-ts pr-sim">
+                <div class="pr-ts-top">
+                    @if (_screen is Screen.Wager or Screen.Rank or Screen.Position or Screen.Confirm)
+                    {
+                        <button type="button" class="pr-back" aria-label="Back" @onclick="SimBack">&lsaquo;</button>
+                    }
+                </div>
+
+                @switch (_screen)
+                {
+                    case Screen.Lock:
+                        @PosNums
+                        @for (int w = 0; w < 2; w++)
+                        {
+                            int wi = w;
+                            <div class="pr-grid">
+                                @for (int s = 1; s <= 6; s++)
+                                {
+                                    int si = s;
+                                    <button type="button" class="pr-chip @(_simOn[wi, si] ? "pr-lit" : "") @Color(_def.Wagers[wi]) @(_def.Wagers[wi].ChipTop.Length > 2 ? "pr-chip-long" : "")"
+                                            aria-pressed="@(_simOn[wi, si] ? "true" : "false")" aria-label="@($"{_def.Wagers[wi].Header} position {si}")"
+                                            @onclick="() => _simOn[wi, si] = !_simOn[wi, si]">@_def.Wagers[wi].ChipTop</button>
+                                }
+                            </div>
+                        }
+                        <div class="pr-ts-btns">
+                            <button type="button" class="pr-btn pr-play" @onclick="() => _screen = Screen.Tables">PLAY</button>
+                        </div>
+                        break;
+
+                    case Screen.Tables:
+                        <div class="pr-pts">
+                            @for (int w = 0; w < 2; w++)
+                            {
+                                ProgWager pw = _def.Wagers[w];
+                                <div class="pr-pt">
+                                    <div class="pr-pt-hd @pw.HeaderClass">@pw.Header</div>
+                                    @foreach (ProgRow r in pw.Rows)
+                                    {
+                                        <div class="pr-pt-row"><span>@r.Name</span><b>@r.PayText</b></div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="pr-ts-btns">
+                            <button type="button" class="pr-btn pr-end" @onclick="SimEndGame">END GAME</button>
+                            <button type="button" class="pr-btn pr-pay" disabled="@(!SimOwed(0) && !SimOwed(1))" @onclick="() => { ResetPicks(); _screen = Screen.Wager; }">PAYOUT</button>
+                        </div>
+                        break;
+
+                    case Screen.Wager:
+                        @for (int w = 0; w < 2; w++)
+                        {
+                            if (!SimOwed(w)) continue;
+                            int wi = w;
+                            ProgWager pw = _def.Wagers[w];
+                            <button type="button" class="pr-wline @(_selWager == wi ? "pr-on" : "")" @onclick="() => _selWager = wi">
+                                <span class="pr-box">@(_selWager == wi ? "✓" : "")</span>
+                                <span class="pr-wline-pill"><small>@pw.Tag<br />@pw.ChipSub</small><b>@pw.Header</b></span>
+                            </button>
+                        }
+                        <div class="pr-ts-btns">
+                            <button type="button" class="pr-btn pr-next" disabled="@(_selWager < 0)" @onclick="() => { _selRank = -1; _screen = Screen.Rank; }">NEXT</button>
+                        </div>
+                        break;
+
+                    case Screen.Rank:
+                        {
+                            ProgWager pw = _def.Wagers[_selWager];
+                            <div class="pr-rank-hd">@pw.Header</div>
+                            <div class="pr-ranks">
+                                @for (int r = 0; r < pw.Rows.Length; r++)
+                                {
+                                    int ri = r;
+                                    <button type="button" class="pr-rank @(_selRank == ri ? "pr-on" : "")" @onclick="() => _selRank = ri">
+                                        <span>@pw.Rows[ri].Name</span><b>@pw.Rows[ri].PayText</b>
+                                    </button>
+                                }
+                            </div>
+                            <div class="pr-ts-btns">
+                                <button type="button" class="pr-btn pr-next" disabled="@(_selRank < 0)" @onclick="() => { _selPos = -1; _screen = Screen.Position; }">NEXT</button>
+                            </div>
+                        }
+                        break;
+
+                    case Screen.Position:
+                        @PosNums
+                        <div class="pr-grid">
+                            @for (int s = 1; s <= 6; s++)
+                            {
+                                int si = s;
+                                bool lit = _simOn[_selWager, si] && !_simPaid[_selWager, si];
+                                <button type="button" class="pr-chip @(lit ? "pr-lit" : "") @(_selPos == si ? "pr-sel" : "") @(_def.Wagers[_selWager].ChipTop.Length > 2 ? "pr-chip-long" : "")"
+                                        disabled="@(!lit)" aria-label="@($"Position {si}")" @onclick="() => _selPos = si">
+                                    @_def.Wagers[_selWager].ChipTop
+                                </button>
+                            }
+                        </div>
+                        <div class="pr-ts-btns">
+                            <button type="button" class="pr-btn pr-next" disabled="@(_selPos < 0)" @onclick="() => _screen = Screen.Confirm">NEXT</button>
+                        </div>
+                        break;
+
+                    case Screen.Confirm:
+                        @* Blank, like the real screen: the dealer pays, then CONFIRM *@
+                        <div class="pr-ts-btns">
+                            <button type="button" class="pr-btn pr-next" @onclick="SimConfirm">CONFIRM</button>
+                        </div>
+                        break;
+                }
+            </div>
+        </div>
+
+        <GameBar HelpTitle="@($"{_def.Name} Touchscreen")" OnEnd="BackToStart" EndLabel="Exit">
+            <HelpContent>
+                <p>For the training table: deal real cards and use this as the progressive touchscreen. Nothing is scored.</p>
+                <ol class="pr-help-steps">
+                    <li>Tap a chip to place or remove that wager, like a chip on the sensor. Check the wagers on the table match the lit positions.</li>
+                    <li>Tap <b>PLAY</b> to lock them in, then collect the chips and deal.</li>
+                    <li>A winner: <b>PAYOUT</b>, pick the wager, the rank and the position, pay it, then <b>CONFIRM</b>. A metered pay needs a supervisor.</li>
+                    <li><b>END GAME</b> clears the sensors for the next round.</li>
+                </ol>
+                <p>Turn your phone sideways for a full-screen touchscreen.</p>
+            </HelpContent>
+        </GameBar>
     </div>
 }
 else
@@ -147,7 +305,7 @@ else
                             @for (int s = 1; s <= 6; s++)
                             {
                                 bool lit = s == h.Seat && h.Placed[wi];
-                                <span class="pr-chip @(lit ? "pr-lit" : "") @(_def.Wagers[wi].ChipTop.Length > 2 ? "pr-chip-long" : "")">@_def.Wagers[wi].ChipTop</span>
+                                <span class="pr-chip @(lit ? "pr-lit" : "") @Color(_def.Wagers[wi]) @(_def.Wagers[wi].ChipTop.Length > 2 ? "pr-chip-long" : "")">@_def.Wagers[wi].ChipTop</span>
                             }
                         </div>
                     }
@@ -354,6 +512,13 @@ else
     {
         _def = game;
         _openKey = game.Key;
+        _sim = _simChoice;
+        if (_sim)
+        {
+            _started = true;
+            SimClear();
+            return;
+        }
         _log = new SessionLog();
         _correct = 0;
         _played = 0;
@@ -362,6 +527,71 @@ else
     }
 
     private void BackToStart() => _started = false;
+
+    // Sensor screens: a lit $5 is red and a lit $1 blue, like the live
+    // tables (Pai Gow's ET and INS are both $1: blue)
+    private static string Color(ProgWager w) => w.Tag.Contains("$5") ? "pr-c5" : "pr-c1";
+
+    // ---- Touchscreen only --------------------------------------------------
+
+    private bool _simChoice;   // the start screen tile
+    private bool _sim;         // the mode running
+    private readonly bool[,] _simOn = new bool[2, 7];   // [wager, position 1-6]: chip on the sensor
+    private readonly bool[,] _simPaid = new bool[2, 7]; // paid this round
+
+    private void SimClear()
+    {
+        Array.Clear(_simOn);
+        Array.Clear(_simPaid);
+        ResetPicks();
+        _screen = Screen.Lock;
+    }
+
+    // A locked wager with a position still to pay
+    private bool SimOwed(int w) => Enumerable.Range(1, 6).Any(s => _simOn[w, s] && !_simPaid[w, s]);
+
+    private void SimEndGame() => SimClear();
+
+    private void SimConfirm()
+    {
+        if (_selWager >= 0 && _selPos > 0) _simPaid[_selWager, _selPos] = true;
+        ResetPicks();
+        _screen = Screen.Tables;
+    }
+
+    private void SimBack()
+    {
+        _screen = _screen switch
+        {
+            Screen.Confirm => Screen.Position,
+            Screen.Position => Screen.Rank,
+            Screen.Rank => Screen.Wager,
+            _ => Screen.Tables
+        };
+        if (_screen == Screen.Tables) ResetPicks();
+    }
+
+    private string SimInstruction => _screen switch
+    {
+        Screen.Lock => "Tap a chip to place or remove that wager. Check they match the table, then tap PLAY.",
+        Screen.Tables => "Deal the game. PAYOUT for a winner, END GAME when the round is done.",
+        Screen.Wager => "Tap the wager to pay, then NEXT.",
+        Screen.Rank => "Tap the hand's rank, then NEXT.",
+        Screen.Position => "Tap the position to pay, then NEXT.",
+        _ when _def!.Wagers[_selWager].Rows[_selRank].IsMetered => "Metered pay: a supervisor is required. Then CONFIRM.",
+        _ => "Pay the player, then CONFIRM."
+    };
+
+    // Position numbers 1-6 over the chip grid
+    private static readonly RenderFragment PosNums = __builder =>
+    {
+        <div class="pr-posnums" aria-hidden="true">
+            @for (int s = 1; s <= 6; s++)
+            {
+                <span>@s</span>
+            }
+        </div>
+    };
 
     private void EndSession()
     {

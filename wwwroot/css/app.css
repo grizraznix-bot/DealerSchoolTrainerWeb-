@@ -8525,3 +8525,189 @@ span.pr-btn {
     justify-content: center;
     padding: 0.45rem;
 }
+
+/* ------------------------------------------------------------------
+   Progressives, Touchscreen only (for the training table): the practice
+   touchscreen on its own. Portrait: under the usual title and
+   instruction line. A phone held sideways: the touchscreen fills the
+   screen with a thin strip on top (Exit, game, instruction), and the
+   "Turn your phone upright" message is not shown on this screen.
+   ------------------------------------------------------------------ */
+.pr-posnums {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-bottom: 0.1rem;
+    color: #9fb0bc;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+.pr-sim {
+    min-height: 330px;
+}
+
+.pr-sim .pr-chip {
+    font-size: 1.05rem;
+}
+
+.pr-sim .pr-chip.pr-chip-long {
+    font-size: 0.75rem;
+}
+
+.pr-sim .pr-pts {
+    font-size: 0.8rem;
+}
+
+.pr-simstrip {
+    display: none;
+}
+
+html:has(.pr-simwrap) #rotate-msg {
+    display: none !important;
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) and (pointer: coarse) {
+    .pr-simwrap {
+        position: fixed;
+        inset: 0;
+        z-index: 1500;
+        display: flex;
+        flex-direction: column;
+        padding: max(6px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+        box-sizing: border-box;
+        background-color: #0d1214;
+    }
+
+    .pr-simstrip {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 34px;
+        color: #cfd8dc;
+        font-size: 0.85rem;
+    }
+
+    .pr-simstrip b {
+        flex: none;
+        color: white;
+    }
+
+    .pr-simstrip span {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        color: #9fb0bc;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .pr-simexit {
+        flex: none;
+        min-height: 0;
+        padding: 0.3rem 0.7rem;
+        border: 1px solid #556;
+        border-radius: 8px;
+        background: transparent;
+        color: white;
+        font-size: 0.85rem;
+    }
+
+    .pr-simhow {
+        display: none;
+    }
+
+    .pr-simwrap .pr-sim {
+        flex: 1;
+        min-height: 0;
+        margin-top: 4px;
+        overflow: auto;
+    }
+
+    .pr-simwrap .pr-ts-top {
+        min-height: 26px;
+        margin-bottom: 0;
+    }
+
+    .pr-simwrap .pr-grid,
+    .pr-simwrap .pr-posnums {
+        gap: 10px;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+
+    /* Chips sized to the screen height so both rows and PLAY fit */
+    .pr-simwrap .pr-chip {
+        justify-self: center;
+        width: min(70px, 19vh);
+        height: min(70px, 19vh);
+        font-size: 1.15rem;
+    }
+
+    .pr-simwrap .pr-pts {
+        gap: 2rem;
+        padding: 0 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* Pay table picks in two columns so 8 lines still fit */
+    .pr-simwrap .pr-ranks {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 0.5rem;
+    }
+
+    .pr-simwrap .pr-rank {
+        min-height: 30px;
+        margin-bottom: 0.15rem;
+        padding: 0.1rem 0.6rem;
+        font-size: 0.82rem;
+        align-items: center;
+    }
+
+    .pr-simwrap .pr-rank-hd {
+        margin-bottom: 0.2rem;
+        padding: 0.05rem;
+        font-size: 0.85rem;
+    }
+
+    .pr-simwrap .pr-back {
+        height: 24px;
+    }
+
+    .pr-simwrap .pr-ts-btns {
+        padding-top: 0.4rem;
+    }
+
+    .pr-simwrap .pr-btn {
+        flex: 0 1 40%;
+    }
+
+    .pr-simwrap .pr-end,
+    .pr-simwrap .pr-pay {
+        flex: 0 1 32%;
+    }
+
+    .pr-simwrap .pr-wline {
+        max-width: 560px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+/* Sensor screens: a lit $5 is red, a lit $1 blue (the live tables' colors) */
+.pr-chip.pr-lit.pr-c5 {
+    border-color: #ff5a5a;
+    background-color: #c8102e;
+    box-shadow: inset 0 0 0 4px #c8102e, inset 0 0 0 6px white, 0 0 10px rgba(255, 70, 70, 0.85);
+    color: white;
+}
+
+.pr-chip.pr-lit.pr-c1 {
+    border-color: #5d8cff;
+    background-color: #1f4fd1;
+    box-shadow: inset 0 0 0 4px #1f4fd1, inset 0 0 0 6px white, 0 0 10px rgba(80, 130, 255, 0.85);
+    color: white;
+}
