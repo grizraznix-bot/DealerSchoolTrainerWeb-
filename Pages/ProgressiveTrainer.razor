@@ -169,7 +169,8 @@ else
                 case Screen.Wager:
                     @for (int w = 0; w < 2; w++)
                     {
-                        if (!h.Placed[w]) continue;
+                        // Like the real screen: only wagers made and not paid yet
+                        if (!h.Placed[w] || _paid[w]) continue;
                         int wi = w;
                         ProgWager pw = _def.Wagers[w];
                         <button type="button" class="pr-wline @(_selWager == wi ? "pr-on" : "")" @onclick="() => _selWager = wi">
