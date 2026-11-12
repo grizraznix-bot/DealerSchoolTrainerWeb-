@@ -8191,6 +8191,12 @@ body {
     opacity: 0.4;
 }
 
+/* 3 letters (Pai Gow's INS): smaller so it fits inside the ring */
+.pr-chip.pr-chip-long {
+    font-size: 0.68rem;
+    letter-spacing: -0.02em;
+}
+
 .pr-chip small {
     margin-top: 1px;
     font-size: 0.45rem;
@@ -8459,6 +8465,11 @@ body {
     font-style: normal;
     font-weight: 800;
     font-size: 0.7rem;
+}
+
+.pr-gamelink-chips i.pr-gl-long {
+    font-size: 0.56rem;
+    letter-spacing: -0.03em;
 }
 
 .pr-gamelink-chips i + i {

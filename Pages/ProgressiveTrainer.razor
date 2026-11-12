@@ -138,7 +138,7 @@ else
                             @for (int s = 1; s <= 6; s++)
                             {
                                 bool lit = s == h.Seat && h.Placed[wi];
-                                <span class="pr-chip @(lit ? "pr-lit" : "")">@_def.Wagers[wi].ChipTop</span>
+                                <span class="pr-chip @(lit ? "pr-lit" : "") @(_def.Wagers[wi].ChipTop.Length > 2 ? "pr-chip-long" : "")">@_def.Wagers[wi].ChipTop</span>
                             }
                         </div>
                     }
@@ -207,7 +207,7 @@ else
                         {
                             int si = s;
                             bool lit = s == h.Seat;
-                            <button type="button" class="pr-chip @(lit ? "pr-lit" : "") @(_selPos == si ? "pr-sel" : "")"
+                            <button type="button" class="pr-chip @(lit ? "pr-lit" : "") @(_selPos == si ? "pr-sel" : "") @(_def.Wagers[_selWager].ChipTop.Length > 2 ? "pr-chip-long" : "")"
                                     disabled="@(!lit)" aria-label="@($"Position {si}")" @onclick="() => _selPos = si">
                                 @_def.Wagers[_selWager].ChipTop
                             </button>

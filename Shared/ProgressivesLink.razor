@@ -3,7 +3,7 @@
    that game's card already open. Start screens only, never during play. *@
 
 <a class="pr-gamelink" href="@($"progressives?open={Key}")">
-    <span class="pr-gamelink-chips" aria-hidden="true"><i>@Chip1</i><i>@Chip2</i></span>
+    <span class="pr-gamelink-chips" aria-hidden="true"><i class="@(Chip1.Length > 2 ? "pr-gl-long" : "")">@Chip1</i><i class="@(Chip2.Length > 2 ? "pr-gl-long" : "")">@Chip2</i></span>
     <span class="pr-gamelink-text">
         <b>Progressives</b>
         <span>Practice the @Game progressive touchscreen</span>
