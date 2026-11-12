@@ -105,7 +105,15 @@ else
         </div>
 
         @* What to do on this screen *@
-        @if (!_over)
+        @if (!_over && _screen == Screen.Tables && _paidLog.Count > 0)
+        {
+            @* After a CONFIRM: what was recorded, and END GAME is next *@
+            <div class="pr-done pr-howto">
+                <b>&#x2713; @string.Join(" · ", _paidLog)</b>
+                <span>Next: tap <strong>END GAME</strong> to finish the hand and see your result. Another wager still wins? Tap PAYOUT first.</span>
+            </div>
+        }
+        else if (!_over)
         {
             <p class="cr-howto pr-howto">@Instruction</p>
         }
@@ -153,7 +161,7 @@ else
                         }
                     </div>
                     <div class="pr-ts-btns">
-                        <button type="button" class="pr-btn pr-end" disabled="@_over" @onclick="EndGame">END GAME</button>
+                        <button type="button" class="pr-btn pr-end @(!_over && _paidLog.Count > 0 ? "pr-cue" : "")" disabled="@_over" @onclick="EndGame">END GAME</button>
                         <button type="button" class="pr-btn pr-pay" disabled="@_over" @onclick="Payout">PAYOUT</button>
                     </div>
                     break;
@@ -238,12 +246,6 @@ else
             </div>
         }
 
-        @* What's been paid this hand (not what's left: deciding that is the job) *@
-        @if (!_over && _paidLog.Count > 0 && _screen == Screen.Tables)
-        {
-            <p class="pr-paid">Paid: @string.Join(" · ", _paidLog)</p>
-        }
-
         @* Feedback: the same card as every other game (Shared/ResultBreakdown),
            one line per wager *@
         <div class="feedback-area pr-feedback">
@@ -296,7 +298,7 @@ else
 
     private bool _over, _ok;
     private readonly List<BreakdownRow> _rows = new();
-    private bool _scrollToFeedback, _scrollToKeypad;
+    private bool _scrollToFeedback, _scrollToKeypad, _scrollToDone;
     private int _correct, _played;
     private SessionLog _log = new();
     private bool _showSessionSummary, _scrollToSummary, _lastRenderedStarted;
@@ -496,19 +498,20 @@ else
             Fail("Wrong amount", $"${paid:N0}", PayAnswer(_selWager));
             return;
         }
-        MarkPaid($"{pw.Header} {row.PayText}");
+        MarkPaid($"{row.PayText} paid on the {pw.Header}");
     }
 
     private void CallSupervisor()
     {
         ProgWager pw = _def!.Wagers[_selWager];
-        MarkPaid($"{pw.Header} {pw.Rows[_selRank].Name} (Supervisor called)");
+        MarkPaid($"Supervisor called for the {pw.Header} ({pw.Rows[_selRank].Name})");
     }
 
     private void MarkPaid(string what)
     {
         _paid[_selWager] = true;
         _paidLog.Add(what);
+        _scrollToDone = true;
         _rows.Add(new BreakdownRow(_def!.Wagers[_selWager].Header, "", PayAnswer(_selWager), true, ""));
         ResetPicks();
         _screen = Screen.Tables;
@@ -526,8 +529,7 @@ else
     private string Instruction => _screen switch
     {
         Screen.Lock => "The wagers are on the sensors. Tap PLAY to lock them in.",
-        Screen.Tables when _paidLog.Count > 0 => "Another wager to pay? Tap PAYOUT. Everything paid? Tap END GAME.",
-        Screen.Tables => "Check the hand against the pay tables. Tap PAYOUT if it qualifies, END GAME if it doesn't.",
+        Screen.Tables => "Check the hand against the pay tables. Tap PAYOUT if it qualifies. If it doesn't, tap END GAME to finish the hand and see your result.",
         Screen.Wager => "Tap the wager to pay, then NEXT.",
         Screen.Rank => "Tap the hand's rank, then NEXT.",
         Screen.Position => "Tap the player's position (the lit chip), then NEXT.",
@@ -582,6 +584,13 @@ else
         if (_scrollToKeypad && _screen == Screen.Confirm)
         {
             _scrollToKeypad = false;
+            try { await JS.InvokeVoidAsync("dstScrollToEl", ".pr-howto"); } catch { }
+        }
+
+        // After a CONFIRM: the green "Paid" box and END GAME in view
+        if (_scrollToDone && _screen == Screen.Tables && !_over)
+        {
+            _scrollToDone = false;
             try { await JS.InvokeVoidAsync("dstScrollToEl", ".pr-howto"); } catch { }
         }
 
