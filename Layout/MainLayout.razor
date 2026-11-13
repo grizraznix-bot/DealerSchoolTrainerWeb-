@@ -42,14 +42,16 @@
             <li><NavLink href="roulette" @onclick='() => MenuLinkClicked("roulette")'>Roulette</NavLink></li>
         </ul>
 
-        @* Progressives and the timed challenges, shaded gold so they stand
-           apart from the game trainers *@
+        @* Practice & Tools: Progressives, the timed challenges and the Table
+           Tools, shaded gold so they stand apart from the game trainers *@
+        <h3>Practice &amp; Tools</h3>
         <ul>
             <li class="challenge-link"><NavLink href="progressives" @onclick='() => MenuLinkClicked("progressives")'>Progressives</NavLink></li>
             <li class="challenge-link"><NavLink href="challenge" @onclick='() => MenuLinkClicked("challenge")'>Challenge Mode</NavLink></li>
-            <li class="challenge-link"><NavLink href="tools" @onclick='() => MenuLinkClicked("tools")'>Tools</NavLink></li>
+            <li class="challenge-link"><NavLink href="tools" @onclick='() => MenuLinkClicked("tools")'>Table Tools</NavLink></li>
         </ul>
 
+        <h3>Info</h3>
         <ul>
             <li><NavLink href="about">About</NavLink></li>
         </ul>

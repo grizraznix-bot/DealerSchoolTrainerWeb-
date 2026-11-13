@@ -2750,15 +2750,9 @@ label,
    Challenge Mode
    ------------------------------------------------------------------ */
 
-/* Menu: shaded gold so it stands apart from the regular trainers */
-.sidebar li.challenge-link {
-    margin-top: 1rem;
-}
-
-/* Progressives and Challenge Mode share the gold group: one gap above it */
-.sidebar li.challenge-link + li.challenge-link {
-    margin-top: 0;
-}
+/* Menu: shaded gold so it stands apart from the regular trainers. The
+   group sits under its own "Practice & Tools" heading, which gives the
+   gap above it */
 
 .sidebar li.challenge-link a {
     background: var(--c-gold-bg);
