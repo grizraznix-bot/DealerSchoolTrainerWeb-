@@ -25,10 +25,15 @@
 }
 
 /* Stops phones zooming the page when something is tapped twice quickly
-   (e.g. cycling a wager Win > Lose fast). Pinch-to-zoom still works. */
+   (e.g. cycling a wager Win > Lose fast). Pinch-to-zoom still works.
+   text-size-adjust: stops iPhone Safari enlarging text on its own when
+   the phone is held sideways (it did so unevenly, e.g. one pay table
+   bigger than the one beside it). */
 html {
     touch-action: manipulation;
     font-family: var(--font-ui);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 body,
