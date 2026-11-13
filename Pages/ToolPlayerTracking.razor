@@ -1,0 +1,247 @@
+@page "/tools/player-tracking"
+@inject NavigationManager Nav
+
+<PageTitle>Player Tracking</PageTitle>
+
+@* Player Tracking (demo): the table's player tracking touchscreen, drawn
+   like the real one. A free practice tool, not graded.
+     Table screen: "15-300 Game Name Here", positions 1.-6. and D.
+     The IN button (first of the bottom row) only shows once a spot is
+     tapped: D. before login, a position after login.
+     D. -> IN -> Dealer Pin keypad (any number, Ent) -> D. Dealer
+     Position -> IN -> Buyin Amt: Player N (CASH, keypad, Ent) -> Guest;
+     the buy-in goes to the player's rating card. Another buy-in: tap the
+     guest, IN, the amount, Ent.
+   On the real system supervisors remove players; here Reset clears every
+   guest and logs the dealer out. A phone held sideways fills the screen
+   with it (app.css, tl-stage / pk-). *@
+<div class="play-screen tl-screen pk-screen has-game-bar">
+    <div class="game-status">
+        <span class="game-status-title">Player Tracking</span>
+        <span>Demo</span>
+    </div>
+
+    <div class="tl-stage pk-stage">
+        <div class="tl-strip">
+            <button type="button" class="tl-exit" @onclick='() => Nav.NavigateTo("tools")'>&lsaquo; Exit</button>
+            <b>Player Tracking</b>
+            <span>@(_note ?? Instruction)</span>
+            <button type="button" class="pk-strip-reset" @onclick="Reset">Reset</button>
+        </div>
+
+        <p class="cr-howto pk-howto">@Instruction</p>
+
+        <div class="pk-bezel">
+            <div class="pk-scr">
+                @switch (_screen)
+                {
+                    case Screen.Pin:
+                        <button type="button" class="pk-back" aria-label="Back" @onclick="Back">&#x21A9;</button>
+                        <div class="pk-lbl pk-lbl-pin">Dealer Pin:</div>
+                        <div class="pk-disp" aria-live="polite">@(_entry.Length == 0 ? "0" : _entry)</div>
+                        @Keypad(false)
+                        break;
+
+                    case Screen.Buyin:
+                        <button type="button" class="pk-back" aria-label="Back" @onclick="Back">&#x21A9;</button>
+                        <div class="pk-lbl pk-lbl-buy">Buyin Amt:</div>
+                        <div class="pk-lbl pk-lbl-player">Player @_sel</div>
+                        <div class="pk-cash">CASH</div>
+                        <div class="pk-disp" aria-live="polite">$@(_entry.Length == 0 ? "0" : _entry)</div>
+                        @Keypad(true)
+                        break;
+
+                    default:
+                        <div class="pk-title">15-300 Game Name Here</div>
+                        @for (int s = 1; s <= 6; s++)
+                        {
+                            int si = s;
+                            <button type="button" class="pk-pos pk-p@(si) @(_sel == si ? "pk-sel" : "")"
+                                    aria-label="@($"Position {si}{(_buyins[si] > 0 ? ", Guest" : "")}")"
+                                    @onclick="() => TapSeat(si)">
+                                <span class="pk-n">@(si).</span>@if (_buyins[si] > 0)
+                                {
+                                    <span class="pk-g">Guest</span>
+                                }
+                            </button>
+                        }
+                        <button type="button" class="pk-pos pk-pd @(_sel == 0 ? "pk-sel" : "")"
+                                aria-label="@(_loggedIn ? "Dealer, logged in" : "Dealer, tap to log in")"
+                                @onclick="TapDealer">
+                            <span class="pk-n">D.</span>@if (_loggedIn)
+                            {
+                                <span class="pk-g">Dealer</span>
+                            }
+                        </button>
+                        <div class="pk-btns">
+                            @if (_sel is not null)
+                            {
+                                <button type="button" class="pk-in" @onclick="TapIn">IN</button>
+                            }
+                            else
+                            {
+                                <span></span>
+                            }
+                            <span></span><span></span><span></span><span></span>
+                        </div>
+                        break;
+                }
+            </div>
+        </div>
+
+        @if (_note is not null)
+        {
+            <p class="pk-note">&#x2713; @_note</p>
+        }
+    </div>
+
+    <GameBar HelpTitle="Player Tracking" OnEnd='() => Nav.NavigateTo("tools")' EndLabel="Exit">
+        <ChildContent>
+            <button type="button" class="game-bar-main pk-reset" @onclick="Reset">Reset</button>
+        </ChildContent>
+        <HelpContent>
+            <p>A demo of the table's player tracking touchscreen. Nothing is scored.</p>
+            <ol class="pr-help-steps">
+                <li><b>Log in:</b> tap <b>D.</b>, then <b>IN</b>. Enter any PIN and tap <b>Ent</b>. D. now shows Dealer.</li>
+                <li><b>Add a guest:</b> tap a position, then <b>IN</b>. Enter the cash buy-in and tap <b>Ent</b>. The position shows Guest and the buy-in goes to the player's rating card.</li>
+                <li><b>Another buy-in:</b> tap the guest, then <b>IN</b>, and enter the new amount.</li>
+            </ol>
+            <p>The <b>IN</b> button only shows once a spot is tapped. The red arrow goes back without saving.</p>
+            <p>On the real system the supervisors see the rating card in the pit software and remove players. Here, <b>Reset</b> clears every guest and logs you out.</p>
+            <p>Turn your phone sideways to fill the screen.</p>
+        </HelpContent>
+    </GameBar>
+</div>
+
+@code {
+    private enum Screen { Table, Pin, Buyin }
+
+    private Screen _screen = Screen.Table;
+    private bool _loggedIn, _loginFirst;
+    private int? _sel;                        // tapped spot: 0 = D., 1-6 = a position
+    private string _entry = "";               // the keypad display
+    private string? _note;                    // the last buy-in sent
+    private readonly decimal[] _buyins = new decimal[7]; // running total per position (index 1-6)
+
+    private string Instruction => _screen switch
+    {
+        Screen.Pin => "Enter any PIN, then Ent.",
+        Screen.Buyin => "Enter the cash buy-in, then Ent.",
+        _ when _sel == 0 => "Tap IN to log in.",
+        _ when _sel is not null => "Tap IN to enter the buy-in.",
+        _ when !_loggedIn => _loginFirst ? "Log in first: tap D." : "Tap D. to log in.",
+        _ when _buyins.Any(b => b > 0) => "Tap a position to add a guest, or a guest for another buy-in.",
+        _ => "Tap a position to add a guest."
+    };
+
+    private void TapDealer()
+    {
+        _note = null;
+        _loginFirst = false;
+        if (_loggedIn) return;           // already logged in
+        _sel = _sel == 0 ? null : 0;
+    }
+
+    private void TapSeat(int seat)
+    {
+        _note = null;
+        if (!_loggedIn)
+        {
+            _loginFirst = true;
+            return;
+        }
+        _sel = _sel == seat ? null : seat;
+    }
+
+    private void TapIn()
+    {
+        _entry = "";
+        _screen = _sel == 0 ? Screen.Pin : Screen.Buyin;
+    }
+
+    private void Back()
+    {
+        _entry = "";
+        _sel = null;
+        _screen = Screen.Table;
+    }
+
+    private void Key(string k)
+    {
+        bool money = _screen == Screen.Buyin;
+        if (k == ".")
+        {
+            if (money && !_entry.Contains('.')) _entry = _entry.Length == 0 ? "0." : _entry + ".";
+            return;
+        }
+        int dot = _entry.IndexOf('.');
+        if (dot >= 0 && _entry.Length - dot - 1 + k.Length > 2) return;   // cents: 2 digits at most
+        if (_entry.Replace(".", "").Length + k.Length > 8) return;         // 8 digits at most
+        if (money && _entry.Length == 0 && k[0] == '0') return;           // no leading zeros on a dollar amount
+        _entry += k;
+    }
+
+    private void Del()
+    {
+        if (_entry.Length > 0) _entry = _entry[..^1];
+    }
+
+    private void Ent()
+    {
+        if (_screen == Screen.Pin)
+        {
+            if (_entry.Length == 0) return;  // any number logs in, but one is needed
+            _loggedIn = true;
+            Back();
+            return;
+        }
+
+        if (!decimal.TryParse(_entry, System.Globalization.NumberStyles.AllowDecimalPoint,
+                System.Globalization.CultureInfo.InvariantCulture, out decimal amt) || amt <= 0)
+            return;
+        int seat = _sel ?? 0;
+        _buyins[seat] += amt;
+        string Money(decimal d) => d == Math.Floor(d) ? $"${d:N0}" : $"${d:N2}";
+        _note = $"{Money(amt)} cash buy-in sent to Player {seat}'s rating card"
+                + (_buyins[seat] != amt ? $" ({Money(_buyins[seat])} total)" : "");
+        Back();
+    }
+
+    private void Reset()
+    {
+        Array.Clear(_buyins);
+        _loggedIn = false;
+        _loginFirst = false;
+        _note = null;
+        Back();
+    }
+
+    // The keypad: 1-9, 00, 0, and "." (Buyin) or blank (Dealer Pin); red Del, green Ent
+    private RenderFragment Keypad(bool money) => __builder =>
+    {
+        <div class="pk-kp">
+            @foreach (string k in new[] { "1", "2", "3" })
+            {
+                string kk = k;
+                <button type="button" @onclick="() => Key(kk)">@kk</button>
+            }
+            <button type="button" class="pk-del" @onclick="Del">Del</button>
+            @foreach (string k in new[] { "4", "5", "6", "7", "8", "9" })
+            {
+                string kk = k;
+                <button type="button" @onclick="() => Key(kk)">@kk</button>
+            }
+            <button type="button" class="pk-ent" @onclick="Ent">Ent</button>
+            <button type="button" @onclick='() => Key("00")'>00</button>
+            <button type="button" @onclick='() => Key("0")'>0</button>
+            @if (money)
+            {
+                <button type="button" @onclick='() => Key(".")'>.</button>
+            }
+            else
+            {
+                <span></span>
+            }
+        </div>
+    };
+}
