@@ -147,6 +147,24 @@
                 }),
             new("House Way", "House Way", "", Array.Empty<PtTable>(), HouseWay: true)
         }),
+        new("Player's Edge-21", new PtTab[]
+        {
+            new("Bonus 21", "Bonus 21", "Bonus 21 payouts.",
+                new[] { One(("5-card 21", "3 to 2"), ("6-card 21", "2 to 1"), ("7-card 21", "3 to 1"),
+                            ("6-7-8 mixed suits", "3 to 2"), ("6-7-8 same suit", "2 to 1"), ("6-7-8 of Diamonds", "3 to 1"),
+                            ("7-7-7 mixed suits", "3 to 2"), ("7-7-7 same suit", "2 to 1"), ("7-7-7 of Diamonds", "3 to 1")) }),
+            new("Match Up & Match Down", "Match", "Match Up and Match Down wagers.",
+                new[] { One(("2 Suited Matches", "18 to 1"), ("1 Non-Suited & 1 Suited Match", "13 to 1"), ("1 Suited Match", "9 to 1"),
+                            ("2 Non-Suited Matches", "8 to 1"), ("1 Non-Suited Match", "4 to 1")) }),
+            new("Monster Match", "Prog.", "Monster Match progressive: all 4 cards (the player's 2 and the dealer's 2). A percentage pays from the meter: supervisor required.",
+                new[]
+                {
+                    new PtTable("$5", "tl-h5", new[] { ("Four of a Kind (Same Color)", "100%"), ("Four of a Kind", "$1,000"), ("Three of a Kind (Same Color)", "$100"),
+                                                     ("Three of a Kind", "$50"), ("Pair (Suited)", "$10") }),
+                    new PtTable("$1", "tl-h1", new[] { ("Four of a Kind (Same Color)", "100%"), ("Four of a Kind", "$200"), ("Three of a Kind (Same Color)", "$20"),
+                                                     ("Three of a Kind", "$10"), ("Pair (Suited)", "$2") })
+                })
+        }),
         new("Hold'em", new PtTab[]
         {
             new("Odds", "Odds", "Pays only when the player wins with a Straight or better; a smaller win pushes.",

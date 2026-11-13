@@ -4,8 +4,8 @@
 <PageTitle>Pai Gow Number</PageTitle>
 
 @* Pai Gow Number: a random number 1-7, or a roll of 3 dice with their
-   total, for the training table. Roll (or tap the number / the dice) for
-   a new one; the last few show underneath. *@
+   total, for the training table. Only the Roll button rolls (tapping the
+   number or the dice does nothing); the last few show underneath. *@
 <div class="play-screen tl-screen has-game-bar">
     <h1 class="tl-h">PAI GOW NUMBER</h1>
 
@@ -16,14 +16,14 @@
 
     @if (!_dice)
     {
-        <button type="button" class="tl-num @(_flash ? "tl-flash" : "")" @onclick="Roll" aria-label="@($"Number {_number}, tap to roll")">
+        <div class="tl-num @(_flash ? "tl-flash" : "")" role="status" aria-label="@(_number == 0 ? "No number yet" : $"Number {_number}")">
             <small>NUMBER</small>
             <b>@(_number == 0 ? "?" : _number.ToString())</b>
-        </button>
+        </div>
     }
     else
     {
-        <button type="button" class="tl-dice @(_flash ? "tl-flash" : "")" @onclick="Roll" aria-label="@(_die[0] == 0 ? "Tap to roll" : $"Dice {_die[0]}, {_die[1]}, {_die[2]}, total {_die.Sum()}")">
+        <div class="tl-dice @(_flash ? "tl-flash" : "")" role="status" aria-label="@(_die[0] == 0 ? "Not rolled yet" : $"Dice {_die[0]}, {_die[1]}, {_die[2]}, total {_die.Sum()}")">
             @foreach (int d in _die)
             {
                 <span class="tl-die">
@@ -33,7 +33,7 @@
                     }
                 </span>
             }
-        </button>
+        </div>
         <p class="tl-total">Total<b>@(_die[0] == 0 ? "?" : _die.Sum().ToString())</b></p>
     }
 
@@ -51,7 +51,7 @@
         <HelpContent>
             <p><b>Number 1-7</b>: a random number from 1 to 7.</p>
             <p><b>3 Dice</b>: three dice and their total.</p>
-            <p>Tap Roll, the number or the dice for a new one.</p>
+            <p>Tap <b>Roll</b> for a new one.</p>
         </HelpContent>
     </GameBar>
 </div>
