@@ -8,7 +8,8 @@
 <PageTitle>Progressives</PageTitle>
 
 @* Progressives: the table's progressive touchscreen routine, for
-   Blackjack, Three Card Prime, Pai Gow and Hold'em. The felt shows only
+   Blackjack, Three Card Prime, Pai Gow, Player's Edge-21 and Hold'em. The
+   felt shows only
    the cards the progressive pays on; below it, a practice touchscreen
    drawn like the real one at the table:
      PLAY (locks in the wagers) -> pay tables with END GAME / PAYOUT
@@ -222,7 +223,7 @@ else
 
         @* The felt: only the cards the progressive pays on *@
         <div class="felt pr-felt">
-            @if (_def.Game is ProgGame.Blackjack or ProgGame.Holdem)
+            @if (_def.Game is ProgGame.Blackjack or ProgGame.Holdem or ProgGame.PlayersEdge)
             {
                 <div class="pr-cap">@_def.FeltLabel</div>
                 @if (_screen == Screen.Lock)
@@ -232,10 +233,11 @@ else
                 else
                 {
                     <div class="pr-cards">
-                        @foreach (var c in _def.Game == ProgGame.Blackjack ? h.Dealer : h.Board)
+                        @foreach (var c in _def.Game == ProgGame.Holdem ? h.Board : h.Dealer)
                         {
                             <img class="pr-card" src="images/cards/@(c.Code).png" alt="@c.Name" />
                         }
+                        @HitCards(h.DealerHits)
                     </div>
                 }
                 <div class="pr-seatrow">
@@ -247,9 +249,14 @@ else
                             {
                                 <img class="pr-card" src="images/cards/@(c.Code).png" alt="@c.Name" />
                             }
+                            @HitCards(h.PlayerHits)
                         </div>
                     }
                 </div>
+                @if (_def.Game == ProgGame.PlayersEdge)
+                {
+                    <div class="pr-cap pr-capnote">Monster Match: first 2 cards each · dimmed cards don't count</div>
+                }
             }
             else
             {
@@ -508,6 +515,24 @@ else
                 }
             </span>
         </div>
+    };
+
+    // Player's Edge hit cards: dimmed (they don't count for Monster Match);
+    // the first shown whole, a second only its left half
+    private static RenderFragment HitCards(List<(string Code, string Name)> hits) => __builder =>
+    {
+        for (int i = 0; i < hits.Count; i++)
+        {
+            var c = hits[i];
+            if (i == 0)
+            {
+                <img class="pr-card pr-dim" src="images/cards/@(c.Code).png" alt="@($"{c.Name} (hit card, doesn't count)")" />
+            }
+            else
+            {
+                <span class="pr-half"><img class="pr-card pr-dim" src="images/cards/@(c.Code).png" alt="@($"{c.Name} (hit card, doesn't count)")" /></span>
+            }
+        }
     };
 
     // ---- Session -----------------------------------------------------------

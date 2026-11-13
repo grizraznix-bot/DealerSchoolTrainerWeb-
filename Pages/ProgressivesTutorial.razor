@@ -7,7 +7,7 @@
 @* Progressives Tutorial: a Beyond Dealer School topic. An intro screen,
    five short steps (what a progressive is, locking in -- checking the
    wagers and the lit positions first, paying a winner, metered pays and
-   END GAME, what each game pays on), then a finish screen with a practice
+   END GAME, what each game pays on, Player's Edge-21 included), then a finish screen with a practice
    link to each game. The touchscreen pictures use the Progressives game's
    own styles (pr- classes). Opened from the "New to Progressives?" card on
    the Progressives page. *@
@@ -33,13 +33,13 @@
                 <div class="pr-ts pr-ts-pic">@ChipGrid(4)</div>
                 <div class="tu-tot">Progressives<small>Beyond Dealer School</small></div>
             </div>
-            <p>Players can add a $1 or $5 progressive wager. You lock it in on the table's touchscreen and pay the winners from it. Progressives practises that touchscreen routine for four games.</p>
+            <p>Players can add a $1 or $5 progressive wager. You lock it in on the table's touchscreen and pay the winners from it. Progressives practises that touchscreen routine for five games.</p>
             <ol class="tu-steps">
                 <li><div><b>What a progressive is</b><span>$1 and $5 wagers on the sensors</span></div></li>
                 <li><div><b>Lock in</b><span>Check the wagers, PLAY, collect the chips</span></div></li>
                 <li><div><b>Paying a winner</b><span>PAYOUT: wager, rank, position</span></div></li>
                 <li><div><b>Metered pays and END GAME</b><span>Call Supervisor; END GAME every round</span></div></li>
-                <li><div><b>What each game pays on</b><span>Blackjack, Three Card, Pai Gow, Hold'em</span></div></li>
+                <li><div><b>What each game pays on</b><span>Blackjack, Three Card, Pai Gow, Player's Edge, Hold'em</span></div></li>
             </ol>
             break;
 
@@ -96,13 +96,15 @@
         case 5:
             <h2 class="tu-title">What each game pays on</h2>
             <p>The touchscreen routine is the same in every game. What changes is the hand it pays on:</p>
-            <table class="tu-pt">
+            <table class="tu-pt pr-tu-pt">
                 <tr><td><b>Blackjack</b> 21+3</td><td>Player's 2 cards + dealer's up card</td></tr>
                 <tr><td><b>Three Card</b> Mini Royal</td><td>Player's 3 cards</td></tr>
                 <tr><td><b>Pai Gow</b> ET and Insurance</td><td>Player's 7 cards</td></tr>
+                <tr><td><b>Player's Edge-21</b> Monster Match</td><td>Dealer's first 2 + player's first 2 cards</td></tr>
                 <tr><td><b>Hold'em</b></td><td>Player's best 5 of 7</td></tr>
             </table>
             <div class="tu-tip">Three Card: the jackpot Mini-Royal is <b>Diamonds</b> on the $5 and <b>Spades</b> on the $1.</div>
+            <div class="tu-tip">Player's Edge-21: only the <b>first 2 cards</b> of each hand count. Hit cards don't.</div>
             <div class="tu-tip">Hold'em: a Royal on the board alone is a <b>Community Royal</b>, its own line on the pay table.</div>
             break;
 
@@ -116,7 +118,8 @@
                 <a class="tu-next" href="progressives?open=bj"><i>1</i><b>Blackjack</b><small>21+3</small></a>
                 <a href="progressives?open=tc"><i>2</i><b>Three Card Prime</b><small>Mini Royal</small></a>
                 <a href="progressives?open=pg"><i>3</i><b>Pai Gow</b><small>ET and Insurance</small></a>
-                <a href="progressives?open=hd"><i>4</i><b>Heads-Up Hold'em</b><small>best 5 of 7</small></a>
+                <a href="progressives?open=pe"><i>4</i><b>Player's Edge-21</b><small>Monster Match</small></a>
+                <a href="progressives?open=hd"><i>5</i><b>Heads-Up Hold'em</b><small>best 5 of 7</small></a>
             </div>
             <p class="tu-muted">You can reopen this tutorial any time from the Progressives page.</p>
             break;

@@ -8,11 +8,12 @@ namespace DealerSchoolTrainerWeb.Games.ProgressiveTrainer;
 // Progressives: the table's progressive touchscreen routine, one game at
 // a time. Each game has two progressive wagers (the touchscreen's two chip
 // rows): $5 and $1 for Blackjack, Three Card Prime and Hold'em, Emperor's
-// Treasure $1 and Insurance $1 for Pai Gow. Pay tables are the house's
+// Treasure $1 and Insurance $1 for Pai Gow, Monster Match $5 and $1 for
+// Player's Edge-21. Pay tables are the house's
 // base tables (no Dynamic Pays multipliers). A metered pay (a % of the
 // meter) needs a supervisor; nothing is entered for it.
 
-public enum ProgGame { Blackjack, ThreeCard, PaiGow, Holdem }
+public enum ProgGame { Blackjack, ThreeCard, PaiGow, PlayersEdge, Holdem }
 
 /// <summary>One pay table line: a dollar amount, or Meter = "100%" / "50%" / "25%".</summary>
 public sealed record ProgRow(string Name, int Pay, string? Meter = null)
@@ -33,7 +34,9 @@ public sealed record ProgWager(
 /// <summary>One dealt hand: the cards shown and, per wager, the pay table line it hits (-1 = none).</summary>
 public sealed class ProgHand
 {
-    public List<(string Code, string Name)> Dealer { get; init; } = new(); // Blackjack: the up card
+    public List<(string Code, string Name)> Dealer { get; init; } = new(); // Blackjack: the up card; Player's Edge: the dealer's first 2
+    public List<(string Code, string Name)> DealerHits { get; init; } = new(); // Player's Edge: hit cards, shown dimmed (don't count)
+    public List<(string Code, string Name)> PlayerHits { get; init; } = new(); // Player's Edge: hit cards, shown dimmed (don't count)
     public List<(string Code, string Name)> Board { get; init; } = new();  // Hold'em: the 5 community cards
     public List<(string Code, string Name)> Player { get; init; } = new();
     public required int Seat { get; init; }          // 1-6
@@ -125,6 +128,25 @@ public static class ProgressiveGames
         },
         new()
         {
+            Game = ProgGame.PlayersEdge, Key = "pe", Name = "Player's Edge-21", Title = "Player's Edge Progressive",
+            Description = "Monster Match progressive: the dealer's first 2 cards and the player's first 2 cards.",
+            FeltLabel = "DEALER",
+            Wagers = new[]
+            {
+                new ProgWager("PE21 $5", "$5", "Jackpot", "$5", "pr-h5", new ProgRow[]
+                {
+                    new("Four of a Kind (Same Color)", 0, "100%"), new("Four of a Kind", 1000),
+                    new("Three of a Kind (Same Color)", 100), new("Three of a Kind", 50), new("Pair (Suited)", 10)
+                }),
+                new ProgWager("PE21 $1", "$1", "Jackpot", "$1", "pr-h1", new ProgRow[]
+                {
+                    new("Four of a Kind (Same Color)", 0, "100%"), new("Four of a Kind", 200),
+                    new("Three of a Kind (Same Color)", 20), new("Three of a Kind", 10), new("Pair (Suited)", 2)
+                })
+            }
+        },
+        new()
+        {
             Game = ProgGame.Holdem, Key = "hd", Name = "Heads-Up Hold'em", Title = "Hold'em Progressive",
             Description = "Hold'em progressive: the player's best 5 of 7 cards, or a Royal Flush on the board.",
             FeltLabel = "BOARD",
@@ -146,6 +168,8 @@ public static class ProgressiveGames
 
     public static ProgGameDef? ByKey(string? key) => All.FirstOrDefault(g => g.Key == key);
 
+    private static ProgGameDef Def(ProgGame game) => All.First(g => g.Game == game);
+
     // ======================================================================
     // Dealing
     // ======================================================================
@@ -160,6 +184,7 @@ public static class ProgressiveGames
                 ProgGame.Blackjack => DealBlackjack(rng, qualify),
                 ProgGame.ThreeCard => DealThreeCard(rng, qualify),
                 ProgGame.PaiGow => DealPaiGow(rng, qualify),
+                ProgGame.PlayersEdge => DealPlayersEdge(rng, qualify),
                 _ => DealHoldem(rng, qualify)
             };
             if (h is not null) return h;
@@ -170,6 +195,7 @@ public static class ProgressiveGames
             ProgGame.Blackjack => DealBlackjack(rng, false)!,
             ProgGame.ThreeCard => DealThreeCard(rng, false)!,
             ProgGame.PaiGow => DealPaiGow(rng, false)!,
+            ProgGame.PlayersEdge => DealPlayersEdge(rng, false)!,
             _ => DealHoldem(rng, false)!
         };
     }
@@ -230,7 +256,7 @@ public static class ProgressiveGames
     private static string BlackjackName(IReadOnlyList<Card> c)
     {
         int row = BlackjackRow(c);
-        if (row >= 0) return All[0].Wagers[0].Rows[row].Name;
+        if (row >= 0) return Def(ProgGame.Blackjack).Wagers[0].Rows[row].Name;
         bool suited = c[0].Suit == c[1].Suit && c[1].Suit == c[2].Suit;
         bool pair = c[0].Rank == c[1].Rank || c[1].Rank == c[2].Rank || c[0].Rank == c[2].Rank;
         return suited ? "Flush" : pair ? "Pair" : "High Card";
@@ -336,7 +362,7 @@ public static class ProgressiveGames
             Seat = rng.Next(1, 7),
             Placed = PickWagers(rng),
             Row = rows,
-            HandName = rows[0] >= 0 ? (rows[0] <= 1 ? "Mini-Royal" : All[1].Wagers[0].Rows[rows[0]].Name)
+            HandName = rows[0] >= 0 ? (rows[0] <= 1 ? "Mini-Royal" : Def(ProgGame.ThreeCard).Wagers[0].Rows[rows[0]].Name)
                      : ThreeCardEvaluator.GetCategory(cards) switch
                      {
                          ThreeCardCategory.Flush => "Flush",
@@ -420,7 +446,7 @@ public static class ProgressiveGames
             Seat = rng.Next(1, 7),
             Placed = PickWagers(rng),
             Row = new[] { row, row },
-            HandName = row >= 0 ? All[3].Wagers[0].Rows[row].Name : HandEvaluator.HandRankName(best)
+            HandName = row >= 0 ? Def(ProgGame.Holdem).Wagers[0].Rows[row].Name : HandEvaluator.HandRankName(best)
         };
     }
 
@@ -546,10 +572,124 @@ public static class ProgressiveGames
             Seat = rng.Next(1, 7),
             Placed = PickWagers(rng, wager),
             Row = rows,
-            HandName = rows[0] >= 0 ? All[2].Wagers[0].Rows[rows[0]].Name
-                     : rows[1] >= 0 ? All[2].Wagers[1].Rows[rows[1]].Name
+            HandName = rows[0] >= 0 ? Def(ProgGame.PaiGow).Wagers[0].Rows[rows[0]].Name
+                     : rows[1] >= 0 ? Def(ProgGame.PaiGow).Wagers[1].Rows[rows[1]].Name
                      : solver.BestSevenCardCategoryName() is "High Card" ? "Ace or King high Pai Gow"
                      : solver.BestSevenCardCategoryName()
+        };
+    }
+
+    // ---- Player's Edge-21: Monster Match on the dealer's first 2 cards and
+    // the player's first 2 cards (6-deck shoe). Hit cards are dealt only to
+    // show what the table would look like; they are dimmed and never count --
+
+    private static bool Red(Suit s) => s is Suit.Hearts or Suit.Diamonds;
+
+    /// <summary>Pay table line (same lines on both wagers), -1 = no pay.</summary>
+    public static int MonsterRow(IReadOnlyList<Card> c)
+    {
+        foreach (var g in c.GroupBy(x => x.Rank).OrderByDescending(g => g.Count()))
+        {
+            int n = g.Count();
+            bool sameColor = g.Select(x => Red(x.Suit)).Distinct().Count() == 1;
+            if (n == 4) return sameColor ? 0 : 1;
+            if (n == 3)
+            {
+                // Three of a Kind (Same Color): the three cards are one color
+                return sameColor ? 2 : 3;
+            }
+        }
+        // Pair (Suited): two cards of the same rank and the same suit
+        bool suitedPair = c.GroupBy(x => (x.Rank, x.Suit)).Any(g => g.Count() >= 2);
+        return suitedPair ? 4 : -1;
+    }
+
+    private static string MonsterName(IReadOnlyList<Card> c)
+    {
+        int row = MonsterRow(c);
+        if (row >= 0) return Def(ProgGame.PlayersEdge).Wagers[0].Rows[row].Name;
+        return c.GroupBy(x => x.Rank).Any(g => g.Count() >= 2) ? "Pair (Not Suited)" : "No Pair";
+    }
+
+    // Blackjack total (best, counting an Ace as 11 when it fits) and whether it's soft
+    private static (int Total, bool Soft) BjTotal(IEnumerable<Card> cards)
+    {
+        int total = 0, aces = 0;
+        foreach (Card c in cards)
+        {
+            int r = (int)c.Rank;
+            if (r == 14) { aces++; total += 11; }
+            else total += r >= 10 ? 10 : r;
+        }
+        while (total > 21 && aces > 0) { total -= 10; aces--; }
+        return (total, aces > 0);
+    }
+
+    // Up to 2 hit cards: the player draws to 17 (stands on a two-card 21);
+    // the dealer hits below 17 and on a soft 17. Only shown, never counted.
+    private static List<Card> Hits(List<Card> first2, bool dealer, Random rng)
+    {
+        var hand = new List<Card>(first2);
+        var hits = new List<Card>();
+        while (hits.Count < 2)
+        {
+            var (total, soft) = BjTotal(hand);
+            bool hit = total < 17 || (dealer && total == 17 && soft);
+            if (!hit) break;
+            Card c = C(rng.Next(2, 15), AnySuit(rng));
+            hand.Add(c);
+            hits.Add(c);
+        }
+        return hits;
+    }
+
+    private static ProgHand? DealPlayersEdge(Random rng, bool qualify)
+    {
+        List<Card> cards;
+        int target = -1;
+        if (qualify)
+        {
+            target = Weighted(rng, 4, 8, 14, 30, 44);
+            int r = rng.Next(2, 15);
+            bool red = rng.Next(2) == 0;
+            Suit OneColor() => red ? (rng.Next(2) == 0 ? Suit.Hearts : Suit.Diamonds) : (rng.Next(2) == 0 ? Suit.Spades : Suit.Clubs);
+            int Other()
+            {
+                int o;
+                do { o = rng.Next(2, 15); } while (o == r);
+                return o;
+            }
+            Suit s = AnySuit(rng);
+            cards = target switch
+            {
+                0 => new() { C(r, OneColor()), C(r, OneColor()), C(r, OneColor()), C(r, OneColor()) },
+                1 => new() { C(r, AnySuit(rng)), C(r, AnySuit(rng)), C(r, AnySuit(rng)), C(r, AnySuit(rng)) },
+                2 => new() { C(r, OneColor()), C(r, OneColor()), C(r, OneColor()), C(Other(), AnySuit(rng)) },
+                3 => new() { C(r, AnySuit(rng)), C(r, AnySuit(rng)), C(r, AnySuit(rng)), C(Other(), AnySuit(rng)) },
+                _ => new() { C(r, s), C(r, s), C(Other(), AnySuit(rng)), C(Other(), AnySuit(rng)) }
+            };
+        }
+        else
+        {
+            cards = Enumerable.Range(0, 4).Select(_ => C(rng.Next(2, 15), AnySuit(rng))).ToList();
+        }
+
+        int row = MonsterRow(cards);
+        if (row != target) return null; // e.g. "mixed color" quads that came out one color: deal again
+
+        Shuffle(cards, rng);
+        var dealer = new List<Card> { cards[0], cards[1] };
+        var player = new List<Card> { cards[2], cards[3] };
+        return new ProgHand
+        {
+            Dealer = dealer.Select(Show).ToList(),
+            DealerHits = Hits(dealer, true, rng).Select(Show).ToList(),
+            Player = player.Select(Show).ToList(),
+            PlayerHits = Hits(player, false, rng).Select(Show).ToList(),
+            Seat = rng.Next(1, 7),
+            Placed = PickWagers(rng),
+            Row = new[] { row, row },
+            HandName = MonsterName(cards)
         };
     }
 }
