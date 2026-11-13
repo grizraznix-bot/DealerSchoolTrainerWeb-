@@ -7830,6 +7830,12 @@ body {
     background-image: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.12), transparent 70%);
 }
 
+/* Practice & Tools: gold, like its cards and the menu's gold group */
+.home-sec-tools {
+    background-color: #8a6a10;
+    background-image: radial-gradient(ellipse at top, rgba(255, 255, 255, 0.14), transparent 70%);
+}
+
 /* Hand Setting: an empty Low Hand slot is a dashed card outline with
    "Tap a card below" inside, so it reads as waiting for a card */
 .hs-low-slot:not(:has(img)) {
