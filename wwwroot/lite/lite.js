@@ -557,7 +557,7 @@
             body += '</div><p class="tl-total">Total<b>' + (g.die[0] ? g.die[0] + g.die[1] + g.die[2] : '?') + '</b></p>';
         }
         var hist = g.dice ? g.diceHist : g.numHist;
-        return '<div class="tl-seg"><button type="button" class="' + (!g.dice ? 'tl-on' : '') + '" data-act="pgnmode" data-d="0">Number 1-7</button>' +
+        return '<div class="tl-seg"><button type="button" class="' + (!g.dice ? 'tl-on' : '') + '" data-act="pgnmode" data-d="0">Number 1&#8209;7</button>' +
             '<button type="button" class="' + (g.dice ? 'tl-on' : '') + '" data-act="pgnmode" data-d="1">3 Dice</button></div>' +
             body +
             '<button type="button" class="tl-big" data-act="roll">Roll</button>' +
@@ -693,13 +693,31 @@
         ['7', 'Straight (the wheel, A-2-3-4-5, is the 2nd highest)'], ['8', 'Three of a Kind'], ['9', 'Two Pair'], ['10', 'One Pair'], ['11', 'High Card']
     ];
 
-    var pay = { game: 0, tab: 0 };
+    var pay = { game: 0, tab: 0, hw: 0 };
+
+    // House Way in sections (Two Pair, Three Pair, ...): a row of tabs picks
+    // which section shows
+    var HW_SHORT = ['Two Pair', 'Three Pair', 'Three of a Kind', 'Straights & Flushes', 'Full House', 'Four of a Kind', 'Five Aces', 'Ranking'];
+
+    function hwSections() {
+        var out = [];
+        HOUSE_WAY.forEach(function (r) {
+            if (r.length === 1) out.push({ title: r[0], rows: [] });
+            else out[out.length - 1].rows.push(r);
+        });
+        return out;
+    }
 
     function houseWayTable() {
-        var h = '<table class="help-table sp-help-table hw-table">';
-        HOUSE_WAY.forEach(function (r) {
-            if (r.length === 1) h += '<tr class="sp-pt-hd"><td colspan="2">' + esc(r[0]) + '</td></tr>';
-            else if (r.length === 3) h += '<tr class="hw-sub"><td></td><td><b>' + esc(r[1]) + '</b>' + esc(r[2]) + '</td></tr>';
+        var secs = hwSections(), sec = secs[Math.min(pay.hw, secs.length - 1)];
+        var h = '<div class="lt-hw-tabs">';
+        secs.forEach(function (x, i) {
+            h += '<button type="button" class="lt-hw-tab' + (i === pay.hw ? ' tl-on' : '') + '" data-act="hw" data-i="' + i + '">' + esc(HW_SHORT[i] || x.title) + '</button>';
+        });
+        h += '</div><table class="help-table sp-help-table hw-table">';
+        h += '<tr class="sp-pt-hd"><td colspan="2">' + esc(sec.title) + '</td></tr>';
+        sec.rows.forEach(function (r) {
+            if (r.length === 3) h += '<tr class="hw-sub"><td></td><td><b>' + esc(r[1]) + '</b>' + esc(r[2]) + '</td></tr>';
             else h += '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>';
         });
         return h + '</table>';
@@ -866,6 +884,7 @@
             // Pay Tables
             case 'pgame2': pay.game = n('data-i'); pay.tab = 0; break;
             case 'ptab': pay.tab = n('data-i'); break;
+            case 'hw': pay.hw = n('data-i'); break;
         }
         render();
     });

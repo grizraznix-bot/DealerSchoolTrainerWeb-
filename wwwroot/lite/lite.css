@@ -844,3 +844,46 @@ body.lite {
 .lt-sign-locked .tl-tap {
     opacity: 0.5;
 }
+
+/* Pai Gow Number: keep "Number 1-7" on one line */
+.lite .tl-seg button {
+    white-space: nowrap;
+}
+
+/* House Way: a tab per hand section */
+.lt-hw-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0.3rem 0.2rem 0.5rem;
+}
+
+.lt-hw-tab {
+    min-height: 34px;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid #c4ccd4;
+    border-radius: 17px;
+    background-color: white;
+    color: #1b2530;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.lt-hw-tab.tl-on {
+    border-color: var(--c-felt, #1f5c3a);
+    background-color: var(--c-felt, #1f5c3a);
+    color: white;
+}
+
+/* Table Screen pay panel: House Way tabs in one row that scrolls sideways */
+.lw-pay .lt-hw-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.lw-pay .lt-hw-tab {
+    flex: none;
+    min-height: 30px;
+    font-size: 0.82rem;
+}
