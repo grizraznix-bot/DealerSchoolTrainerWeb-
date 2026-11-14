@@ -9713,6 +9713,20 @@ html:has(.tl-stage) #rotate-msg {
     background-color: #0d1214;
 }
 
+/* Phone (panels stacked): a panel that stops close to the top of the
+   screen snaps into place. proximity, not mandatory: a scroll that stops
+   well away from a panel's top stays where it is, and a panel taller
+   than the screen can still be scrolled through. Two-column tablet
+   layout doesn't scroll, so this has no effect there. */
+.ts-stage {
+    scroll-snap-type: y proximity;
+    scroll-padding-top: max(8px, env(safe-area-inset-top, 0px));
+}
+
+.ts-stage .ts-p {
+    scroll-snap-align: start;
+}
+
 html:has(.ts-stage) #rotate-msg {
     display: none !important;
 }
