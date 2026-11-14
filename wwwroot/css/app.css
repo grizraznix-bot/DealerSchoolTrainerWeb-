@@ -9640,3 +9640,414 @@ html:has(.tl-stage) #rotate-msg {
         font-size: 10px;
     }
 }
+
+/* ------------------------------------------------------------------
+   Table Screens (Pages/ToolTableScreen + Shared/Ts*): a ready-made
+   screen per game, full screen. Tablet / computer: limit and tool on
+   the left, touchscreen (fixed height) and pay tables on the right.
+   Phone: the panels stack and the screen scrolls.
+   ------------------------------------------------------------------ */
+.tl-sec {
+    margin: 1.1rem 0 0.5rem;
+    color: #4a5560;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.tl-tables {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+}
+
+.tl-table {
+    display: flex;
+    flex-direction: column;
+    padding: 0.65rem 0.75rem;
+    border: 2px solid var(--c-gold-line);
+    border-radius: 12px;
+    background-color: var(--c-gold-bg);
+    color: inherit;
+    text-decoration: none;
+}
+
+.tl-table b {
+    font-size: 1rem;
+}
+
+.tl-table span {
+    margin-top: 2px;
+    color: #4a5560;
+    font-size: 0.78rem;
+    line-height: 1.3;
+}
+
+.ts-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    padding: max(8px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+    box-sizing: border-box;
+    overflow-y: auto;
+    background-color: #0d1214;
+}
+
+html:has(.ts-stage) #rotate-msg {
+    display: none !important;
+}
+
+.ts-stage .tl-strip {
+    display: flex;
+}
+
+.ts-stage > .sim-disc {
+    flex: none;
+    margin: 6px 0 0;
+    color: rgba(207, 216, 220, 0.6);
+    font-size: 11px;
+}
+
+.ts-grid {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ts-col1,
+.ts-col2 {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Tablet or computer: two columns, filling the screen */
+@media (min-width: 900px) and (min-height: 600px) {
+    .ts-stage {
+        overflow: hidden;
+    }
+
+    .ts-grid {
+        flex-direction: row;
+        min-height: 0;
+    }
+
+    .ts-col1 {
+        flex: none;
+        width: 330px;
+    }
+
+    .ts-col2 {
+        flex: 1;
+    }
+
+    .ts-p.ts-grow {
+        flex: 1;
+        min-height: 0;
+    }
+}
+
+.ts-p {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 12px;
+    background-color: #1a2428;
+}
+
+.ts-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    background-color: #141c1f;
+    color: #cfd8dc;
+    font-size: 13px;
+}
+
+.ts-hd b {
+    color: white;
+}
+
+.ts-hd > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Lock button (Table Screens and the Limit Sign) */
+.ts-lock {
+    flex: none;
+    min-height: 28px;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid #f2d27a;
+    border-radius: 8px;
+    background-color: #f2d27a;
+    color: #1b2530;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.ts-lock.ts-lock-on {
+    border-color: #556;
+    background: transparent;
+    color: #cfd8dc;
+}
+
+/* Table limit */
+.ts-limit {
+    display: flex;
+    height: 110px;
+    margin: 8px;
+    border: 4px solid #c9a227;
+    border-radius: 12px;
+    background: radial-gradient(ellipse at center, #14824a, #0b5c33);
+}
+
+.ts-lim:not(.ts-locked) .ts-limit {
+    border-style: dashed;
+}
+
+.ts-limit button {
+    flex: 1;
+    min-height: 0;
+    border: none;
+    background: transparent;
+    color: white;
+}
+
+.ts-limit small {
+    display: block;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+}
+
+.ts-limit b {
+    font-weight: 900;
+    font-size: 44px;
+    line-height: 1.1;
+}
+
+.ts-limit i {
+    width: 2px;
+    margin: 12px 0;
+    background-color: rgba(242, 210, 122, 0.6);
+}
+
+/* Timer and Pai Gow Number panels */
+.ts-white {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 8px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    background-color: white;
+    color: #1b2530;
+}
+
+.ts-white .tl-timer {
+    width: 100%;
+    margin: 0;
+}
+
+.ts-white .tl-ring {
+    width: 190px;
+    height: 190px;
+}
+
+.ts-white .tl-time {
+    font-size: 3rem;
+}
+
+.ts-white .tl-big {
+    width: 85%;
+    margin-top: 10px;
+}
+
+.ts-white .tl-result {
+    width: 90%;
+    font-size: 0.95rem;
+}
+
+.ts-pgn .tl-seg {
+    width: 90%;
+    margin: 0 0 8px;
+}
+
+.ts-pgn .tl-seg button {
+    white-space: nowrap;
+}
+
+.ts-pgn .tl-num {
+    width: 140px;
+    height: 140px;
+}
+
+.ts-pgn .tl-num b {
+    font-size: 5rem;
+}
+
+.ts-pgn .tl-die {
+    width: 72px;
+    height: 72px;
+}
+
+.ts-pgn .tl-total b {
+    font-size: 3.5rem;
+}
+
+.ts-pgn .tl-hist {
+    margin: 6px 0 0;
+}
+
+/* Touchscreen: fixed height so the panels never resize between screens;
+   the buttons stay at the bottom */
+.ts-p.ts-ts {
+    flex: none;
+    height: 360px;
+}
+
+.ts-ts .ts-sim {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    margin: 6px 8px 8px;
+    padding-top: 0.3rem;
+    padding-bottom: 0.6rem;
+    overflow: auto;
+}
+
+.ts-ts .pr-ts-top {
+    min-height: 26px;
+    margin-bottom: 0;
+}
+
+.ts-ts .pr-back {
+    height: 26px;
+}
+
+.ts-ts .pr-ts-btns {
+    margin-top: auto;
+    padding-top: 0.5rem;
+}
+
+.ts-ts .pr-grid,
+.ts-ts .pr-posnums {
+    gap: 6px;
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+}
+
+.ts-ts .pr-chip {
+    justify-self: center;
+    width: min(62px, 12vw);
+    height: min(62px, 12vw);
+    font-size: 1.05rem;
+}
+
+@media (min-width: 900px) and (min-height: 600px) {
+    .ts-ts .pr-grid,
+    .ts-ts .pr-posnums {
+        gap: 10px;
+        margin-left: 1rem;
+        margin-right: 1rem;
+    }
+}
+
+.ts-ts .pr-chip.pr-chip-long {
+    font-size: 0.9rem;
+}
+
+.ts-ts .pr-btn {
+    flex: 0 1 40%;
+    min-height: 48px;
+    font-size: 1.1rem;
+}
+
+.ts-ts .pr-end,
+.ts-ts .pr-pay {
+    flex: 0 1 38%;
+}
+
+.ts-ts .pr-pts {
+    gap: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.ts-ts .pr-pt-row {
+    padding: 0;
+}
+
+.ts-ts .pr-rank {
+    min-height: 34px;
+    margin-bottom: 0.2rem;
+    font-size: 0.92rem;
+    align-items: center;
+}
+
+.ts-ts .pr-ranks.ts-ranks-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: column;
+    column-gap: 0.5rem;
+}
+
+.ts-ts .pr-wline-pill {
+    min-height: 48px;
+}
+
+/* Pay tables panel */
+.ts-pay .tl-tabs {
+    flex: none;
+    margin: 6px 8px 0;
+    border-radius: 8px 8px 0 0;
+}
+
+.ts-pay .tl-pt-body {
+    flex: 1;
+    min-height: 0;
+    margin: 0 8px 8px;
+    padding: 0.2rem 0.5rem;
+    overflow: auto;
+    border-radius: 0 0 10px 10px;
+}
+
+.ts-pay .ts-cols {
+    flex-direction: row;
+    gap: 1rem;
+}
+
+.ts-pay .tl-pt td {
+    padding: 0.38rem 0.5rem;
+}
+
+/* Limit Sign page: the lock under the sign's title on the page */
+.tl-lockrow {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+}
+
+.tl-lockrow .ts-lock.ts-lock-on {
+    border-color: #c4ccd4;
+    color: #1b2530;
+}
+
+.tl-stage.tl-full .tl-lockrow {
+    display: none;
+}
+
+.tl-sign-locked .tl-tap {
+    opacity: 0.5;
+}

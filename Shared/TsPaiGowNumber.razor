@@ -1,0 +1,79 @@
+@* Table Screens (Pai Gow): the Pai Gow Number in a panel. Same as the
+   Pai Gow Number tool (Pages/ToolPaiGowNumber.razor): a number 1-7 or 3
+   dice with their total, only the Roll button rolls, last few underneath. *@
+<div class="ts-p ts-grow">
+    <div class="ts-hd"><b>Pai Gow Number</b></div>
+    <div class="ts-white ts-pgn">
+        <div class="tl-seg" role="radiogroup" aria-label="Mode">
+            <button type="button" class="@(!_dice ? "tl-on" : "")" role="radio" aria-checked="@(!_dice ? "true" : "false")" @onclick="() => _dice = false">Number&nbsp;1&#8209;7</button>
+            <button type="button" class="@(_dice ? "tl-on" : "")" role="radio" aria-checked="@(_dice ? "true" : "false")" @onclick="() => _dice = true">3&nbsp;Dice</button>
+        </div>
+
+        @if (!_dice)
+        {
+            <div class="tl-num @(_flash ? "tl-flash" : "")" role="status"><small>NUMBER</small><b>@(_number == 0 ? "?" : _number.ToString())</b></div>
+        }
+        else
+        {
+            <div class="tl-dice @(_flash ? "tl-flash" : "")" role="status">
+                @foreach (int d in _die)
+                {
+                    <span class="tl-die">
+                        @for (int p = 1; p <= 9; p++)
+                        {
+                            <i class="@(d > 0 && Pips[d].Contains(p) ? "tl-pip" : "")"></i>
+                        }
+                    </span>
+                }
+            </div>
+            <p class="tl-total">Total<b>@(_die[0] == 0 ? "?" : _die.Sum().ToString())</b></p>
+        }
+
+        <button type="button" class="tl-big" @onclick="Roll">Roll</button>
+        @if (History.Count > 0)
+        {
+            <p class="tl-hist">Last: @string.Join(" · ", History)</p>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly Random Rng = new();
+
+    private static readonly Dictionary<int, int[]> Pips = new()
+    {
+        [1] = new[] { 5 }, [2] = new[] { 1, 9 }, [3] = new[] { 1, 5, 9 },
+        [4] = new[] { 1, 3, 7, 9 }, [5] = new[] { 1, 3, 5, 7, 9 }, [6] = new[] { 1, 3, 4, 6, 7, 9 }
+    };
+
+    private bool _dice, _flash;
+    private int _number;
+    private readonly int[] _die = new int[3];
+    private readonly List<int> _numHistory = new(), _diceHistory = new();
+
+    private List<int> History => _dice ? _diceHistory : _numHistory;
+
+    private async Task Roll()
+    {
+        if (_dice)
+        {
+            if (_die[0] > 0) Remember(_diceHistory, _die.Sum());
+            for (int i = 0; i < 3; i++) _die[i] = Rng.Next(1, 7);
+        }
+        else
+        {
+            if (_number > 0) Remember(_numHistory, _number);
+            _number = Rng.Next(1, 8);
+        }
+        _flash = true;
+        StateHasChanged();
+        await Task.Delay(250);
+        _flash = false;
+    }
+
+    private static void Remember(List<int> list, int value)
+    {
+        list.Insert(0, value);
+        if (list.Count > 5) list.RemoveAt(5);
+    }
+}

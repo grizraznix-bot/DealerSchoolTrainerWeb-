@@ -1,0 +1,57 @@
+@using DealerSchoolTrainerWeb.Games.ToolData
+
+@* Table Screens: one game's pay tables in a panel, a tab per wager (the
+   same data as the Pay Tables tool, Games/ToolData/PayTablesData.cs);
+   Pai Gow includes the House Way. *@
+<div class="ts-p ts-pay ts-grow">
+    <div class="ts-hd"><b>Pay Tables · @Game.Name</b></div>
+    <div class="tl-tabs" role="tablist" aria-label="Wager">
+        @for (int t = 0; t < Game.Tabs.Length; t++)
+        {
+            int ti = t;
+            <button type="button" class="tl-tab @(ti == _tab ? "tl-on" : "")" role="tab" aria-selected="@(ti == _tab ? "true" : "false")"
+                    @onclick="() => _tab = ti">@Game.Tabs[ti].Short</button>
+        }
+    </div>
+    <div class="tl-pt-body">
+        @if (Tab.HouseWay)
+        {
+            <p class="hw-key">Front = Low hand (2 cards) &middot; Back = High hand (5 cards)</p>
+            <HouseWayTable />
+        }
+        else
+        {
+            <div class="tl-cols ts-cols">
+                @foreach (PtTable table in Tab.Tables)
+                {
+                    <div class="tl-col">
+                        @if (table.Title.Length > 0)
+                        {
+                            <div class="tl-col-hd @table.TitleClass">@table.Title</div>
+                        }
+                        <table class="tl-pt">
+                            @foreach (var (hand, pay) in table.Rows)
+                            {
+                                <tr><td>@hand</td><td>@pay</td></tr>
+                            }
+                        </table>
+                    </div>
+                }
+            </div>
+            @if (Tab.Note.Length > 0)
+            {
+                <p class="tl-note">@Tab.Note</p>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    // The game's name in PayTablesData ("Blackjack", "Three Card", ...)
+    [Parameter, EditorRequired] public string GameName { get; set; } = "";
+
+    private int _tab;
+
+    private PtGame Game => PayTablesData.Games.First(g => g.Name == GameName);
+    private PtTab Tab => Game.Tabs[Math.Min(_tab, Game.Tabs.Length - 1)];
+}

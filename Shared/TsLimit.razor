@@ -1,0 +1,80 @@
+@inject IJSRuntime JS
+
+@* Table Screens: the table limit (MINIMUM / MAXIMUM) with a lock.
+   Locked: taps do nothing, so a bump at the table can't change it.
+   Unlocked: tap to cycle ($5 $10 $15 $25 $50 / $100 $300 $500).
+   Starts at $10 / $300, locked; both remembered per screen in this
+   browser (keys shared with Table Tools Lite on the same site). *@
+<div class="ts-p ts-lim @(_locked ? "ts-locked" : "")">
+    <div class="ts-hd">
+        <b>Table Limit</b>
+        <button type="button" class="ts-lock @(_locked ? "ts-lock-on" : "")" aria-pressed="@(_locked ? "true" : "false")" @onclick="ToggleLock">
+            @(_locked ? "\U0001F512︎ Locked" : "\U0001F513︎ Unlocked")
+        </button>
+    </div>
+    <div class="ts-limit">
+        <button type="button" @onclick="NextMin" aria-label="@($"Minimum ${Mins[_min]}")"><small>MINIMUM</small><b>$@Mins[_min]</b></button>
+        <i aria-hidden="true"></i>
+        <button type="button" @onclick="NextMax" aria-label="@($"Maximum ${Maxes[_max]}")"><small>MAXIMUM</small><b>$@Maxes[_max]</b></button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Key { get; set; } = "";
+
+    private static readonly int[] Mins = { 5, 10, 15, 25, 50 };
+    private static readonly int[] Maxes = { 100, 300, 500 };
+
+    private int _min = 1, _max = 1;   // $10 / $300
+    private bool _locked = true;
+
+    private string LimitKey => "dst-table-limit-" + Key;
+    private string LockKey => "dst-lock-" + Key;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            string? saved = await JS.InvokeAsync<string?>("localStorage.getItem", LimitKey);
+            string[] parts = (saved ?? "").Split(',');
+            if (parts.Length == 2 && int.TryParse(parts[0], out int a) && int.TryParse(parts[1], out int b)
+                && a >= 0 && a < Mins.Length && b >= 0 && b < Maxes.Length)
+            {
+                _min = a;
+                _max = b;
+            }
+            _locked = await JS.InvokeAsync<string?>("localStorage.getItem", LockKey) != "0";
+            StateHasChanged();
+        }
+        catch
+        {
+            // Storage blocked: $10 / $300, locked
+        }
+    }
+
+    private async Task NextMin()
+    {
+        if (_locked) return;
+        _min = (_min + 1) % Mins.Length;
+        await Save(LimitKey, $"{_min},{_max}");
+    }
+
+    private async Task NextMax()
+    {
+        if (_locked) return;
+        _max = (_max + 1) % Maxes.Length;
+        await Save(LimitKey, $"{_min},{_max}");
+    }
+
+    private async Task ToggleLock()
+    {
+        _locked = !_locked;
+        await Save(LockKey, _locked ? "1" : "0");
+    }
+
+    private async Task Save(string key, string value)
+    {
+        try { await JS.InvokeVoidAsync("localStorage.setItem", key, value); } catch { }
+    }
+}

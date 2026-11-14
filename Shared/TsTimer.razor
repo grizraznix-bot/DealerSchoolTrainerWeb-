@@ -1,0 +1,186 @@
+@implements IDisposable
+@inject IJSRuntime JS
+
+@* Table Screens (Blackjack, Player's Edge-21): the Shuffle Timer in a
+   panel. Same as the Shuffle Timer tool (Pages/ToolShuffleTimer.razor):
+   Start, a 5-second countdown to GO, the ring fills toward the 90-second
+   ideal (amber past it), Stop; Best today kept in this browser. *@
+<div class="ts-p ts-grow">
+    <div class="ts-hd"><b>Shuffle Timer</b></div>
+    <div class="ts-white ts-timer">
+        <div class="tl-timer">
+            <div class="tl-ring @RingClass" style="--pct:@RingPct.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                <div class="tl-ring-in">
+                    @if (_state == TimerState.Countdown)
+                    {
+                        <span class="tl-count @(_count == 0 ? "tl-go-txt" : "")">@(_count == 0 ? "GO" : _count.ToString())</span>
+                    }
+                    else
+                    {
+                        <span class="tl-time">@Clock(_elapsed)</span>
+                        <span class="tl-ring-sub">@RingSub</span>
+                    }
+                </div>
+            </div>
+            @if (_state == TimerState.Done)
+            {
+                <p class="tl-result @(_elapsed.TotalSeconds <= Ideal ? "tl-ok" : "tl-over")">@ResultText</p>
+            }
+            <button type="button" class="tl-big @(_state is TimerState.Countdown or TimerState.Running ? "tl-big-red" : "")" @onclick="MainAction">@MainLabel</button>
+            @if (_best is not null)
+            {
+                <p class="tl-best">Best today: @Clock(_best.Value)</p>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private enum TimerState { Ready, Countdown, Running, Done }
+
+    private const int Ideal = 90;
+    private const string BestKey = "dst-shuffle-best";
+
+    private TimerState _state;
+    private int _count;
+    private TimeSpan _elapsed;
+    private TimeSpan? _best;
+    private DateTime _startedAt;
+    private CancellationTokenSource? _cts;
+
+    private string MainLabel => _state switch
+    {
+        TimerState.Countdown => "Cancel",
+        TimerState.Running => "Stop",
+        TimerState.Done => "Again",
+        _ => "Start"
+    };
+
+    private double RingPct => _state switch
+    {
+        TimerState.Countdown => (5 - _count) * 20,
+        TimerState.Running or TimerState.Done => Math.Min(100, _elapsed.TotalSeconds / Ideal * 100),
+        _ => 0
+    };
+
+    private string RingClass => _state switch
+    {
+        TimerState.Countdown => "tl-ring-gold",
+        _ when _elapsed.TotalSeconds > Ideal => "tl-ring-over",
+        _ => ""
+    };
+
+    private string RingSub => _state switch
+    {
+        TimerState.Running => _elapsed.TotalSeconds > Ideal ? "over 1:30" : "of 1:30",
+        TimerState.Done => Diff(),
+        _ => "90 s ideal"
+    };
+
+    private string ResultText
+    {
+        get
+        {
+            int secs = (int)Math.Round(_elapsed.TotalSeconds);
+            if (secs == Ideal) return "✓ Right on the 90-second ideal";
+            return secs < Ideal ? "✓ Under the 90-second ideal" : "Over the 90-second ideal";
+        }
+    }
+
+    private string Diff()
+    {
+        int secs = (int)Math.Round(_elapsed.TotalSeconds) - Ideal;
+        return secs == 0 ? "right on 90" : secs < 0 ? $"{-secs} s under 90" : $"{secs} s over 90";
+    }
+
+    private static string Clock(TimeSpan t) => $"{(int)t.TotalMinutes}:{t.Seconds:00}";
+
+    private async Task MainAction()
+    {
+        switch (_state)
+        {
+            case TimerState.Ready:
+            case TimerState.Done:
+                await RunCountdown();
+                break;
+            case TimerState.Countdown:
+                _cts?.Cancel();
+                _state = TimerState.Ready;
+                _elapsed = TimeSpan.Zero;
+                break;
+            case TimerState.Running:
+                _cts?.Cancel();
+                _elapsed = DateTime.UtcNow - _startedAt;
+                _state = TimerState.Done;
+                await SaveBest();
+                break;
+        }
+    }
+
+    private async Task RunCountdown()
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        CancellationToken token = _cts.Token;
+        _elapsed = TimeSpan.Zero;
+        _state = TimerState.Countdown;
+        try
+        {
+            for (_count = 5; _count > 0; _count--)
+            {
+                StateHasChanged();
+                await Task.Delay(1000, token);
+            }
+            _count = 0;
+            _startedAt = DateTime.UtcNow;
+            StateHasChanged();
+            await Task.Delay(700, token);
+            _state = TimerState.Running;
+            while (!token.IsCancellationRequested)
+            {
+                _elapsed = DateTime.UtcNow - _startedAt;
+                StateHasChanged();
+                await Task.Delay(200, token);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Cancel or Stop
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            string? saved = await JS.InvokeAsync<string?>("localStorage.getItem", BestKey);
+            string[] parts = (saved ?? "").Split('|');
+            if (parts.Length == 2 && parts[0] == Today && double.TryParse(parts[1], System.Globalization.CultureInfo.InvariantCulture, out double secs))
+            {
+                _best = TimeSpan.FromSeconds(secs);
+                StateHasChanged();
+            }
+        }
+        catch
+        {
+            // Storage blocked: no best today
+        }
+    }
+
+    private static string Today => DateTime.Now.ToString("yyyy-MM-dd");
+
+    private async Task SaveBest()
+    {
+        if (_best is not null && _best.Value <= _elapsed) return;
+        _best = _elapsed;
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", BestKey,
+                $"{Today}|{_elapsed.TotalSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+        }
+        catch { }
+    }
+
+    public void Dispose() => _cts?.Cancel();
+}

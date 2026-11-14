@@ -1,0 +1,188 @@
+@using DealerSchoolTrainerWeb.Games.ProgressiveTrainer
+
+@* Table Screens: the game's progressive touchscreen in a panel, the same
+   routine as the Progressives page's Touchscreen only mode
+   (Pages/ProgressiveTrainer.razor): tap chips on/off, PLAY, PAYOUT
+   (only owed wagers, then rank, then a lit unpaid position, then a blank
+   CONFIRM), END GAME clears. Fixed height, so the panels never resize
+   between screens. The instruction shows in the panel header. *@
+<div class="ts-p ts-ts">
+    <div class="ts-hd"><span><b>Progressive Touchscreen · @Def.Name</b> — @Instruction</span></div>
+    <div class="pr-ts pr-sim ts-sim">
+        <div class="pr-ts-top">
+            @if (_screen is Screen.Wager or Screen.Rank or Screen.Position or Screen.Confirm)
+            {
+                <button type="button" class="pr-back" aria-label="Back" @onclick="Back">&lsaquo;</button>
+            }
+        </div>
+
+        @switch (_screen)
+        {
+            case Screen.Lock:
+                @PosNums
+                @for (int w = 0; w < 2; w++)
+                {
+                    int wi = w;
+                    <div class="pr-grid">
+                        @for (int s = 1; s <= 6; s++)
+                        {
+                            int si = s;
+                            <button type="button" class="pr-chip @(_on[wi, si] ? "pr-lit" : "") @Color(Def.Wagers[wi]) @(Def.Wagers[wi].ChipTop.Length > 2 ? "pr-chip-long" : "")"
+                                    aria-pressed="@(_on[wi, si] ? "true" : "false")" aria-label="@($"{Def.Wagers[wi].Header} position {si}")"
+                                    @onclick="() => _on[wi, si] = !_on[wi, si]">@Def.Wagers[wi].ChipTop</button>
+                        }
+                    </div>
+                }
+                <div class="pr-ts-btns">
+                    <button type="button" class="pr-btn pr-play" @onclick="() => _screen = Screen.Tables">PLAY</button>
+                </div>
+                break;
+
+            case Screen.Tables:
+                <div class="pr-pts">
+                    @foreach (ProgWager pw in Def.Wagers)
+                    {
+                        <div class="pr-pt">
+                            <div class="pr-pt-hd @pw.HeaderClass">@pw.Header</div>
+                            @foreach (ProgRow r in pw.Rows)
+                            {
+                                <div class="pr-pt-row"><span>@r.Name</span><b>@r.PayText</b></div>
+                            }
+                        </div>
+                    }
+                </div>
+                <div class="pr-ts-btns">
+                    <button type="button" class="pr-btn pr-end" @onclick="Clear">END GAME</button>
+                    <button type="button" class="pr-btn pr-pay" disabled="@(!Owed(0) && !Owed(1))" @onclick="() => { ResetPicks(); _screen = Screen.Wager; }">PAYOUT</button>
+                </div>
+                break;
+
+            case Screen.Wager:
+                @for (int w = 0; w < 2; w++)
+                {
+                    if (!Owed(w)) continue;
+                    int wi = w;
+                    ProgWager pw = Def.Wagers[w];
+                    <button type="button" class="pr-wline @(_w == wi ? "pr-on" : "")" @onclick="() => _w = wi">
+                        <span class="pr-box">@(_w == wi ? "✓" : "")</span>
+                        <span class="pr-wline-pill"><small>@pw.Tag<br />@pw.ChipSub</small><b>@pw.Header</b></span>
+                    </button>
+                }
+                <div class="pr-ts-btns">
+                    <button type="button" class="pr-btn pr-next" disabled="@(_w < 0)" @onclick="() => { _r = -1; _screen = Screen.Rank; }">NEXT</button>
+                </div>
+                break;
+
+            case Screen.Rank:
+                {
+                    ProgWager pw = Def.Wagers[_w];
+                    // One column, top to bottom; a long table (Pai Gow ET, 8 lines)
+                    // in two columns read top to bottom so it fits the panel
+                    bool two = pw.Rows.Length > 5;
+                    <div class="pr-rank-hd">@pw.Header</div>
+                    <div class="pr-ranks @(two ? "ts-ranks-2" : "")" style="@(two ? $"grid-template-rows:repeat({(pw.Rows.Length + 1) / 2},auto)" : "")">
+                        @for (int r = 0; r < pw.Rows.Length; r++)
+                        {
+                            int ri = r;
+                            <button type="button" class="pr-rank @(_r == ri ? "pr-on" : "")" @onclick="() => _r = ri">
+                                <span>@pw.Rows[ri].Name</span><b>@pw.Rows[ri].PayText</b>
+                            </button>
+                        }
+                    </div>
+                    <div class="pr-ts-btns">
+                        <button type="button" class="pr-btn pr-next" disabled="@(_r < 0)" @onclick="() => { _p = -1; _screen = Screen.Position; }">NEXT</button>
+                    </div>
+                }
+                break;
+
+            case Screen.Position:
+                @PosNums
+                <div class="pr-grid">
+                    @for (int s = 1; s <= 6; s++)
+                    {
+                        int si = s;
+                        bool lit = _on[_w, si] && !_paid[_w, si];
+                        <button type="button" class="pr-chip @(lit ? "pr-lit" : "") @(_p == si ? "pr-sel" : "") @(Def.Wagers[_w].ChipTop.Length > 2 ? "pr-chip-long" : "")"
+                                disabled="@(!lit)" aria-label="@($"Position {si}")" @onclick="() => _p = si">@Def.Wagers[_w].ChipTop</button>
+                    }
+                </div>
+                <div class="pr-ts-btns">
+                    <button type="button" class="pr-btn pr-next" disabled="@(_p < 0)" @onclick="() => _screen = Screen.Confirm">NEXT</button>
+                </div>
+                break;
+
+            case Screen.Confirm:
+                @* Blank, like the real screen: the dealer pays, then CONFIRM *@
+                <div class="pr-ts-btns">
+                    <button type="button" class="pr-btn pr-next" @onclick="ConfirmPay">CONFIRM</button>
+                </div>
+                break;
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ProgGameDef Def { get; set; } = default!;
+
+    private enum Screen { Lock, Tables, Wager, Rank, Position, Confirm }
+
+    private Screen _screen = Screen.Lock;
+    private readonly bool[,] _on = new bool[2, 7];     // [wager, position 1-6]: chip on the sensor
+    private readonly bool[,] _paid = new bool[2, 7];   // paid this round
+    private int _w = -1, _r = -1, _p = -1;
+
+    private string Instruction => _screen switch
+    {
+        Screen.Lock => "Tap a chip to place or remove that wager. Check they match the table, then tap PLAY.",
+        Screen.Tables => "Deal the game. PAYOUT for a winner, END GAME when the round is done.",
+        Screen.Wager => "Tap the wager to pay, then NEXT.",
+        Screen.Rank => "Tap the hand's rank, then NEXT.",
+        Screen.Position => "Tap the position to pay, then NEXT.",
+        _ when Def.Wagers[_w].Rows[_r].IsMetered => "Metered pay: a supervisor is required. Then CONFIRM.",
+        _ => "Pay the player, then CONFIRM."
+    };
+
+    // Lit $5 = red, lit $1 = blue (Pai Gow's ET and INS are both $1: blue)
+    private static string Color(ProgWager w) => w.Tag.Contains("$5") ? "pr-c5" : "pr-c1";
+
+    private bool Owed(int w) => Enumerable.Range(1, 6).Any(s => _on[w, s] && !_paid[w, s]);
+
+    private void ResetPicks() => _w = _r = _p = -1;
+
+    private void Clear()
+    {
+        Array.Clear(_on);
+        Array.Clear(_paid);
+        ResetPicks();
+        _screen = Screen.Lock;
+    }
+
+    private void ConfirmPay()
+    {
+        if (_w >= 0 && _p > 0) _paid[_w, _p] = true;
+        ResetPicks();
+        _screen = Screen.Tables;
+    }
+
+    private void Back()
+    {
+        _screen = _screen switch
+        {
+            Screen.Confirm => Screen.Position,
+            Screen.Position => Screen.Rank,
+            Screen.Rank => Screen.Wager,
+            _ => Screen.Tables
+        };
+        if (_screen == Screen.Tables) ResetPicks();
+    }
+
+    private static readonly RenderFragment PosNums = __builder =>
+    {
+        <div class="pr-posnums" aria-hidden="true">
+            @for (int s = 1; s <= 6; s++)
+            {
+                <span>@s</span>
+            }
+        </div>
+    };
+}

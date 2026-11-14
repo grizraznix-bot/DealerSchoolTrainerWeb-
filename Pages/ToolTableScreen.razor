@@ -1,0 +1,78 @@
+@page "/tools/table/{Key}"
+@using DealerSchoolTrainerWeb.Games.ProgressiveTrainer
+@inject NavigationManager Nav
+
+<PageTitle>@(_screen?.Name ?? "Table") Table</PageTitle>
+
+@* Table Screens: ready-made layouts for the training table, one per game.
+   Left: the table limit ($10 / $300 to start, with a lock; remembered per
+   screen) and, for Blackjack and Player's Edge-21, the Shuffle Timer
+   (Pai Gow: the Pai Gow Number; blank for the others). Right: the game's
+   progressive touchscreen (fixed height) and its pay tables. Full screen;
+   on a tablet or computer the two columns sit side by side, on a phone
+   they stack and scroll. Table Tools Lite (wwwroot/lite) has the same
+   screens for older iPads. *@
+@if (_screen is null)
+{
+    <div class="start-screen tl-hub">
+        <h1>TABLE SCREENS</h1>
+        <p class="tl-intro">That table screen wasn't found.</p>
+        <a class="tl-tool" href="tools"><span class="tl-tool-text"><b>Back to Table Tools</b></span><span class="tl-go">&rsaquo;</span></a>
+    </div>
+}
+else
+{
+    <div class="ts-stage">
+        <div class="tl-strip">
+            <button type="button" class="tl-exit" @onclick='() => Nav.NavigateTo("tools")'>&lsaquo; Exit</button>
+            <b>@_screen.Name Table</b>
+            <span>Table screen: tap any panel to use it</span>
+        </div>
+
+        <div class="ts-grid">
+            <div class="ts-col1">
+                <TsLimit Key="@_screen.Key" @key="@("lim-" + _screen.Key)" />
+                @if (_screen.Side == "timer")
+                {
+                    <TsTimer />
+                }
+                else if (_screen.Side == "pgn")
+                {
+                    <TsPaiGowNumber />
+                }
+            </div>
+            <div class="ts-col2">
+                <TsTouchscreen Def="_def!" @key="@("ts-" + _screen.Key)" />
+                <TsPayTables GameName="@_screen.PayName" @key="@("pay-" + _screen.Key)" />
+            </div>
+        </div>
+
+        <p class="sim-disc">Training simulation only &middot; Not a real gaming system &middot; Not affiliated with or endorsed by any game or equipment manufacturer</p>
+    </div>
+}
+
+@code {
+    [Parameter] public string Key { get; set; } = "";
+
+    public sealed record TableScreen(string Key, string Name, string PayName, string Side, string Text);
+
+    // The five screens, in the Table Tools list order
+    public static readonly TableScreen[] Screens =
+    {
+        new("bj", "Blackjack", "Blackjack", "timer", "Limit, Shuffle Timer, 21+3 progressive, pay tables"),
+        new("tc", "Three Card Prime", "Three Card", "", "Limit, Mini Royal progressive, pay tables"),
+        new("pg", "Pai Gow", "Pai Gow", "pgn", "Limit, Pai Gow Number, ET / INS progressives, pay tables"),
+        new("hd", "Heads-Up Hold'em", "Hold'em", "", "Limit, progressive, pay tables"),
+        new("pe", "Player's Edge-21", "Player's Edge-21", "timer", "Limit, Shuffle Timer, Monster Match progressive, pay tables")
+    };
+
+    private TableScreen? _screen;
+    private ProgGameDef? _def;
+
+    protected override void OnParametersSet()
+    {
+        _screen = Screens.FirstOrDefault(s => s.Key == Key);
+        _def = _screen is null ? null : ProgressiveGames.ByKey(_screen.Key);
+        if (_def is null) _screen = null;
+    }
+}

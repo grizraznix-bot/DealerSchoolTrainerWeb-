@@ -1,4 +1,5 @@
 @page "/tools/pay-tables"
+@using DealerSchoolTrainerWeb.Games.ToolData
 @inject NavigationManager Nav
 
 <PageTitle>Pay Tables</PageTitle>
@@ -80,113 +81,7 @@
 </div>
 
 @code {
-    private sealed record PtTable(string Title, string TitleClass, (string Hand, string Pay)[] Rows);
-    private sealed record PtTab(string Name, string Short, string Note, PtTable[] Tables, bool HouseWay = false);
-    private sealed record PtGame(string Name, PtTab[] Tabs);
-
-    private static PtTable One(params (string, string)[] rows) => new("", "", rows);
-
-    private static readonly PtGame[] Games =
-    {
-        new("Blackjack", new PtTab[]
-        {
-            new("21+3", "21+3", "The player's 2 cards and the dealer's up card.",
-                new[] { One(("Straight Flush", "30 to 1"), ("Three of a Kind", "20 to 1"), ("Straight", "10 to 1"), ("Flush", "5 to 1")) }),
-            new("Lucky Ladies", "Lucky Ladies", "The player's first 2 cards total 20.",
-                new[] { One(("Q♥ Pair + Dealer Blackjack", "1000 to 1"), ("Q♥ Pair", "125 to 1"), ("Matched 20", "19 to 1"),
-                            ("Suited 20", "9 to 1"), ("Any 20", "4 to 1")) }),
-            new("Progressive", "Progressive", "21+3 Progressive Jackpot. A percentage pays from the meter: supervisor required.",
-                new[]
-                {
-                    new PtTable("$5", "tl-h5", new[] { ("3 of a Kind Aces (Suited)", "100%"), ("3 of a Kind (Suited)", "$500"), ("Straight Flush", "$100"),
-                                                     ("3 of a Kind (Offsuit)", "$50"), ("Straight", "$10") }),
-                    new PtTable("$1", "tl-h1", new[] { ("3 of a Kind Aces (Suited)", "100%"), ("3 of a Kind (Suited)", "$100"), ("Straight Flush", "$20"),
-                                                     ("3 of a Kind (Offsuit)", "$10"), ("Straight", "$2") })
-                })
-        }),
-        new("Three Card", new PtTab[]
-        {
-            new("Ante Bonus", "Ante Bonus", "Paid on the Ante, win or lose against the dealer. Play and Ante pay 1 to 1.",
-                new[] { One(("Straight Flush", "5 to 1"), ("Three of a Kind", "4 to 1"), ("Straight", "1 to 1")) }),
-            new("Pair Bonus", "Pair Bonus", "The player's 3 cards.",
-                new[] { One(("Straight Flush", "40 to 1"), ("Three of a Kind", "30 to 1"), ("Straight", "6 to 1"), ("Flush", "3 to 1"), ("Pair", "1 to 1")) }),
-            new("Prime", "Prime", "Card colors: red or black.",
-                new[] { One(("All 6 cards same color", "4 to 1"), ("Player's 3 cards same color", "3 to 1")) }),
-            new("All 6", "All 6", "The best 5-card hand from the player's 3 and the dealer's 3.",
-                new[] { One(("Royal Flush", "1000 to 1"), ("Straight Flush", "200 to 1"), ("Four of a Kind", "50 to 1"), ("Full House", "25 to 1"),
-                            ("Flush", "20 to 1"), ("Straight", "10 to 1"), ("Three of a Kind", "5 to 1")) }),
-            new("Progressive", "Prog.", "Mini Royal Progressive: the player's 3 cards. A percentage pays from the meter: supervisor required.",
-                new[]
-                {
-                    new PtTable("$5", "tl-h5", new[] { ("Mini-Royal (Diamonds)", "100%"), ("Mini-Royal (Other)", "$1,000"), ("Straight Flush", "$100"),
-                                                     ("Three of a Kind", "$50"), ("Straight", "$10") }),
-                    new PtTable("$1", "tl-h1", new[] { ("Mini-Royal (Spades)", "100%"), ("Mini-Royal (Other)", "$200"), ("Straight Flush", "$20"),
-                                                     ("Three of a Kind", "$10"), ("Straight", "$2") })
-                })
-        }),
-        new("Pai Gow", new PtTab[]
-        {
-            new("Insurance", "Insurance", "Pays when the player's 7 cards make no pair, straight or flush (a Pai Gow). The Joker counts as an Ace.",
-                new[] { One(("9-High Pai Gow", "100 to 1"), ("10-High Pai Gow", "25 to 1"), ("Jack-High Pai Gow", "15 to 1"),
-                            ("Queen-High Pai Gow", "6 to 1"), ("King-High Pai Gow", "5 to 1"), ("Ace-High Pai Gow", "3 to 1")) }),
-            new("Emperor's Treasure", "Emperor's", "The player's 7 cards. $5 or more earns an Envy button.",
-                new[] { One(("7-Card Straight Flush, no Joker", "2500 to 1"), ("Royal Flush + A-K Suited", "1000 to 1"), ("7-Card Straight Flush with Joker", "750 to 1"),
-                            ("Five Aces", "250 to 1"), ("Royal Flush", "125 to 1"), ("Straight Flush", "50 to 1"), ("Four of a Kind", "25 to 1"),
-                            ("Full House", "5 to 1"), ("Flush", "4 to 1"), ("Three of a Kind", "3 to 1"), ("Straight", "2 to 1")) }),
-            new("Envy", "Envy", "Paid to every OTHER hand with an Envy button when a player has one of these hands.",
-                new[] { One(("7-Card Straight Flush, no Joker", "$1,000"), ("Royal Flush + A-K Suited", "$750"), ("7-Card Straight Flush with Joker", "$250"),
-                            ("Five Aces", "$100"), ("Royal Flush", "$50"), ("Straight Flush", "$20"), ("Four of a Kind", "$5")) }),
-            new("Progressive", "Prog.", "Two $1 progressives on the player's 7 cards. A percentage pays from the meter: supervisor required.",
-                new[]
-                {
-                    new PtTable("Emperor's Treasure $1", "tl-h1", new[] { ("7-Card SF (no Joker)", "100%"), ("Royal + A-K Suited", "50%"), ("7-Card Straight Flush", "25%"),
-                                                                        ("Five Aces", "$1,000"), ("Royal Flush", "$175"), ("Straight Flush", "$150"),
-                                                                        ("Four of a Kind", "$75"), ("Full House", "$5") }),
-                    new PtTable("Insurance $1", "tl-h1", new[] { ("9-High Same Color", "100%"), ("9-High Pai Gow", "$250"), ("10-High Pai Gow", "$125"),
-                                                               ("Jack-High Pai Gow", "$30"), ("Queen-High Pai Gow", "$7") })
-                }),
-            new("House Way", "House Way", "", Array.Empty<PtTable>(), HouseWay: true)
-        }),
-        new("Player's Edge-21", new PtTab[]
-        {
-            new("Bonus 21", "Bonus 21", "Bonus 21 payouts.",
-                new[] { One(("5-card 21", "3 to 2"), ("6-card 21", "2 to 1"), ("7-card 21", "3 to 1"),
-                            ("6-7-8 mixed suits", "3 to 2"), ("6-7-8 same suit", "2 to 1"), ("6-7-8 of Diamonds", "3 to 1"),
-                            ("7-7-7 mixed suits", "3 to 2"), ("7-7-7 same suit", "2 to 1"), ("7-7-7 of Diamonds", "3 to 1")) }),
-            new("Match Up & Match Down", "Match", "Match Up and Match Down wagers.",
-                new[] { One(("2 Suited Matches", "18 to 1"), ("1 Non-Suited & 1 Suited Match", "13 to 1"), ("1 Suited Match", "9 to 1"),
-                            ("2 Non-Suited Matches", "8 to 1"), ("1 Non-Suited Match", "4 to 1")) }),
-            new("Monster Match", "Prog.", "Monster Match progressive: all 4 cards (the player's 2 and the dealer's 2). A percentage pays from the meter: supervisor required.",
-                new[]
-                {
-                    new PtTable("$5", "tl-h5", new[] { ("Four of a Kind (Same Color)", "100%"), ("Four of a Kind", "$1,000"), ("Three of a Kind (Same Color)", "$100"),
-                                                     ("Three of a Kind", "$50"), ("Pair (Suited)", "$10") }),
-                    new PtTable("$1", "tl-h1", new[] { ("Four of a Kind (Same Color)", "100%"), ("Four of a Kind", "$200"), ("Three of a Kind (Same Color)", "$20"),
-                                                     ("Three of a Kind", "$10"), ("Pair (Suited)", "$2") })
-                })
-        }),
-        new("Hold'em", new PtTab[]
-        {
-            new("Odds", "Odds", "Pays only when the player wins with a Straight or better; a smaller win pushes.",
-                new[] { One(("Royal Flush", "500 to 1"), ("Straight Flush", "50 to 1"), ("Four of a Kind", "10 to 1"), ("Full House", "3 to 1"),
-                            ("Flush", "3 to 2"), ("Straight", "1 to 1")) }),
-            new("Bad Beat", "Bad Beat", "Pays when the player's Straight or better loses, including a hand made on the board.",
-                new[] { One(("Straight Flush", "500 to 1"), ("Four of a Kind", "25 to 1"), ("Full House", "6 to 1"), ("Flush", "5 to 1"), ("Straight", "4 to 1")) }),
-            new("Trips Plus", "Trips+", "The player's best 5 of 7 cards.",
-                new[] { One(("Royal Flush", "100 to 1"), ("Straight Flush", "40 to 1"), ("Four of a Kind", "30 to 1"), ("Full House", "8 to 1"),
-                            ("Flush", "7 to 1"), ("Straight", "4 to 1"), ("Three of a Kind", "3 to 1")) }),
-            new("Pocket Bonus", "Pocket", "The player's 2 cards. Ace-Face = A-K, A-Q or A-J.",
-                new[] { One(("Pair of Aces", "25 to 1"), ("Ace-Face Suited", "20 to 1"), ("Ace-Face", "10 to 1"), ("Any Pair", "5 to 1")) }),
-            new("Progressive", "Prog.", "The player's best 5 of 7; a Royal on the board alone is a Community Royal. A percentage pays from the meter: supervisor required.",
-                new[]
-                {
-                    new PtTable("$5", "tl-h5", new[] { ("Royal Flush", "100%"), ("Community Royal", "$1,000"), ("Straight Flush", "$400"),
-                                                     ("Four of a Kind", "$200"), ("Full House", "$20") }),
-                    new PtTable("$1", "tl-h1", new[] { ("Royal Flush", "100%"), ("Community Royal", "$200"), ("Straight Flush", "$80"),
-                                                     ("Four of a Kind", "$40"), ("Full House", "$4") })
-                })
-        })
-    };
+    private static PtGame[] Games => PayTablesData.Games;
 
     private int _game, _tab;
     private bool _full;
