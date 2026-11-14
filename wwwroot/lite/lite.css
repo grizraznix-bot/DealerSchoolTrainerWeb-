@@ -1,0 +1,476 @@
+/* Table Tools Lite: layout for an iPad held sideways (iPadOS 15+).
+   The tools' own look comes from the main site's css/app.css; this file
+   makes each one full screen and sizes it for the iPad. Kept to styling
+   older Safari understands (no container queries). */
+
+html,
+body.lite {
+    height: 100%;
+    margin: 0;
+    background-color: #0d1214;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    touch-action: manipulation;
+}
+
+body.lite {
+    font-family: var(--font-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.lite button {
+    font-family: inherit;
+    cursor: pointer;
+}
+
+/* ---- Home -------------------------------------------------------------- */
+.lt-home {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: max(28px, env(safe-area-inset-top, 0px)) max(36px, env(safe-area-inset-right, 0px)) max(18px, env(safe-area-inset-bottom, 0px)) max(36px, env(safe-area-inset-left, 0px));
+    box-sizing: border-box;
+    background: radial-gradient(ellipse at top, #2c7a4f, #1f5c3a 70%);
+    color: white;
+}
+
+.lt-home h1 {
+    margin: 0;
+    font-size: 30px;
+    letter-spacing: 0.02em;
+}
+
+.lt-home h1 span {
+    color: #e8c25a;
+}
+
+.lt-sub {
+    margin: 4px 0 22px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+}
+
+.lt-grid {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -8px;
+}
+
+.lt-tile {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: calc(33.333% - 16px);
+    height: 190px;
+    margin: 8px;
+    padding: 22px;
+    box-sizing: border-box;
+    border: none;
+    border-bottom: 4px solid #c9a227;
+    border-radius: 16px;
+    background-color: white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+    color: #1b2530;
+    text-align: left;
+}
+
+.lt-tile:active {
+    filter: brightness(0.92);
+}
+
+.lt-tile.lt-gold {
+    background-color: #fff3cf;
+}
+
+.lt-ic {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background-color: #1f5c3a;
+    color: white;
+    font-weight: 900;
+    font-size: 20px;
+}
+
+.lt-gold .lt-ic {
+    background-color: #c8102e;
+}
+
+.lt-tx b {
+    display: block;
+    font-size: 24px;
+}
+
+.lt-tx span {
+    display: block;
+    margin-top: 2px;
+    color: #4a5560;
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+.lt-foot {
+    margin: auto 0 0;
+    padding-top: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+}
+
+/* ---- Every tool: full screen with a strip across the top ---------------- */
+.lt-stage.tl-full .tl-strip {
+    min-height: 44px;
+    font-size: 16px;
+}
+
+.lt-stage .tl-exit,
+.lt-strip-btn,
+.lt-stage .pk-strip-reset {
+    min-height: 36px;
+    padding: 0.35rem 0.9rem;
+    font-size: 16px;
+}
+
+.lt-strip-btn {
+    flex: none;
+    border: 1px solid #556;
+    border-radius: 8px;
+    background: transparent;
+    color: white;
+}
+
+/* Limit Sign: bigger numbers on the iPad */
+.lt-stage .tl-k {
+    font-size: 1.3rem;
+}
+
+.lt-stage.tl-full .tl-v {
+    font-size: 9rem;
+}
+
+.lt-stage .tl-tap {
+    font-size: 1rem;
+}
+
+/* Light panel (Shuffle Timer, Pai Gow Number) */
+.lt-panel {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: 16px;
+    border-radius: 14px;
+    background-color: white;
+    color: #1b2530;
+}
+
+.lt-panel .tl-ring {
+    width: 340px;
+    height: 340px;
+}
+
+.lt-panel .tl-ring-in {
+    top: 18px;
+    right: 18px;
+    bottom: 18px;
+    left: 18px;
+}
+
+.lt-panel .tl-time {
+    font-size: 5rem;
+}
+
+.lt-panel .tl-big {
+    min-width: 320px;
+    font-size: 1.5rem;
+}
+
+.lt-pgn .tl-seg {
+    min-width: 420px;
+}
+
+.lt-pgn .tl-num b {
+    font-size: 9rem;
+}
+
+.lt-pgn .tl-die {
+    width: 120px;
+    height: 120px;
+}
+
+/* ---- Progressive Touchscreen: game picker, then the touchscreen ---------- */
+.lt-pick {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    flex: 1;
+    margin: -8px;
+}
+
+.lt-pick-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: calc(33.333% - 16px);
+    height: 150px;
+    margin: 8px;
+    padding: 18px;
+    box-sizing: border-box;
+    border: 1px solid #3a4a52;
+    border-radius: 14px;
+    background-color: #1e2c30;
+    color: white;
+    text-align: left;
+}
+
+.lt-pick-btn b {
+    font-size: 22px;
+}
+
+.lt-pick-btn span {
+    margin-top: 6px;
+    color: #9fb0bc;
+    font-size: 15px;
+}
+
+.lt-prog .pr-sim {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    overflow: auto;
+}
+
+.lt-prog .pr-grid,
+.lt-prog .pr-posnums {
+    gap: 18px;
+    margin-left: 2rem;
+    margin-right: 2rem;
+}
+
+.lt-prog .pr-posnums {
+    font-size: 1.2rem;
+}
+
+.lt-prog .pr-chip {
+    justify-self: center;
+    width: 104px;
+    height: 104px;
+    font-size: 1.6rem;
+}
+
+.lt-prog .pr-chip.pr-chip-long {
+    font-size: 1.3rem;
+}
+
+.lt-prog .pr-pts {
+    gap: 3rem;
+    padding: 0 2rem;
+    font-size: 1.15rem;
+}
+
+.lt-prog .pr-ranks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0.8rem;
+}
+
+.lt-prog .pr-rank {
+    min-height: 52px;
+    margin-bottom: 0.4rem;
+    font-size: 1.1rem;
+    align-items: center;
+}
+
+.lt-prog .pr-rank-hd {
+    font-size: 1.15rem;
+}
+
+.lt-prog .pr-btn {
+    flex: 0 1 34%;
+    min-height: 64px;
+    font-size: 1.4rem;
+}
+
+.lt-prog .pr-end,
+.lt-prog .pr-pay {
+    flex: 0 1 30%;
+}
+
+.lt-prog .pr-ts-btns {
+    padding-top: 1rem;
+}
+
+.lt-prog .pr-back {
+    width: 52px;
+    height: 40px;
+    font-size: 1.6rem;
+}
+
+.lt-prog .pr-wline {
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.2rem;
+}
+
+/* ---- Player Tracking: the main site sizes this screen with container
+   units (iPadOS 16+); here the same sizes in screen-height units -------- */
+.lt-track .pk-bezel {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.lt-track .pk-scr {
+    flex: 1;
+    aspect-ratio: auto;
+}
+
+.lt-track .pk-title {
+    padding-top: 2.2vh;
+    font-size: 7.2vh;
+}
+
+.lt-track .pk-pos {
+    height: 10.8vh;
+    padding: 0 1.4vh;
+    font-size: 5.9vh;
+}
+
+.lt-track .pk-btns .pk-in,
+.lt-track .pk-back {
+    font-size: 5.9vh;
+}
+
+.lt-track .pk-back {
+    top: 1.8vh;
+    right: 1.8vh;
+    width: 9.9vh;
+    height: 9vh;
+}
+
+.lt-track .pk-lbl {
+    font-size: 6.3vh;
+}
+
+.lt-track .pk-cash {
+    font-size: 5vh;
+}
+
+.lt-track .pk-disp {
+    font-size: 6.8vh;
+}
+
+.lt-track .pk-kp > * {
+    font-size: 6.3vh;
+}
+
+/* ---- Pay Tables -------------------------------------------------------- */
+.lt-games {
+    flex: none;
+    margin-bottom: 8px;
+}
+
+.lt-games .tl-game {
+    min-height: 40px;
+    padding: 0.4rem 1rem;
+    border-color: #3a4a52;
+    background-color: #1e2c30;
+    color: white;
+    font-size: 1rem;
+}
+
+.lt-games .tl-game.tl-on {
+    border-color: #c9a227;
+    background-color: #1f5c3a;
+}
+
+.lite .tl-stage-pt .tl-tab {
+    min-height: 44px;
+    font-size: 1rem;
+}
+
+.lite .tl-stage-pt .tl-pt {
+    font-size: 1.15rem;
+}
+
+.lite .tl-stage-pt .tl-note {
+    font-size: 1rem;
+}
+
+/* ---- iPad sizing for the smaller pieces --------------------------------- */
+.lt-prog .pr-pt-hd {
+    font-size: 1.05rem;
+}
+
+.lt-prog .pr-pt-row {
+    padding: 0.3rem 0;
+}
+
+.lt-prog .pr-wline-pill {
+    min-height: 64px;
+    font-size: 1.25rem;
+}
+
+.lt-prog .pr-wline-pill small {
+    font-size: 0.9rem;
+}
+
+.lt-prog .pr-box {
+    width: 32px;
+    height: 32px;
+}
+
+.lt-panel .tl-big {
+    min-height: 68px;
+    font-size: 1.6rem;
+}
+
+.lt-panel .tl-ring-sub,
+.lt-panel .tl-best,
+.lt-panel .tl-hist {
+    font-size: 1.1rem;
+}
+
+.lt-panel .tl-result {
+    width: auto;
+    min-width: 420px;
+    font-size: 1.2rem;
+}
+
+.lt-panel .tl-count {
+    font-size: 8rem;
+}
+
+.lt-panel .tl-count.tl-go-txt {
+    font-size: 6.5rem;
+}
+
+.lt-pgn .tl-seg button {
+    min-height: 52px;
+    font-size: 1.15rem;
+}
+
+.lt-pgn .tl-num {
+    width: 280px;
+    height: 280px;
+}
+
+.lt-pgn .tl-num small {
+    font-size: 1.1rem;
+}
+
+.lt-pgn .tl-total {
+    font-size: 1.2rem;
+}
+
+.lt-pgn .tl-total b {
+    font-size: 6rem;
+}

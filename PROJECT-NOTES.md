@@ -57,6 +57,7 @@ settled on purpose. Last updated: November 13, 2026.
 | `wwwroot/css/app.css` | All styling (one file) |
 | `wwwroot/index.html` | Page shell + small scripts (old-device notice, double-tap fix, card preload, Reload Latest) |
 | `wwwroot/manifest.webmanifest` | Home-screen app settings (`orientation: any`) |
+| `wwwroot/lite/` | **Table Tools Lite** (`index.html`, `lite.js`, `lite.css`): plain HTML / JavaScript copies of the six Table Tools for older iPads, iPad sideways only. Borrows `css/app.css` for the look |
 
 **Pages**
 
@@ -85,12 +86,13 @@ the old number to catch anything missed.
 | 21+3, Lucky Ladies | `Games/SideWagerTrainer/SideWagerPayouts.cs` | `BlackjackTrainer.razor` (Help), `BlackjackTutorial.razor`, `ToolPayTables.razor` |
 | Three Card Prime (Ante Bonus, Pair Bonus, Prime, All 6) | `Games/ThreeCardTrainer/ThreeCardPayouts.cs` | `ThreeCardTrainer.razor` (Help), `ThreeCardTutorial.razor`, `ToolPayTables.razor` |
 | Pai Gow (Insurance, Emperor's Treasure, Envy) | `Games/PaiGowTrainer/PaiGowPayouts.cs` | `PaiGowCombined.razor` (Help), `PaiGowTutorial.razor`, `ToolPayTables.razor` |
-| Pai Gow House Way | `Games/PaiGowTrainer/PaiGowSolver.cs` | `Shared/HouseWayTable.razor` (Help and the Pay Tables tool) |
+| Pai Gow House Way | `Games/PaiGowTrainer/PaiGowSolver.cs` | `Shared/HouseWayTable.razor` (Help and the Pay Tables tool), and `wwwroot/lite/lite.js` |
 | Hold'em (Odds, Bad Beat, Trips Plus, Pocket Bonus) | `Games/HoldemTrainer/HoldemPayouts.cs` | `HoldemTrainer.razor` (Help), `HoldemTutorial.razor`, `ToolPayTables.razor` |
 | Blackjack 3:2 / 6:5 | `Games/PayoutTrainer/PayoutWager.cs` | `BlackjackTrainer.razor`, `Challenge.razor`, `BlackjackTutorial.razor` |
 | Roulette | `Games/RouletteTrainer/` | `RouletteTrainer.razor`, `RouletteTutorial.razor` |
 | **All progressives** (Blackjack 21+3, Three Card Mini Royal, Pai Gow ET / INS, Player's Edge-21 Monster Match, Hold'em) | `Games/ProgressiveTrainer/ProgressiveGames.cs` (one table per wager, used by both Practice and Touchscreen only) | `ProgressivesTutorial.razor` (example table, "what each game pays on"), `ToolPayTables.razor` |
 | Player's Edge-21 Bonus 21 / Match | — (no game mode) | `ToolPayTables.razor` only |
+| **Every Table Tools pay table and every progressive** | — | also `wwwroot/lite/lite.js` (Table Tools Lite) |
 
 Idea on the list for later: one **house-rules file** that every page reads,
 so a pay change is one edit.
@@ -175,15 +177,15 @@ Cards Numbers Only.
   get a green "This device can't run…" notice (`index.html`). Confirmed on
   the iPad Air 2.
 - Decided: nothing is removed or switched off to support older devices.
+- **Table Tools Lite** (`.../lite/`) covers the training-table tools on
+  older iPads: Limit Sign, Progressive Touchscreen (all five games), Player
+  Tracking, Shuffle Timer, Pai Gow Number, Pay Tables. iPad sideways only.
+  The old-device notice links to it. **Any change to a Table Tool, or to a
+  pay table shown in one, must be repeated in `wwwroot/lite/lite.js`.**
 - A native Android / iOS app was considered and set aside: staying a website.
 
 ## 8. Still to do / later
 
-- **Table Tools Lite** for the iPad Air 2: plain HTML / JavaScript copies
-  of the Limit Sign, Progressive Touchscreen only, Player Tracking, Shuffle
-  Timer, Pai Gow Number and Pay Tables (e.g. at `/lite/`), avoiding newer
-  CSS. Plan and mockup first. A change to a tool then has to be made in
-  both places.
 - Once the site is complete: look at protecting the site (private repo,
   copyright notice, host with a login) and getting management / compliance
   sign-off.
