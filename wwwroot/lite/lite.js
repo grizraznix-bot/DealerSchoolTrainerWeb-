@@ -108,6 +108,18 @@
         return h;
     }
 
+    // ---- Table limit lock ----------------------------------------------------
+    // Locked: tapping MINIMUM / MAXIMUM does nothing, so a bump at the table
+    // can't change the limit. Unlocked: tap to cycle. Locked to start;
+    // remembered per sign.
+    function isLocked(key) { return load('dst-lock-' + key) !== '0'; }
+
+    function lockBtn(key) {
+        var locked = isLocked(key);
+        return '<button type="button" class="lt-lock' + (locked ? ' lt-locked' : '') + '" data-act="lock" data-key="' + key + '" aria-pressed="' + locked + '">' +
+            (locked ? '&#x1F512;&#xFE0E; Locked' : '&#x1F513;&#xFE0E; Unlocked') + '</button>';
+    }
+
     // ---- Limit Sign (ToolLimitSign.razor) -----------------------------------
 
     var MINS = [5, 10, 15, 25, 50], MAXES = [100, 300, 500];
@@ -125,11 +137,13 @@
     }
 
     function limitView() {
-        return '<div class="tl-stage tl-full lt-stage">' + strip('Table Limit Sign', 'Tap a number to change it') +
-            '<div class="tl-sign">' +
-            '<button type="button" class="tl-sign-half" data-act="min"><span class="tl-k">MINIMUM</span><span class="tl-v">$' + MINS[limit.min] + '</span>' + dots(MINS.length, limit.min) + '<span class="tl-tap">tap to change</span></button>' +
+        var locked = isLocked('sign'), tap = locked ? 'locked' : 'tap to change';
+        return '<div class="tl-stage tl-full lt-stage">' +
+            strip('Table Limit Sign', locked ? 'Locked: unlock to change the limits' : 'Tap a number to change it', lockBtn('sign')) +
+            '<div class="tl-sign' + (locked ? ' lt-sign-locked' : '') + '">' +
+            '<button type="button" class="tl-sign-half" data-act="min"><span class="tl-k">MINIMUM</span><span class="tl-v">$' + MINS[limit.min] + '</span>' + dots(MINS.length, limit.min) + '<span class="tl-tap">' + tap + '</span></button>' +
             '<span class="tl-sign-rule" aria-hidden="true"></span>' +
-            '<button type="button" class="tl-sign-half" data-act="max"><span class="tl-k">MAXIMUM</span><span class="tl-v">$' + MAXES[limit.max] + '</span>' + dots(MAXES.length, limit.max) + '<span class="tl-tap">tap to change</span></button>' +
+            '<button type="button" class="tl-sign-half" data-act="max"><span class="tl-k">MAXIMUM</span><span class="tl-v">$' + MAXES[limit.max] + '</span>' + dots(MAXES.length, limit.max) + '<span class="tl-tap">' + tap + '</span></button>' +
             '</div></div>';
     }
 
@@ -273,7 +287,12 @@
 
             case 'rank':
                 var rw = def.wagers[prog.w];
-                body += '<div class="pr-rank-hd">' + esc(rw.header) + '</div><div class="pr-ranks">';
+                // One column, top to bottom, like the real screen. On a Table Screen a
+                // long table (Pai Gow ET, 8 lines) goes in two columns read top to
+                // bottom (first half down the left) so it fits the panel.
+                var two = rw.rows.length > 5;
+                body += '<div class="pr-rank-hd">' + esc(rw.header) + '</div><div class="pr-ranks' + (two ? ' lt-ranks-2' : '') + '"' +
+                    (two ? ' style="grid-template-rows:repeat(' + Math.ceil(rw.rows.length / 2) + ',auto)"' : '') + '>';
                 rw.rows.forEach(function (r, i) {
                     body += '<button type="button" class="pr-rank' + (prog.r === i ? ' pr-on' : '') + '" data-act="selr" data-i="' + i + '"><span>' + esc(r[0]) + '</span><b>' + esc(r[1]) + '</b></button>';
                 });
@@ -740,8 +759,8 @@
         return { min: 1, max: 1 };
     }
 
-    function panel(title, body, cls) {
-        return '<div class="lw-p ' + (cls || '') + '"><div class="lw-hd"><b>' + esc(title) + '</b></div><div class="lw-b">' + body + '</div></div>';
+    function panel(title, body, cls, extra) {
+        return '<div class="lw-p ' + (cls || '') + '"><div class="lw-hd"><span><b>' + esc(title) + '</b></span>' + (extra || '') + '</div><div class="lw-b">' + body + '</div></div>';
     }
 
     function tableView(ti) {
@@ -751,7 +770,7 @@
             '<i></i>' +
             '<button type="button" data-act="tmax" data-key="' + t.key + '"><small>MAXIMUM</small><b>$' + MAXES[lim.max] + '</b></button></div>';
 
-        var left = panel('Table Limit', limitBody, 'lw-lim');
+        var left = panel('Table Limit', limitBody, 'lw-lim' + (isLocked(t.key) ? ' lw-locked' : ''), lockBtn(t.key));
         if (t.side === 'timer') left += panel('Shuffle Timer', '<div class="lw-white">' + timerInner() + '</div>', 'lw-grow');
         if (t.side === 'pgn') left += panel('Pai Gow Number', '<div class="lw-white lt-pgn">' + pgnInner() + '</div>', 'lw-grow');
 
@@ -776,16 +795,21 @@
             case 'go': go(el.getAttribute('data-v')); return;
 
             // Table Screens: the screen's own limit
+            case 'lock':
+                var lk = el.getAttribute('data-key');
+                save('dst-lock-' + lk, isLocked(lk) ? '0' : '1');
+                break;
             case 'tmin':
             case 'tmax':
                 var tk = el.getAttribute('data-key'), tl = tableLimit(tk);
+                if (isLocked(tk)) return;
                 if (a === 'tmin') tl.min = (tl.min + 1) % MINS.length; else tl.max = (tl.max + 1) % MAXES.length;
                 save('dst-table-limit-' + tk, tl.min + ',' + tl.max);
                 break;
 
             // Limit Sign
-            case 'min': limit.min = (limit.min + 1) % MINS.length; save('dst-limit-sign', limit.min + ',' + limit.max); break;
-            case 'max': limit.max = (limit.max + 1) % MAXES.length; save('dst-limit-sign', limit.min + ',' + limit.max); break;
+            case 'min': if (isLocked('sign')) return; limit.min = (limit.min + 1) % MINS.length; save('dst-limit-sign', limit.min + ',' + limit.max); break;
+            case 'max': if (isLocked('sign')) return; limit.max = (limit.max + 1) % MAXES.length; save('dst-limit-sign', limit.min + ',' + limit.max); break;
 
             // Progressive Touchscreen
             case 'pgame': prog.game = n('data-i'); progClear(); break;

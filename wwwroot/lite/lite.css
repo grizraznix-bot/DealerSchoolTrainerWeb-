@@ -276,9 +276,17 @@ body.lite {
 }
 
 .lt-prog .pr-ranks {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 0.8rem;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.lt-prog .pr-rank-hd {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .lt-prog .pr-rank {
@@ -710,11 +718,12 @@ body.lite {
     margin-top: auto;
 }
 
-/* Rank list in two columns so 8 lines fit */
-.lw-ts .pr-ranks {
+/* Rank list: one column; Pai Gow's 8-line ET table in two columns read top to bottom */
+.lw-ts .pr-ranks.lt-ranks-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
     column-gap: 0.5rem;
+    grid-auto-flow: column;
 }
 
 .lw-ts .pr-grid,
@@ -788,4 +797,50 @@ body.lite {
 
 .lw-pay .tl-pt td {
     padding: 0.38rem 0.6rem;
+}
+
+/* ---- Table limit lock ---------------------------------------------------- */
+.lw-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lw-hd > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lt-lock {
+    flex: none;
+    min-height: 28px;
+    padding: 0.15rem 0.6rem;
+    border: 1px solid #f2d27a;
+    border-radius: 8px;
+    background-color: #f2d27a;
+    color: #1b2530;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.lt-lock.lt-locked {
+    border-color: #556;
+    background: transparent;
+    color: #cfd8dc;
+}
+
+.lt-stage .tl-strip .lt-lock {
+    min-height: 36px;
+    padding: 0.35rem 0.9rem;
+    font-size: 16px;
+}
+
+/* Unlocked: a dashed gold edge shows the numbers can be tapped */
+.lw-lim:not(.lw-locked) .lw-limit {
+    border-style: dashed;
+}
+
+.lt-sign-locked .tl-tap {
+    opacity: 0.5;
 }
