@@ -1,40 +1,38 @@
-@* Table Scenes (Pai Gow): the Pai Gow Number in a panel. Same as the
+@* Table Scenes (Pai Gow): the Pai Gow Number, in the Pai Gow Number tab
+   of Shared/TsSide.razor. Same as the
    Pai Gow Number tool (Pages/ToolPaiGowNumber.razor): a number 1-7 or 3
    dice with their total, only the Roll button rolls, last few underneath. *@
-<div class="ts-p ts-grow">
-    <div class="ts-hd"><b>Pai Gow Number</b></div>
-    <div class="ts-white ts-pgn">
-        <div class="tl-seg" role="radiogroup" aria-label="Mode">
-            <button type="button" class="@(!_dice ? "tl-on" : "")" role="radio" aria-checked="@(!_dice ? "true" : "false")" @onclick="() => _dice = false">Number&nbsp;1&#8209;7</button>
-            <button type="button" class="@(_dice ? "tl-on" : "")" role="radio" aria-checked="@(_dice ? "true" : "false")" @onclick="() => _dice = true">3&nbsp;Dice</button>
-        </div>
-
-        @if (!_dice)
-        {
-            <div class="tl-num @(_flash ? "tl-flash" : "")" role="status"><small>NUMBER</small><b>@(_number == 0 ? "?" : _number.ToString())</b></div>
-        }
-        else
-        {
-            <div class="tl-dice @(_flash ? "tl-flash" : "")" role="status">
-                @foreach (int d in _die)
-                {
-                    <span class="tl-die">
-                        @for (int p = 1; p <= 9; p++)
-                        {
-                            <i class="@(d > 0 && Pips[d].Contains(p) ? "tl-pip" : "")"></i>
-                        }
-                    </span>
-                }
-            </div>
-            <p class="tl-total">Total<b>@(_die[0] == 0 ? "?" : _die.Sum().ToString())</b></p>
-        }
-
-        <button type="button" class="tl-big" @onclick="Roll">Roll</button>
-        @if (History.Count > 0)
-        {
-            <p class="tl-hist">Last: @string.Join(" · ", History)</p>
-        }
+<div class="ts-white ts-pgn">
+    <div class="tl-seg" role="radiogroup" aria-label="Mode">
+        <button type="button" class="@(!_dice ? "tl-on" : "")" role="radio" aria-checked="@(!_dice ? "true" : "false")" @onclick="() => _dice = false">Number&nbsp;1&#8209;7</button>
+        <button type="button" class="@(_dice ? "tl-on" : "")" role="radio" aria-checked="@(_dice ? "true" : "false")" @onclick="() => _dice = true">3&nbsp;Dice</button>
     </div>
+
+    @if (!_dice)
+    {
+        <div class="tl-num @(_flash ? "tl-flash" : "")" role="status"><small>NUMBER</small><b>@(_number == 0 ? "?" : _number.ToString())</b></div>
+    }
+    else
+    {
+        <div class="tl-dice @(_flash ? "tl-flash" : "")" role="status">
+            @foreach (int d in _die)
+            {
+                <span class="tl-die">
+                    @for (int p = 1; p <= 9; p++)
+                    {
+                        <i class="@(d > 0 && Pips[d].Contains(p) ? "tl-pip" : "")"></i>
+                    }
+                </span>
+            }
+        </div>
+        <p class="tl-total">Total<b>@(_die[0] == 0 ? "?" : _die.Sum().ToString())</b></p>
+    }
+
+    <button type="button" class="tl-big" @onclick="Roll">Roll</button>
+    @if (History.Count > 0)
+    {
+        <p class="tl-hist">Last: @string.Join(" · ", History)</p>
+    }
 </div>
 
 @code {

@@ -48,6 +48,9 @@
 
     function go(v) {
         stopTimers();
+        // Leaving a scene or the Rotation Timer tool stops its Rotation Timer
+        // (as on the main site); each one starts fresh
+        if (v !== view && (view === 'rot' || view.indexOf('table:') === 0)) rotReset();
         view = v;
         if (v === 'prog') prog.game = -1;
         if (v === 'pay') pay.tab = 0;
@@ -56,6 +59,7 @@
             prog.game = TABLES[ti].game;
             progClear();
             pay.tab = 0;
+            rot.tab = false;
             if (timer.state !== 'done') timer.state = 'ready';
         }
         if (v === 'timer' && timer.state !== 'done') timer.state = 'ready';
@@ -73,13 +77,31 @@
             case 'pgn': html = pgnView(); break;
             case 'pay': html = payView(); break;
             case 'about': html = aboutView(); break;
+            case 'rot': html = rotView(); break;
             default: html = view.indexOf('table:') === 0 ? tableView(parseInt(view.slice(6), 10)) : homeView();
         }
         // Every tool screen carries the training disclaimer along the bottom
         // (Home has it in full at the foot of the page; About has both)
         if (view !== 'home') html += '<p class="lt-disc">Training simulation only &middot; Not a real gaming system &middot; Not affiliated with or endorsed by any game or equipment manufacturer</p>';
+        // Timers re-draw the screen several times a second: keep the place in
+        // anything scrolled (pay tables, House Way tabs, touchscreen lists)
+        var keep = [], sameView = view === lastView;
+        if (sameView) {
+            var old = app.querySelectorAll(SCROLLERS);
+            for (var i = 0; i < old.length; i++) keep.push([old[i].scrollTop, old[i].scrollLeft]);
+        }
         app.innerHTML = html;
+        if (sameView) {
+            var now = app.querySelectorAll(SCROLLERS);
+            if (now.length === keep.length) {
+                for (var j = 0; j < now.length; j++) { now[j].scrollTop = keep[j][0]; now[j].scrollLeft = keep[j][1]; }
+            }
+        }
+        lastView = view;
     }
+
+    var SCROLLERS = '.pr-sim, .tl-pt-body, .lt-hw-tabs, .tl-tabs, .lw-pay .lw-b';
+    var lastView = null;
 
     // ---- Home ----------------------------------------------------------------
 
@@ -88,6 +110,7 @@
         { v: 'prog', name: 'Progressive Touchscreen', text: 'Sensors, PLAY, PAYOUT, END GAME', ic: '$5', gold: true },
         { v: 'track', name: 'Player Tracking', text: 'Log in, seat a guest, enter the buy-in', ic: 'IN' },
         { v: 'timer', name: 'Shuffle Timer', text: '6-deck shuffle, 90-second ideal', ic: '90' },
+        { v: 'rot', name: 'Rotation Timer', text: "Time each trainee's turn dealing", ic: '&#x21BB;', raw: true },
         { v: 'pgn', name: 'Pai Gow Number', text: 'A number 1-7, or 3 dice', ic: '7' },
         { v: 'pay', name: 'Pay Tables', text: 'Every game, a tab per wager', ic: '%' }
     ];
@@ -104,7 +127,7 @@
         h += '</div><h2 class="lt-h2">Tools</h2><div class="lt-grid">';
         TOOLS.forEach(function (t) {
             h += '<button type="button" class="lt-tile' + (t.gold ? ' lt-gold' : '') + '" data-act="go" data-v="' + t.v + '">' +
-                '<span class="lt-ic">' + esc(t.ic) + '</span>' +
+                '<span class="lt-ic">' + (t.raw ? t.ic : esc(t.ic)) + '</span>' +
                 '<span class="lt-tx"><b>' + esc(t.name) + '</b><span>' + esc(t.text) + '</span></span></button>';
         });
         h += '</div>' +
@@ -553,6 +576,111 @@
         }
     }
 
+    // ---- Rotation Timer (Shared/RotationTimer.razor) --------------------------
+    // Times each trainee's turn dealing. - / + sets the minutes (1-60, 20 to
+    // start; remembered), Start counts down; at zero ROTATE DEALERS, red,
+    // beeps (speaker button on), and counts the time over until Next
+    // Rotation. Runs on its own clock (not in 'timers'); leaving the scene or
+    // the tool stops and resets it (go()).
+    // Beep and keep-the-screen-on: ../js/beep.js.
+
+    var rot = { mins: 20, state: 'ready', end: 0, left: 0, n: 0, sound: true, tick: null, tab: false };
+    (function () {
+        var m = parseInt(load('dst-rot-mins'), 10);
+        if (m >= 1 && m <= 60) rot.mins = m;
+        rot.sound = load('dst-rot-sound') !== '0';
+    })();
+
+    function rotLeft() {
+        return rot.state === 'running' ? (rot.end - Date.now()) / 1000 : rot.state === 'paused' ? rot.left : rot.state === 'up' ? 0 : rot.mins * 60;
+    }
+
+    // Counting down rounds up, so 0:00 is the moment it ends
+    function rotClock(secs) { return clock(Math.max(0, Math.ceil(secs - 0.001))); }
+
+    function rotStatus() {
+        return rot.state === 'running' ? rotClock(rotLeft()) : rot.state === 'paused' ? 'Paused' : rot.state === 'up' ? 'ROTATE' : null;
+    }
+
+    function callJs(fn, arg) {
+        try { if (window[fn]) window[fn](arg); } catch (e) { }
+    }
+
+    function rotView() {
+        var intro = rot.state === 'up' ? 'Rotate dealers.' : rot.state === 'ready' ? 'Set the minutes, then tap Start.' : 'Each dealer\'s turn.';
+        return '<div class="tl-stage tl-full lt-stage lt-light">' + strip('Rotation Timer', intro) +
+            '<div class="lt-panel rt-wrap' + (rot.state === 'up' ? ' rt-flash' : '') + '">' + rotInner() + '</div></div>';
+    }
+
+    // The sound button, ring and buttons (also used by the Table Scenes)
+    function rotInner() {
+        var left = rotLeft(), total = rot.mins * 60, pct, time, sub;
+        if (rot.state === 'up') { pct = 100; time = '0:00'; sub = '+' + clock((Date.now() - rot.end) / 1000) + ' over'; }
+        else if (rot.state === 'ready') { pct = 0; time = rot.mins + ':00'; sub = 'per dealer'; }
+        else {
+            pct = Math.max(0, Math.min(100, 100 - left / total * 100));
+            time = rotClock(left);
+            sub = rot.state === 'paused' ? 'paused' : 'left of ' + rot.mins + ':00';
+        }
+        var h = '<button type="button" class="rt-sound' + (rot.sound ? '' : ' rt-sound-off') + '" data-act="rsound" aria-label="' + (rot.sound ? 'Sound on' : 'Sound off') + '">' +
+            (rot.sound ? SOUND_ON : SOUND_OFF) + '</button>' +
+            '<div class="tl-timer"><div class="tl-ring' + (rot.state === 'up' ? ' rt-ring-up' : '') + '" style="--pct:' + pct + '"><div class="tl-ring-in">' +
+            '<span class="tl-time">' + time + '</span><span class="tl-ring-sub">' + sub + '</span></div></div>';
+        if (rot.state === 'ready') {
+            h += '<div class="rt-set"><button type="button" data-act="rstep" data-by="-1"' + (rot.mins <= 1 ? ' disabled' : '') + '>&minus;</button>' +
+                '<span>' + rot.mins + ' min</span>' +
+                '<button type="button" data-act="rstep" data-by="1"' + (rot.mins >= 60 ? ' disabled' : '') + '>+</button></div>' +
+                '<button type="button" class="tl-big" data-act="rstart">Start</button>' +
+                '<p class="tl-best">Remembered for next time</p>';
+        } else if (rot.state === 'up') {
+            h += '<p class="rt-msg">ROTATE DEALERS</p>' +
+                '<button type="button" class="tl-big" data-act="rnext">Next Rotation</button>' +
+                '<div class="rt-under"><span>Next: ' + rot.mins + ':00 &middot; Rotation ' + (rot.n + 1) + '</span>' +
+                '<button type="button" class="rt-link" data-act="rreset">Reset</button></div>';
+        } else {
+            h += '<div class="rt-two"><button type="button" class="tl-big rt-grey" data-act="rpause">' + (rot.state === 'running' ? 'Pause' : 'Resume') + '</button>' +
+                '<button type="button" class="tl-big tl-big-red" data-act="rreset">Reset</button></div>' +
+                '<p class="tl-best">Rotation ' + rot.n + '</p>';
+        }
+        return h + '</div>';
+    }
+
+    var SOUND_ON = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    var SOUND_OFF = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+    function rotBegin(secs) {
+        rot.end = Date.now() + secs * 1000;
+        rot.state = 'running';
+        if (rot.sound) callJs('dstBeepUnlock');
+        callJs('dstKeepAwake', true);
+        if (!rot.tick) rot.tick = setInterval(rotTick, 250);
+    }
+
+    function rotReset() {
+        rot.state = 'ready';
+        rot.n = 0;
+        rotStop();
+    }
+
+    function rotStop() {
+        if (rot.tick) { clearInterval(rot.tick); rot.tick = null; }
+        callJs('dstKeepAwake', false);
+    }
+
+    var rotShown = null;
+    function rotTick() {
+        if (rot.state === 'running' && Date.now() >= rot.end) {
+            rot.state = 'up';
+            if (rot.sound) callJs('dstBeep', 3);
+        }
+        // Only redraw when the screen shows the timer and its numbers changed
+        if (view !== 'rot' && view.indexOf('table:') !== 0) return;
+        var shown = rotStatus() + (rot.state === 'up' ? clock((Date.now() - rot.end) / 1000) : '');
+        if (shown === rotShown) return;
+        rotShown = shown;
+        render();
+    }
+
     // ---- Pai Gow Number (ToolPaiGowNumber.razor) -----------------------------
 
     var PIPS = { 1: [5], 2: [1, 9], 3: [1, 5, 9], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
@@ -786,17 +914,18 @@
     }
 
     // ---- Table Scenes: ready-made layouts per game ---------------------------
-    // Left: the table limit ($10 / $300 to start, remembered per screen) and,
-    // for Blackjack and Player's Edge-21, the Shuffle Timer (Pai Gow: the
-    // Pai Gow Number). Right: the game's progressive touchscreen and its
-    // pay tables.
+    // Left: the table limit ($10 / $300 to start, remembered per screen) and
+    // under it tabs for the Shuffle Timer (Blackjack, Player's Edge-21) or
+    // the Pai Gow Number (Pai Gow) and the Rotation Timer; Three Card Prime
+    // and Hold'em have the Rotation Timer alone. Right: the game's
+    // progressive touchscreen and its pay tables.
 
     var TABLES = [
-        { key: 'bj', name: 'Blackjack', text: 'Limit, Shuffle Timer, 21+3 progressive, pay tables', game: 0, pay: 0, side: 'timer' },
-        { key: 'tc', name: 'Three Card Prime', text: 'Limit, Mini Royal progressive, pay tables', game: 1, pay: 1, side: '' },
-        { key: 'pg', name: 'Pai Gow', text: 'Limit, Pai Gow Number, ET / INS progressives, pay tables', game: 2, pay: 2, side: 'pgn' },
-        { key: 'hd', name: "Heads-Up Hold'em", text: 'Limit, progressive, pay tables', game: 4, pay: 4, side: '' },
-        { key: 'pe', name: "Player's Edge-21", text: 'Limit, Shuffle Timer, Monster Match progressive, pay tables', game: 3, pay: 3, side: 'timer' }
+        { key: 'bj', name: 'Blackjack', text: 'Limit, Shuffle and Rotation Timers, 21+3 progressive, pay tables', game: 0, pay: 0, side: 'timer' },
+        { key: 'tc', name: 'Three Card Prime', text: 'Limit, Rotation Timer, Mini Royal progressive, pay tables', game: 1, pay: 1, side: '' },
+        { key: 'pg', name: 'Pai Gow', text: 'Limit, Pai Gow Number, Rotation Timer, ET / INS progressives, pay tables', game: 2, pay: 2, side: 'pgn' },
+        { key: 'hd', name: "Heads-Up Hold'em", text: 'Limit, Rotation Timer, progressive, pay tables', game: 4, pay: 4, side: '' },
+        { key: 'pe', name: "Player's Edge-21", text: 'Limit, Shuffle and Rotation Timers, Monster Match progressive, pay tables', game: 3, pay: 3, side: 'timer' }
     ];
 
     // Each screen's limit: indexes into MINS / MAXES ($10 / $300 to start)
@@ -811,6 +940,24 @@
         return '<div class="lw-p ' + (cls || '') + '"><div class="lw-hd"><span><b>' + esc(title) + '</b></span>' + (extra || '') + '</div><div class="lw-b">' + body + '</div></div>';
     }
 
+    // The panel under the limit: the scene's own tool and the Rotation Timer
+    // as tabs (TsSide.razor). Shows the Rotation tab's time while hidden.
+    function sidePanel(side) {
+        var rotBody = '<div class="lw-white rt-wrap' + (rot.state === 'up' ? ' rt-flash' : '') + '">' + rotInner() + '</div>';
+        if (!side) return panel('Rotation Timer', rotBody, 'lw-grow');
+        var st = rotStatus(), showRot = rot.tab;
+        var tab2 = !showRot && st
+            ? '<span>Rotation</span><span class="rt-dot' + (st === 'ROTATE' ? ' rt-dot-up' : st === 'Paused' ? ' rt-dot-paused' : '') + '"></span><span class="rt-tab-time">' + st + '</span>'
+            : 'Rotation Timer';
+        var tabs = '<div class="rt-tabs">' +
+            '<button type="button" class="rt-tab' + (!showRot ? ' rt-on' : '') + '" data-act="rtab" data-r="0">' + (side === 'pgn' ? 'Pai Gow Number' : 'Shuffle Timer') + '</button>' +
+            '<button type="button" class="rt-tab' + (showRot ? ' rt-on' : '') + '" data-act="rtab" data-r="1">' + tab2 + '</button></div>';
+        var body = showRot ? rotBody
+            : side === 'pgn' ? '<div class="lw-white lt-pgn">' + pgnInner() + '</div>'
+            : '<div class="lw-white">' + timerInner() + '</div>';
+        return '<div class="lw-p lw-grow">' + tabs + '<div class="lw-b">' + body + '</div></div>';
+    }
+
     function tableView(ti) {
         var t = TABLES[ti], lim = tableLimit(t.key);
         var limitBody = '<div class="lw-limit">' +
@@ -819,8 +966,7 @@
             '<button type="button" data-act="tmax" data-key="' + t.key + '"><small>MAXIMUM</small><b>$' + MAXES[lim.max] + '</b></button></div>';
 
         var left = panel('Table Limit', limitBody, 'lw-lim' + (isLocked(t.key) ? ' lw-locked' : ''), lockBtn(t.key));
-        if (t.side === 'timer') left += panel('Shuffle Timer', '<div class="lw-white">' + timerInner() + '</div>', 'lw-grow');
-        if (t.side === 'pgn') left += panel('Pai Gow Number', '<div class="lw-white lt-pgn">' + pgnInner() + '</div>', 'lw-grow');
+        left += sidePanel(t.side);
 
         var right = panel('Progressive Touchscreen · ' + PROG[t.game].name + ' — ' + progInstruction(), progTouchscreen(), 'lw-ts') +
             panel('Pay Tables · ' + PAY[t.pay].name, payTabsBody(t.pay), 'lw-pay lw-grow');
@@ -906,6 +1052,25 @@
 
             // Shuffle Timer
             case 'timer': timerMain(); return;
+
+            // Rotation Timer
+            case 'rtab': rot.tab = el.getAttribute('data-r') === '1'; break;
+            case 'rstep':
+                rot.mins = Math.max(1, Math.min(60, rot.mins + n('data-by')));
+                save('dst-rot-mins', String(rot.mins));
+                break;
+            case 'rsound':
+                rot.sound = !rot.sound;
+                if (rot.sound) callJs('dstBeepUnlock');
+                save('dst-rot-sound', rot.sound ? '1' : '0');
+                break;
+            case 'rstart': rot.n = 1; rotBegin(rot.mins * 60); break;
+            case 'rnext': rot.n++; rotBegin(rot.mins * 60); break;
+            case 'rpause':
+                if (rot.state === 'running') { rot.left = (rot.end - Date.now()) / 1000; rot.state = 'paused'; rotStop(); }
+                else rotBegin(rot.left);
+                break;
+            case 'rreset': rotReset(); break;
 
             // Pai Gow Number
             case 'pgnmode': pgn.dice = el.getAttribute('data-d') === '1'; break;

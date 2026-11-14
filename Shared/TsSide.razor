@@ -1,0 +1,59 @@
+@* Table Scenes: the panel under the table limit (left column).
+   Blackjack and Player's Edge-21: tabs Shuffle Timer | Rotation Timer.
+   Pai Gow: tabs Pai Gow Number | Rotation Timer.
+   Three Card Prime and Hold'em: the Rotation Timer alone.
+   Both tabs stay running when hidden (only hidden, not removed), and the
+   Rotation tab shows the time left (green dot), Paused (grey) or ROTATE
+   (red) while the other tab is showing. The original tool is shown first. *@
+<div class="ts-p ts-grow ts-side">
+    @if (string.IsNullOrEmpty(Side))
+    {
+        <div class="ts-hd"><b>Rotation Timer</b></div>
+    }
+    else
+    {
+        <div class="rt-tabs" role="tablist" aria-label="Panel">
+            <button type="button" role="tab" class="rt-tab @(!_rot ? "rt-on" : "")" aria-selected="@(!_rot ? "true" : "false")" @onclick="() => _rot = false">@(Side == "pgn" ? "Pai Gow Number" : "Shuffle Timer")</button>
+            <button type="button" role="tab" class="rt-tab @(_rot ? "rt-on" : "")" aria-selected="@(_rot ? "true" : "false")" @onclick="() => _rot = true">
+                @if (!_rot && _status is not null)
+                {
+                    <span>Rotation</span><span class="rt-dot @DotClass"></span><span class="rt-tab-time">@_status</span>
+                }
+                else
+                {
+                    <span>Rotation Timer</span>
+                }
+            </button>
+        </div>
+        <div class="ts-tabbody @(_rot ? "rt-hide" : "")">
+            @if (Side == "timer")
+            {
+                <TsTimer />
+            }
+            else
+            {
+                <TsPaiGowNumber />
+            }
+        </div>
+    }
+    <div class="ts-tabbody @(!_rot && !string.IsNullOrEmpty(Side) ? "rt-hide" : "")">
+        <RotationTimer Panel="true" OnStatus="OnStatus" />
+    </div>
+</div>
+
+@code {
+    // "timer" (Shuffle Timer), "pgn" (Pai Gow Number) or "" (Rotation Timer only)
+    [Parameter] public string Side { get; set; } = "";
+
+    private bool _rot;            // the Rotation Timer tab is showing
+    private string? _status;      // from the Rotation Timer, for its tab
+
+    private string DotClass => _status switch
+    {
+        "ROTATE" => "rt-dot-up",
+        "Paused" => "rt-dot-paused",
+        _ => ""
+    };
+
+    private void OnStatus(string? status) => _status = status;
+}

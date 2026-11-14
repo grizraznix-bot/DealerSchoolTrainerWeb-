@@ -1,0 +1,23 @@
+@page "/tools/rotation-timer"
+@inject NavigationManager Nav
+
+<PageTitle>Rotation Timer</PageTitle>
+
+@* Rotation Timer: times each trainee's turn dealing, so trainees rotate
+   through the dealer's spot. The timer itself is Shared/RotationTimer.razor
+   (also in the Table Scenes). *@
+<div class="play-screen tl-screen has-game-bar">
+    <h1 class="tl-h">ROTATION TIMER</h1>
+    <p class="tl-intro">Times each trainee's turn dealing. Set the minutes, then tap Start.</p>
+
+    <RotationTimer />
+
+    <GameBar HelpTitle="Rotation Timer" OnEnd='() => Nav.NavigateTo("tools")' EndLabel="Exit">
+        <HelpContent>
+            <p>Set the minutes for each dealer's turn with <b>&minus;</b> and <b>+</b> (1 to 60), then tap <b>Start</b>. The time is remembered for next time.</p>
+            <p>The ring fills as the time runs down. <b>Pause</b> stops the clock, <b>Reset</b> starts over.</p>
+            <p>At zero the timer turns red, shows <b>ROTATE DEALERS</b> and beeps. It keeps counting the time over until you tap <b>Next Rotation</b>, which starts the same time for the next dealer.</p>
+            <p>The speaker button turns the beep on or off. No beep plays while the ringer switch is on silent or the screen is locked. While the timer runs, the screen is kept on where the browser allows it.</p>
+        </HelpContent>
+    </GameBar>
+</div>

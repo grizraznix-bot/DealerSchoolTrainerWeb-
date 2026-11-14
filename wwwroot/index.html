@@ -300,7 +300,7 @@
     <script>
         window.dstReloadLatest = async function () {
             var base = document.baseURI;
-            var urls = [base, base + 'index.html', base + 'css/app.css', base + 'manifest.webmanifest'];
+            var urls = [base, base + 'index.html', base + 'css/app.css', base + 'js/beep.js', base + 'manifest.webmanifest'];
             try {
                 await Promise.all(urls.map(function (u) {
                     return fetch(u, { cache: 'reload' }).catch(function () { });
@@ -343,6 +343,8 @@
             document.body.appendChild(box);
         })();
     </script>
+    <!-- Rotation Timer beep and keep-the-screen-on (shared with Lite) -->
+    <script src="js/beep.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 

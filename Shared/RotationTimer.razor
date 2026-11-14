@@ -1,0 +1,247 @@
+@implements IDisposable
+@inject IJSRuntime JS
+
+@* Rotation Timer: times each trainee's turn dealing. Used by the Rotation
+   Timer tool (Pages/ToolRotationTimer.razor) and the Table Scenes (inside
+   Shared/TsSide.razor, Panel = true). Looks like the Shuffle Timer.
+     Ready:   - / + sets the minutes (1-60, 20 to start; remembered), Start.
+     Running: counts down, the ring fills; Pause / Resume, Reset;
+              "Rotation N".
+     Up:      ROTATE DEALERS, the panel turns red and shows the time over;
+              beeps (sound button on); Next Rotation starts the same time.
+   The speaker button turns the beep on/off (remembered). While it runs the
+   screen is asked to stay on. Beep and screen-on: wwwroot/js/beep.js.
+   Table Tools Lite (wwwroot/lite/lite.js) has its own copy: change both. *@
+<div class="rt-wrap @(Panel ? "ts-white" : "") @(_state == RotState.Up ? "rt-flash" : "")">
+    <button type="button" class="rt-sound @(_sound ? "" : "rt-sound-off")" aria-pressed="@(_sound ? "true" : "false")"
+            aria-label="@(_sound ? "Sound on. Tap to turn the beep off" : "Sound off. Tap to turn the beep on")" @onclick="ToggleSound">
+        @((MarkupString)(_sound ? SoundOnSvg : SoundOffSvg))
+    </button>
+
+    <div class="tl-timer">
+        <div class="tl-ring @(_state == RotState.Up ? "rt-ring-up" : "")" style="--pct:@RingPct.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+            <div class="tl-ring-in">
+                <span class="tl-time">@TimeText</span>
+                <span class="tl-ring-sub">@SubText</span>
+            </div>
+        </div>
+
+        @switch (_state)
+        {
+            case RotState.Ready:
+                <div class="rt-set">
+                    <button type="button" aria-label="One minute less" disabled="@(_mins <= MinMins)" @onclick="() => Step(-1)">&minus;</button>
+                    <span>@_mins min</span>
+                    <button type="button" aria-label="One minute more" disabled="@(_mins >= MaxMins)" @onclick="() => Step(1)">+</button>
+                </div>
+                <button type="button" class="tl-big" @onclick="Start">Start</button>
+                <p class="tl-best">Remembered for next time</p>
+                break;
+
+            case RotState.Up:
+                <p class="rt-msg">ROTATE DEALERS</p>
+                <button type="button" class="tl-big" @onclick="Next">Next Rotation</button>
+                <div class="rt-under">
+                    <span>Next: @(_mins):00 &middot; Rotation @(_n + 1)</span>
+                    <button type="button" class="rt-link" @onclick="Reset">Reset</button>
+                </div>
+                break;
+
+            default:
+                <div class="rt-two">
+                    <button type="button" class="tl-big rt-grey" @onclick="PauseResume">@(_state == RotState.Running ? "Pause" : "Resume")</button>
+                    <button type="button" class="tl-big tl-big-red" @onclick="Reset">Reset</button>
+                </div>
+                <p class="tl-best">Rotation @_n</p>
+                break;
+        }
+    </div>
+</div>
+
+@code {
+    // Panel: inside a Table Scene (white panel, smaller ring)
+    [Parameter] public bool Panel { get; set; }
+
+    // For the scene's tab: the time left, "Paused" or "ROTATE"; null when not started
+    [Parameter] public EventCallback<string?> OnStatus { get; set; }
+
+    private enum RotState { Ready, Running, Paused, Up }
+
+    private const int MinMins = 1, MaxMins = 60, DefaultMins = 20;
+    private const string MinsKey = "dst-rot-mins", SoundKey = "dst-rot-sound";
+
+    private RotState _state;
+    private int _mins = DefaultMins;
+    private bool _sound = true;
+    private int _n;                    // rotation number
+    private DateTime _endUtc;          // when the running turn ends
+    private TimeSpan _left;            // time left while paused
+    private string? _lastStatus;
+    private CancellationTokenSource? _cts;
+
+    private TimeSpan Total => TimeSpan.FromMinutes(_mins);
+
+    private TimeSpan Left => _state switch
+    {
+        RotState.Running => _endUtc - DateTime.UtcNow,
+        RotState.Paused => _left,
+        RotState.Up => TimeSpan.Zero,
+        _ => Total
+    };
+
+    private double RingPct => _state switch
+    {
+        RotState.Up => 100,
+        RotState.Ready => 0,
+        _ => Math.Clamp(100 - Left.TotalSeconds / Total.TotalSeconds * 100, 0, 100)
+    };
+
+    private string TimeText => _state == RotState.Up ? "0:00" : Clock(Left);
+
+    private string SubText => _state switch
+    {
+        RotState.Running => $"left of {_mins}:00",
+        RotState.Paused => "paused",
+        RotState.Up => $"+{Clock(DateTime.UtcNow - _endUtc, roundUp: false)} over",
+        _ => "per dealer"
+    };
+
+    // Counting down shows whole seconds rounded up, so 0:00 is the moment it ends
+    private static string Clock(TimeSpan t, bool roundUp = true)
+    {
+        int secs = Math.Max(0, roundUp ? (int)Math.Ceiling(t.TotalSeconds - 0.001) : (int)t.TotalSeconds);
+        return $"{secs / 60}:{secs % 60:00}";
+    }
+
+    private async Task Step(int by)
+    {
+        _mins = Math.Clamp(_mins + by, MinMins, MaxMins);
+        await Save(MinsKey, _mins.ToString());
+    }
+
+    private async Task ToggleSound()
+    {
+        _sound = !_sound;
+        if (_sound) await Js("dstBeepUnlock");
+        await Save(SoundKey, _sound ? "1" : "0");
+    }
+
+    private async Task Start()
+    {
+        _n = 1;
+        await Begin(Total);
+    }
+
+    private async Task Next()
+    {
+        _n++;
+        await Begin(Total);
+    }
+
+    private async Task PauseResume()
+    {
+        if (_state == RotState.Running)
+        {
+            _left = _endUtc - DateTime.UtcNow;
+            _state = RotState.Paused;
+            _cts?.Cancel();
+            await Js("dstKeepAwake", false);
+            await Report();
+        }
+        else
+        {
+            await Begin(_left);
+        }
+    }
+
+    private async Task Reset()
+    {
+        _cts?.Cancel();
+        _state = RotState.Ready;
+        _n = 0;
+        await Js("dstKeepAwake", false);
+        await Report();
+    }
+
+    // Runs one turn from 'left' to zero, then keeps counting the time over
+    private async Task Begin(TimeSpan left)
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        CancellationToken token = _cts.Token;
+        _endUtc = DateTime.UtcNow + left;
+        _state = RotState.Running;
+        if (_sound) await Js("dstBeepUnlock");
+        await Js("dstKeepAwake", true);
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                if (_state == RotState.Running && DateTime.UtcNow >= _endUtc)
+                {
+                    _state = RotState.Up;
+                    if (_sound) await Js("dstBeep", 3);
+                }
+                await Report();
+                StateHasChanged();
+                await Task.Delay(250, token);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Pause, Reset, Next or leaving the page
+        }
+    }
+
+    private async Task Report()
+    {
+        string? status = _state switch
+        {
+            RotState.Running => Clock(Left),
+            RotState.Paused => "Paused",
+            RotState.Up => "ROTATE",
+            _ => null
+        };
+        if (status == _lastStatus) return;
+        _lastStatus = status;
+        if (OnStatus.HasDelegate) await OnStatus.InvokeAsync(status);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            string? mins = await JS.InvokeAsync<string?>("localStorage.getItem", MinsKey);
+            string? sound = await JS.InvokeAsync<string?>("localStorage.getItem", SoundKey);
+            if (int.TryParse(mins, out int m) && m >= MinMins && m <= MaxMins) _mins = m;
+            _sound = sound != "0";
+            StateHasChanged();
+        }
+        catch
+        {
+            // Storage blocked: 20 minutes, sound on
+        }
+    }
+
+    private async Task Save(string key, string value)
+    {
+        try { await JS.InvokeVoidAsync("localStorage.setItem", key, value); }
+        catch { }
+    }
+
+    private async Task Js(string fn, params object?[] args)
+    {
+        try { await JS.InvokeVoidAsync(fn, args); }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _ = Js("dstKeepAwake", false);
+    }
+
+    private const string SoundOnSvg = "<svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" aria-hidden=\"true\"><path d=\"M4 9h4l5-4v14l-5-4H4z\" fill=\"currentColor\"/><path d=\"M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg>";
+    private const string SoundOffSvg = "<svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" aria-hidden=\"true\"><path d=\"M4 9h4l5-4v14l-5-4H4z\" fill=\"currentColor\"/><path d=\"M16.5 9.5l5 5M21.5 9.5l-5 5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"/></svg>";
+}

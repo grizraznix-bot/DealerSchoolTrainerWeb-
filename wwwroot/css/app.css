@@ -9914,6 +9914,238 @@ html:has(.ts-stage) #rotate-msg {
     font-size: 0.95rem;
 }
 
+/* ------------------------------------------------------------------
+   Rotation Timer (Shared/RotationTimer.razor): the tool page and the
+   Table Scenes' panel tabs (Shared/TsSide.razor)
+   ------------------------------------------------------------------ */
+.rt-wrap {
+    position: relative;
+}
+
+.rt-sound {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #1d5fbf;
+    border-radius: 10px;
+    background-color: white;
+    color: #1d5fbf;
+}
+
+.content .rt-sound {
+    min-height: 0;
+    padding: 0;
+}
+
+.rt-sound.rt-sound-off {
+    border-color: #9aa4aa;
+    color: #9aa4aa;
+}
+
+/* The tool page: the button sits at the top right of the timer area */
+.tl-screen .rt-wrap {
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.rt-set {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 0.8rem;
+}
+
+.rt-set button {
+    width: 52px;
+    height: 44px;
+    padding: 0;
+    border: 2px solid #1d5fbf;
+    border-radius: 10px;
+    background-color: white;
+    color: #1d5fbf;
+    font-size: 1.5rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.rt-set button:disabled {
+    border-color: #c5cbd0;
+    color: #c5cbd0;
+}
+
+.rt-set span {
+    min-width: 90px;
+    color: #1b2530;
+    font-weight: 800;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.rt-two {
+    display: flex;
+    gap: 8px;
+    width: 80%;
+    margin: 1rem auto 0;
+}
+
+.rt-two .tl-big {
+    flex: 1;
+    width: auto;
+    margin: 0;
+}
+
+.tl-big.rt-grey {
+    background-color: #e3e7eb;
+    color: #1b2530;
+}
+
+.tl-ring.rt-ring-up {
+    --ring: #c62828;
+}
+
+.rt-ring-up .tl-time {
+    color: #c62828;
+}
+
+.rt-msg {
+    width: 85%;
+    margin: 0.8rem 0 0;
+    padding: 0.55rem 0.8rem;
+    border-radius: 8px;
+    background-color: #c62828;
+    color: white;
+    font-weight: 900;
+    font-size: 1.15rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+.rt-flash {
+    animation: rt-flash 1s ease-in-out infinite alternate;
+}
+
+.ts-white.rt-flash,
+.tl-screen .rt-flash {
+    border-radius: 10px;
+}
+
+@keyframes rt-flash {
+    from { background-color: #fde8e8; }
+    to { background-color: #f7c6c6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rt-flash {
+        animation: none;
+        background-color: #fde8e8;
+    }
+}
+
+.rt-under {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 0.5rem;
+    color: #4a5560;
+    font-size: 0.9rem;
+}
+
+.rt-link {
+    padding: 0.2rem 0.4rem;
+    border: none;
+    background: none;
+    color: #c62828;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-decoration: underline;
+}
+
+.content .rt-link {
+    min-height: 32px;
+    padding: 0.2rem 0.4rem;
+}
+
+/* Table Scenes: the tabs over the panel */
+.rt-tabs {
+    display: flex;
+    flex: none;
+    gap: 4px;
+    padding: 5px;
+    background-color: #141c1f;
+}
+
+.rt-tab {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 0;
+    min-height: 34px;
+    border: 1px solid #3a474d;
+    border-radius: 8px;
+    background-color: transparent;
+    color: #cfd8dc;
+    font-weight: 700;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.content .rt-tab {
+    min-height: 38px;
+    padding: 0 6px;
+    font-size: 14px;
+}
+
+.rt-tab.rt-on {
+    border-color: #1d5fbf;
+    background-color: #1d5fbf;
+    color: white;
+}
+
+.rt-dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #2fe0a8;
+}
+
+.rt-dot.rt-dot-paused { background-color: #9aa4aa; }
+.rt-dot.rt-dot-up { background-color: #ff4b5c; }
+
+.rt-tab-time {
+    font-variant-numeric: tabular-nums;
+}
+
+.ts-tabbody {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.ts-tabbody.rt-hide {
+    display: none;
+}
+
+.ts-white .rt-set {
+    margin-top: 0.6rem;
+}
+
+.ts-white .rt-two {
+    width: 85%;
+    margin-top: 10px;
+}
+
 .ts-pgn .tl-seg {
     width: 90%;
     margin: 0 0 8px;

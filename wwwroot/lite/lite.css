@@ -572,8 +572,18 @@ body.lite {
 }
 
 .lt-home .lt-tile {
+    width: calc(25% - 16px);
     height: 150px;
-    padding: 16px 20px;
+    padding: 16px 18px;
+}
+
+/* Seven tools, four to a row: a smaller name so it fits */
+.lt-home .lt-tx b {
+    font-size: 20px;
+}
+
+.lt-home .lt-tx span {
+    font-size: 14px;
 }
 
 /* ---- Table Scenes: limit + tool on the left, touchscreen + pay tables

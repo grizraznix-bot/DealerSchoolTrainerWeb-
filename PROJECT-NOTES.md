@@ -57,7 +57,7 @@ settled on purpose. Last updated: November 13, 2026.
 | `wwwroot/css/app.css` | All styling (one file) |
 | `wwwroot/index.html` | Page shell + small scripts (old-device notice, double-tap fix, card preload, Reload Latest) |
 | `wwwroot/manifest.webmanifest` | Home-screen app settings (`orientation: any`) |
-| `wwwroot/lite/` | **Table Tools Lite** (`index.html`, `lite.js`, `lite.css`): plain HTML / JavaScript copies of the six Table Tools, the five Table Scenes and the About page for older iPads, iPad sideways only. Borrows `css/app.css` for the look |
+| `wwwroot/lite/` | **Table Tools Lite** (`index.html`, `lite.js`, `lite.css`): plain HTML / JavaScript copies of the seven Table Tools, the five Table Scenes and the About page for older iPads, iPad sideways only. Borrows `css/app.css` for the look |
 
 **Pages**
 
@@ -73,7 +73,7 @@ settled on purpose. Last updated: November 13, 2026.
 | Challenge Mode | `challenge` |
 | Table Scenes list (the Table Scenes button on Table Tools) | `tools/scenes` (`Pages/ToolTableScenes.razor`) |
 | Table Scenes (ready-made per game: `bj`, `tc`, `pg`, `hd`, `pe`) | `tools/table/bj` etc. (`Pages/ToolTableScreen.razor` + `Shared/Ts*.razor`) |
-| Table Tools: Limit Sign, Pay Tables, Shuffle Timer, Pai Gow Number, Player Tracking | `tools`, `tools/limit-sign`, `tools/pay-tables`, `tools/shuffle-timer`, `tools/pai-gow-number`, `tools/player-tracking` |
+| Table Tools: Limit Sign, Pay Tables, Shuffle Timer, Rotation Timer, Pai Gow Number, Player Tracking | `tools`, `tools/limit-sign`, `tools/pay-tables`, `tools/shuffle-timer`, `tools/rotation-timer`, `tools/pai-gow-number`, `tools/player-tracking` |
 | About, Add to Home Screen | `about`, `add-to-home-screen` |
 
 ## 4. Changing a pay table — every place to check
@@ -170,8 +170,11 @@ lit $1 = blue.
 - Table Scenes (main site and Lite): ready-made per game. Table limit
   starts $10 / $300 and **locked** (taps do nothing until unlocked; the
   Limit Sign has the same lock); limit and lock remembered per screen.
-  Shuffle Timer only on Blackjack and Player's Edge-21, Pai Gow Number on
-  Pai Gow, nothing under the limit on Three Card and Hold'em. The
+  The panel under the limit (`Shared/TsSide`) has tabs: Shuffle Timer
+  (Blackjack, Player's Edge-21) or Pai Gow Number (Pai Gow), and Rotation
+  Timer; Three Card and Hold'em show the Rotation Timer alone. Hidden tabs
+  keep running; the Rotation tab shows its time while hidden. On a phone
+  the panels snap into place when scrolled near the top. The
   touchscreen panel has a fixed height so it never resizes between steps.
   Rank lists read top to bottom (Pai Gow ET: two columns, read down).
   Tablet / computer: two columns; phone: stacked and scrolling.
@@ -183,6 +186,13 @@ lit $1 = blue.
   `Shared/TsTouchscreen` (the Progressives page's Touchscreen only mode).
   A change to one of those tools should be made in its Table Scene copy
   (and Lite) too.
+- Rotation Timer (`Shared/RotationTimer.razor`; tool page and Table
+  Scenes; Lite has its own copy in `lite.js`): times each trainee's turn
+  dealing. 1-60 minutes, 20 to start, remembered (`dst-rot-mins`). At zero:
+  red, ROTATE DEALERS, time over, 3 beeps if the speaker button is on
+  (`dst-rot-sound`). Beep and keep-the-screen-on are in `wwwroot/js/beep.js`,
+  loaded by both `index.html` and `lite/index.html`. No beep with the ringer
+  switch on silent or the screen locked; keep-the-screen-on needs iOS 16.4+.
 - iPhone Safari text scaling turned off (`text-size-adjust: 100%`).
 
 **Rejected — don't suggest again**: 4-column keypad; Three Card wagers in
@@ -200,12 +210,13 @@ Cards Numbers Only.
 - Decided: nothing is removed or switched off to support older devices.
 - **Table Tools Lite** (`.../lite/`) covers the training-table tools on
   older iPads: Limit Sign, Progressive Touchscreen (all five games), Player
-  Tracking, Shuffle Timer, Pai Gow Number, Pay Tables. iPad sideways only.
+  Tracking, Shuffle Timer, Rotation Timer, Pai Gow Number, Pay Tables. iPad sideways only.
   The old-device notice links to it. Lite also has five ready-made
   **Table Scenes** (Blackjack, Three Card Prime, Pai Gow, Heads-Up
   Hold'em, Player's Edge-21): table limit ($10 / $300 to start, remembered
-  per screen) top left; under it the Shuffle Timer (Blackjack, Player's
-  Edge-21) or the Pai Gow Number (Pai Gow), blank for the others; that
+  per screen) top left; under it tabs for the Shuffle Timer (Blackjack,
+  Player's Edge-21) or the Pai Gow Number (Pai Gow) and the Rotation Timer
+  (the Rotation Timer alone on the others); that
   game's progressive touchscreen and pay tables on the right. The main
   site has the same five Table Scenes (Table Tools page → Table Scenes button). **Any change to a Table Tool, or to a
   pay table shown in one, must be repeated in `wwwroot/lite/lite.js`.**
