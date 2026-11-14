@@ -193,6 +193,8 @@ else if (_sim)
                         break;
                 }
             </div>
+
+            <p class="sim-disc">Training simulation only &middot; Not a real gaming system &middot; Not affiliated with or endorsed by any game or equipment manufacturer</p>
         </div>
 
         <GameBar HelpTitle="@($"{_def.Name} Touchscreen")" OnEnd="BackToStart" EndLabel="Exit">
@@ -430,6 +432,8 @@ else
                 <ResultBreakdown ResultText="@(_ok ? "CORRECT" : "INCORRECT")" IsCorrect="_ok" Rows="_rows" />
             }
         </div>
+
+        <p class="sim-disc">Training simulation only &middot; Not a real gaming system &middot; Not affiliated with or endorsed by any game or equipment manufacturer</p>
 
         <GameBar HelpTitle="@($"{_def.Name} Progressive")" OnEnd="EndSession">
             <ChildContent>

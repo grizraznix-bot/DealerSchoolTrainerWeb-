@@ -9615,3 +9615,28 @@ html:has(.tl-stage) #rotate-msg {
         aspect-ratio: auto;
     }
 }
+
+/* Training disclaimer under the simulated terminals (Progressive
+   Touchscreen, Player Tracking); stays along the bottom full screen */
+.sim-disc {
+    margin: 0.6rem 0 0;
+    color: #7a858f;
+    font-size: 0.72rem;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.pr-simwrap .sim-disc,
+.tl-stage.tl-full .sim-disc {
+    flex: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) and (pointer: coarse) {
+    .pr-simwrap .sim-disc,
+    .tl-stage .sim-disc {
+        flex: none;
+        margin: 4px 0 0;
+        color: rgba(207, 216, 220, 0.6);
+        font-size: 10px;
+    }
+}
