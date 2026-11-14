@@ -3837,6 +3837,36 @@ label,
     color: var(--c-primary-dark);
 }
 
+/* House Way section tabs (Shared/HouseWayTable): All, Two Pair, ...
+   One row that scrolls sideways, so the rules stay near the top */
+.hw-tabs {
+    display: flex;
+    gap: 6px;
+    margin: 0.3rem 0 0.6rem;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.hw-tab {
+    flex: none;
+    white-space: nowrap;
+    min-height: 34px;
+    padding: 0.25rem 0.75rem;
+    border: 1px solid #c4ccd4;
+    border-radius: 17px;
+    background-color: white;
+    color: #1b2530;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.hw-tab.hw-on {
+    border-color: var(--c-felt);
+    background-color: var(--c-felt);
+    color: white;
+}
+
 /* One-line "what to do" shown on a game's first round only */
 .first-hint {
     align-self: stretch;

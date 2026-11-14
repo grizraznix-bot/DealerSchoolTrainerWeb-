@@ -693,7 +693,7 @@
         ['7', 'Straight (the wheel, A-2-3-4-5, is the 2nd highest)'], ['8', 'Three of a Kind'], ['9', 'Two Pair'], ['10', 'One Pair'], ['11', 'High Card']
     ];
 
-    var pay = { game: 0, tab: 0, hw: 0 };
+    var pay = { game: 0, tab: 0, hw: -1 };
 
     // House Way in sections (Two Pair, Three Pair, ...): a row of tabs picks
     // which section shows
@@ -708,17 +708,21 @@
         return out;
     }
 
+    // "All" (pay.hw = -1, the default) shows every section, like the main site
     function houseWayTable() {
-        var secs = hwSections(), sec = secs[Math.min(pay.hw, secs.length - 1)];
-        var h = '<div class="lt-hw-tabs">';
+        var secs = hwSections();
+        var h = '<div class="lt-hw-tabs"><button type="button" class="lt-hw-tab' + (pay.hw < 0 ? ' tl-on' : '') + '" data-act="hw" data-i="-1">All</button>';
         secs.forEach(function (x, i) {
             h += '<button type="button" class="lt-hw-tab' + (i === pay.hw ? ' tl-on' : '') + '" data-act="hw" data-i="' + i + '">' + esc(HW_SHORT[i] || x.title) + '</button>';
         });
         h += '</div><table class="help-table sp-help-table hw-table">';
-        h += '<tr class="sp-pt-hd"><td colspan="2">' + esc(sec.title) + '</td></tr>';
-        sec.rows.forEach(function (r) {
-            if (r.length === 3) h += '<tr class="hw-sub"><td></td><td><b>' + esc(r[1]) + '</b>' + esc(r[2]) + '</td></tr>';
-            else h += '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>';
+        secs.forEach(function (sec, i) {
+            if (pay.hw >= 0 && pay.hw !== i) return;
+            h += '<tr class="sp-pt-hd"><td colspan="2">' + esc(sec.title) + '</td></tr>';
+            sec.rows.forEach(function (r) {
+                if (r.length === 3) h += '<tr class="hw-sub"><td></td><td><b>' + esc(r[1]) + '</b>' + esc(r[2]) + '</td></tr>';
+                else h += '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td></tr>';
+            });
         });
         return h + '</table>';
     }
