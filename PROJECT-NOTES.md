@@ -57,7 +57,7 @@ settled on purpose. Last updated: November 13, 2026.
 | `wwwroot/css/app.css` | All styling (one file) |
 | `wwwroot/index.html` | Page shell + small scripts (old-device notice, double-tap fix, card preload, Reload Latest) |
 | `wwwroot/manifest.webmanifest` | Home-screen app settings (`orientation: any`) |
-| `wwwroot/lite/` | **Table Tools Lite** (`index.html`, `lite.js`, `lite.css`): plain HTML / JavaScript copies of the six Table Tools for older iPads, iPad sideways only. Borrows `css/app.css` for the look |
+| `wwwroot/lite/` | **Table Tools Lite** (`index.html`, `lite.js`, `lite.css`): plain HTML / JavaScript copies of the six Table Tools, the five Table Scenes and the About page for older iPads, iPad sideways only. Borrows `css/app.css` for the look |
 
 **Pages**
 
@@ -95,6 +95,7 @@ the old number to catch anything missed.
 | **All progressives** (Blackjack 21+3, Three Card Mini Royal, Pai Gow ET / INS, Player's Edge-21 Monster Match, Hold'em) | `Games/ProgressiveTrainer/ProgressiveGames.cs` (one table per wager, used by both Practice and Touchscreen only) | `ProgressivesTutorial.razor` (example table, "what each game pays on"), `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) |
 | Player's Edge-21 Bonus 21 / Match | — (no game mode) | `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) only |
 | **Every Table Tools pay table and every progressive** | — | also `wwwroot/lite/lite.js` (Table Tools Lite) |
+| About text and Special Thanks | `Pages/About.razor` | also `wwwroot/lite/lite.js` (`aboutView`, Lite's About button) |
 
 Idea on the list for later: one **house-rules file** that every page reads,
 so a pay change is one edit.

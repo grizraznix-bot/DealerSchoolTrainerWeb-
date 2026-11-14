@@ -72,10 +72,11 @@
             case 'timer': html = timerView(); break;
             case 'pgn': html = pgnView(); break;
             case 'pay': html = payView(); break;
+            case 'about': html = aboutView(); break;
             default: html = view.indexOf('table:') === 0 ? tableView(parseInt(view.slice(6), 10)) : homeView();
         }
         // Every tool screen carries the training disclaimer along the bottom
-        // (Home has it in full at the foot of the page)
+        // (Home has it in full at the foot of the page; About has both)
         if (view !== 'home') html += '<p class="lt-disc">Training simulation only &middot; Not a real gaming system &middot; Not affiliated with or endorsed by any game or equipment manufacturer</p>';
         app.innerHTML = html;
     }
@@ -93,7 +94,8 @@
 
     function homeView() {
         var h = '<div class="lt-home">' +
-            '<h1>Table Tools <span>Lite</span></h1>' +
+            '<div class="lt-head"><h1>Table Tools <span>Lite</span></h1>' +
+            '<button type="button" class="lt-about-btn" data-act="go" data-v="about">About</button></div>' +
             '<p class="lt-sub">For the training table &middot; Dealer School Trainer</p>' +
             '<h2 class="lt-h2">Table Scenes</h2><div class="lt-tables">';
         TABLES.forEach(function (t, i) {
@@ -109,6 +111,27 @@
             '<p class="lt-foot">Training simulation only. Not affiliated with or endorsed by any game or equipment manufacturer. Game names are trademarks of their owners.</p>' +
             '</div>';
         return h;
+    }
+
+    // ---- About (the main site's About page, Pages/About.razor) ---------------
+    // Same text and Special Thanks; a change there should be made here too.
+    // No version line or Reload button: Lite has no build stamp.
+    function aboutView() {
+        return '<div class="lt-home lt-about">' +
+            '<div class="lt-head"><h1>About</h1>' +
+            '<button type="button" class="lt-about-btn" data-act="home">&lsaquo; Tools</button></div>' +
+            '<div class="lt-about-card">' +
+            '<p>The Dealer School Trainer was created to give dealers in training a way to practice key skills and procedures outside of live training sessions.</p>' +
+            '<p>Games and procedures vary from casino to casino. Always follow the policies and procedures established by the property hosting your training.</p>' +
+            '<div class="thanks-felt">' +
+            '<div class="thanks-title">SPECIAL THANKS</div>' +
+            '<div class="thanks-name"><span class="thanks-spade">&#9824;&#xFE0E;</span>Jesse</div>' +
+            '<div class="thanks-name"><span class="thanks-spade">&#9824;&#xFE0E;</span>Caryn</div>' +
+            '<div class="thanks-name"><span class="thanks-spade">&#9824;&#xFE0E;</span>Nick</div>' +
+            '<div class="thanks-for">for all the work on this project.</div>' +
+            '</div></div>' +
+            '<p class="lt-foot">Training simulation only. Not affiliated with or endorsed by any game or equipment manufacturer. Game names are trademarks of their owners.</p>' +
+            '</div>';
     }
 
     // ---- Table limit lock ----------------------------------------------------
