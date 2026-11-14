@@ -9723,6 +9723,9 @@ html:has(.tl-stage) #rotate-msg {
     scroll-padding-top: max(8px, env(safe-area-inset-top, 0px));
 }
 
+/* The top strip (Scenes button) is a snap point too, so the screen opens
+   and rests at the top instead of snapping the strip off screen */
+.ts-stage .tl-strip,
 .ts-stage .ts-p {
     scroll-snap-align: start;
 }
