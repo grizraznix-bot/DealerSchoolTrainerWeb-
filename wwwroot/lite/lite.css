@@ -483,7 +483,7 @@ body.lite {
     font-size: 6rem;
 }
 
-/* ---- Home: Table Screens row ------------------------------------------- */
+/* ---- Home: Table Scenes row ------------------------------------------- */
 .lt-h2 {
     margin: 0 0 10px;
     color: #f2d27a;
@@ -528,7 +528,7 @@ body.lite {
     padding: 16px 20px;
 }
 
-/* ---- Table Screens: limit + tool on the left, touchscreen + pay tables
+/* ---- Table Scenes: limit + tool on the left, touchscreen + pay tables
    on the right ------------------------------------------------------------ */
 .lw-grid {
     display: flex;
@@ -875,7 +875,7 @@ body.lite {
     color: white;
 }
 
-/* Table Screen pay panel: House Way tabs in one row that scrolls sideways */
+/* Table Scene pay panel: House Way tabs in one row that scrolls sideways */
 .lw-pay .lt-hw-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;

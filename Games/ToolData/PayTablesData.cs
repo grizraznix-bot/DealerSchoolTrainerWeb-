@@ -1,7 +1,7 @@
 namespace DealerSchoolTrainerWeb.Games.ToolData;
 
 // The house's pay tables for the Table Tools: the Pay Tables tool
-// (Pages/ToolPayTables.razor) and the Table Screens (Shared/TsPayTables.razor)
+// (Pages/ToolPayTables.razor) and the Table Scenes (Shared/TsPayTables.razor)
 // both read this one copy. Pick the game, then a tab per wager; a wager with
 // two tables (a progressive's $5 and $1) has two PtTables. Progressive
 // amounts are the base tables, no Dynamic Pays. Table Tools Lite

@@ -8218,7 +8218,9 @@ body {
 /* Chip grid: 6 positions per row */
 .pr-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    /* minmax(0, 1fr): equal columns even when a chip's text is wide, so
+       the chips stay over their seat numbers */
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
     margin: 0.3rem 0;
 }
@@ -8232,6 +8234,12 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    /* Centred, not stretched, in its grid column: a stretched cell can
+       override aspect-ratio on some browsers and draw an oval */
+    align-self: center;
+    justify-self: center;
+    width: 100%;
+    height: auto;
     aspect-ratio: 1;
     min-width: 0;
     padding: 0;
@@ -8244,6 +8252,14 @@ body {
     font-size: 0.95rem;
     line-height: 1;
     opacity: 0.4;
+}
+
+/* Chips keep their own size on touch screens: the touch-screen button
+   rule (.content button: 44px min height and side padding) would squeeze
+   the ring out of round and push it off its seat number */
+.content .pr-chip {
+    min-height: 0;
+    padding: 0;
 }
 
 /* 3 letters (Pai Gow's INS): smaller so it fits inside the ring */
@@ -8590,7 +8606,9 @@ span.pr-btn {
    ------------------------------------------------------------------ */
 .pr-posnums {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    /* minmax(0, 1fr): equal columns even when a chip's text is wide, so
+       the chips stay over their seat numbers */
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 4px;
     margin-bottom: 0.1rem;
     color: #9fb0bc;
@@ -9642,7 +9660,7 @@ html:has(.tl-stage) #rotate-msg {
 }
 
 /* ------------------------------------------------------------------
-   Table Screens (Pages/ToolTableScreen + Shared/Ts*): a ready-made
+   Table Scenes (Pages/ToolTableScreen + Shared/Ts*): a ready-made
    screen per game, full screen. Tablet / computer: limit and tool on
    the left, touchscreen (fixed height) and pay tables on the right.
    Phone: the panels stack and the screen scrolls.
@@ -9781,7 +9799,7 @@ html:has(.ts-stage) #rotate-msg {
     white-space: nowrap;
 }
 
-/* Lock button (Table Screens and the Limit Sign) */
+/* Lock button (Table Scenes and the Limit Sign) */
 .ts-lock {
     flex: none;
     min-height: 28px;

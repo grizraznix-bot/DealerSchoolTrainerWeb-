@@ -3,21 +3,20 @@
 <PageTitle>Table Tools</PageTitle>
 
 @* Table Tools: companions for the training table, set down next to the layout.
-   Table Screens first (a ready-made screen per game), then the single tools.
+   A Table Scenes button first (a ready-made screen per game), then the single tools.
    The limit sign and the pay tables also go full screen with the phone
    held sideways. *@
 <div class="start-screen tl-hub">
     <h1>TABLE TOOLS</h1>
     <p class="tl-intro">Companions for the training table: set your phone down next to the layout.</p>
 
-    @* Table Screens: a ready-made screen per game (Pages/ToolTableScreen) *@
-    <h2 class="tl-sec">Table Screens</h2>
-    <div class="tl-tables">
-        @foreach (var t in ToolTableScreen.Screens)
-        {
-            <a class="tl-table" href="@($"tools/table/{t.Key}")"><b>@t.Name</b><span>@t.Text</span></a>
-        }
-    </div>
+    @* Table Scenes: one button to the list of ready-made scenes (Pages/ToolTableScenes) *@
+    <h2 class="tl-sec">Table Scenes</h2>
+    <a class="tl-tool tl-tool-gold" href="tools/scenes">
+        <span class="tl-ic" aria-hidden="true">&#x25A6;</span>
+        <span class="tl-tool-text"><b>Table Scenes</b><span>A ready-made screen per game: limit, progressive, pay tables</span></span>
+        <span class="tl-go" aria-hidden="true">&rsaquo;</span>
+    </a>
 
     <h2 class="tl-sec">Tools</h2>
 
@@ -52,5 +51,5 @@
         <span class="tl-go" aria-hidden="true">&rsaquo;</span>
     </a>
 
-    <p class="tl-intro">Turn your phone sideways on the Limit Sign, the Pay Tables, Player Tracking or the Progressive Touchscreen for full screen. The Table Screens work best on a tablet or computer.</p>
+    <p class="tl-intro">Turn your phone sideways on the Limit Sign, the Pay Tables, Player Tracking or the Progressive Touchscreen for full screen. Table Scenes work best on a tablet or computer.</p>
 </div>

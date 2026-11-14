@@ -71,7 +71,8 @@ settled on purpose. Last updated: November 13, 2026.
 | Roulette + tutorial, Roulette math tricks | `roulette`, `roulette-tutorial`, `roulette-math` |
 | Progressives (Practice / Touchscreen only) + tutorial | `progressives`, `progressives-tutorial` |
 | Challenge Mode | `challenge` |
-| Table Screens (ready-made per game: `bj`, `tc`, `pg`, `hd`, `pe`) | `tools/table/bj` etc. (`Pages/ToolTableScreen.razor` + `Shared/Ts*.razor`) |
+| Table Scenes list (the Table Scenes button on Table Tools) | `tools/scenes` (`Pages/ToolTableScenes.razor`) |
+| Table Scenes (ready-made per game: `bj`, `tc`, `pg`, `hd`, `pe`) | `tools/table/bj` etc. (`Pages/ToolTableScreen.razor` + `Shared/Ts*.razor`) |
 | Table Tools: Limit Sign, Pay Tables, Shuffle Timer, Pai Gow Number, Player Tracking | `tools`, `tools/limit-sign`, `tools/pay-tables`, `tools/shuffle-timer`, `tools/pai-gow-number`, `tools/player-tracking` |
 | About, Add to Home Screen | `about`, `add-to-home-screen` |
 
@@ -84,15 +85,15 @@ the old number to catch anything missed.
 
 | Wager | Game math | Shown in |
 |---|---|---|
-| 21+3, Lucky Ladies | `Games/SideWagerTrainer/SideWagerPayouts.cs` | `BlackjackTrainer.razor` (Help), `BlackjackTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Screens) |
-| Three Card Prime (Ante Bonus, Pair Bonus, Prime, All 6) | `Games/ThreeCardTrainer/ThreeCardPayouts.cs` | `ThreeCardTrainer.razor` (Help), `ThreeCardTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Screens) |
-| Pai Gow (Insurance, Emperor's Treasure, Envy) | `Games/PaiGowTrainer/PaiGowPayouts.cs` | `PaiGowCombined.razor` (Help), `PaiGowTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Screens) |
+| 21+3, Lucky Ladies | `Games/SideWagerTrainer/SideWagerPayouts.cs` | `BlackjackTrainer.razor` (Help), `BlackjackTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) |
+| Three Card Prime (Ante Bonus, Pair Bonus, Prime, All 6) | `Games/ThreeCardTrainer/ThreeCardPayouts.cs` | `ThreeCardTrainer.razor` (Help), `ThreeCardTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) |
+| Pai Gow (Insurance, Emperor's Treasure, Envy) | `Games/PaiGowTrainer/PaiGowPayouts.cs` | `PaiGowCombined.razor` (Help), `PaiGowTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) |
 | Pai Gow House Way | `Games/PaiGowTrainer/PaiGowSolver.cs` | `Shared/HouseWayTable.razor` (Help and the Pay Tables tool), and `wwwroot/lite/lite.js` |
-| Hold'em (Odds, Bad Beat, Trips Plus, Pocket Bonus) | `Games/HoldemTrainer/HoldemPayouts.cs` | `HoldemTrainer.razor` (Help), `HoldemTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Screens) |
+| Hold'em (Odds, Bad Beat, Trips Plus, Pocket Bonus) | `Games/HoldemTrainer/HoldemPayouts.cs` | `HoldemTrainer.razor` (Help), `HoldemTutorial.razor`, `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) |
 | Blackjack 3:2 / 6:5 | `Games/PayoutTrainer/PayoutWager.cs` | `BlackjackTrainer.razor`, `Challenge.razor`, `BlackjackTutorial.razor` |
 | Roulette | `Games/RouletteTrainer/` | `RouletteTrainer.razor`, `RouletteTutorial.razor` |
-| **All progressives** (Blackjack 21+3, Three Card Mini Royal, Pai Gow ET / INS, Player's Edge-21 Monster Match, Hold'em) | `Games/ProgressiveTrainer/ProgressiveGames.cs` (one table per wager, used by both Practice and Touchscreen only) | `ProgressivesTutorial.razor` (example table, "what each game pays on"), `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Screens) |
-| Player's Edge-21 Bonus 21 / Match | — (no game mode) | `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Screens) only |
+| **All progressives** (Blackjack 21+3, Three Card Mini Royal, Pai Gow ET / INS, Player's Edge-21 Monster Match, Hold'em) | `Games/ProgressiveTrainer/ProgressiveGames.cs` (one table per wager, used by both Practice and Touchscreen only) | `ProgressivesTutorial.razor` (example table, "what each game pays on"), `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) |
+| Player's Edge-21 Bonus 21 / Match | — (no game mode) | `Games/ToolData/PayTablesData.cs` (Pay Tables tool and Table Scenes) only |
 | **Every Table Tools pay table and every progressive** | — | also `wwwroot/lite/lite.js` (Table Tools Lite) |
 
 Idea on the list for later: one **house-rules file** that every page reads,
@@ -163,9 +164,9 @@ lit $1 = blue.
   Deck Blackjack card.
 - Generic labels on the simulated terminals, no vendor names or logos.
   Disclaimer on Home and About, and a "Training simulation only" line on
-  the simulated terminals (Progressives, Player Tracking, Table Screens,
+  the simulated terminals (Progressives, Player Tracking, Table Scenes,
   every Lite screen).
-- Table Screens (main site and Lite): ready-made per game. Table limit
+- Table Scenes (main site and Lite): ready-made per game. Table limit
   starts $10 / $300 and **locked** (taps do nothing until unlocked; the
   Limit Sign has the same lock); limit and lock remembered per screen.
   Shuffle Timer only on Blackjack and Player's Edge-21, Pai Gow Number on
@@ -176,10 +177,10 @@ lit $1 = blue.
 - House Way (`Shared/HouseWayTable.razor`, and Lite) has section tabs:
   All (default), Two Pair, Three Pair, Three of a Kind, Straights &
   Flushes, Full House, Four of a Kind, Five Aces, Ranking.
-- Some Table Screen pieces repeat the single tools' code: `Shared/TsTimer`
+- Some Table Scene pieces repeat the single tools' code: `Shared/TsTimer`
   (Shuffle Timer), `Shared/TsPaiGowNumber` (Pai Gow Number) and
   `Shared/TsTouchscreen` (the Progressives page's Touchscreen only mode).
-  A change to one of those tools should be made in its Table Screen copy
+  A change to one of those tools should be made in its Table Scene copy
   (and Lite) too.
 - iPhone Safari text scaling turned off (`text-size-adjust: 100%`).
 
@@ -200,12 +201,12 @@ Cards Numbers Only.
   older iPads: Limit Sign, Progressive Touchscreen (all five games), Player
   Tracking, Shuffle Timer, Pai Gow Number, Pay Tables. iPad sideways only.
   The old-device notice links to it. Lite also has five ready-made
-  **Table Screens** (Blackjack, Three Card Prime, Pai Gow, Heads-Up
+  **Table Scenes** (Blackjack, Three Card Prime, Pai Gow, Heads-Up
   Hold'em, Player's Edge-21): table limit ($10 / $300 to start, remembered
   per screen) top left; under it the Shuffle Timer (Blackjack, Player's
   Edge-21) or the Pai Gow Number (Pai Gow), blank for the others; that
   game's progressive touchscreen and pay tables on the right. The main
-  site has the same five Table Screens (Table Tools page). **Any change to a Table Tool, or to a
+  site has the same five Table Scenes (Table Tools page → Table Scenes button). **Any change to a Table Tool, or to a
   pay table shown in one, must be repeated in `wwwroot/lite/lite.js`.**
 - A native Android / iOS app was considered and set aside: staying a website.
 

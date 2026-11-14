@@ -1,0 +1,20 @@
+@page "/tools/scenes"
+
+<PageTitle>Table Scenes</PageTitle>
+
+@* Table Scenes: the list of ready-made scenes, one per game
+   (Pages/ToolTableScreen). Reached from the Table Scenes button on the
+   Table Tools page. *@
+<div class="start-screen tl-hub">
+    <h1>TABLE SCENES</h1>
+    <p class="tl-intro">A ready-made screen for each game: the table limit, the progressive touchscreen and the pay tables, plus the Shuffle Timer or the Pai Gow Number where the game uses one. Best on a tablet or computer.</p>
+
+    <div class="tl-tables">
+        @foreach (var t in ToolTableScreen.Screens)
+        {
+            <a class="tl-table" href="@($"tools/table/{t.Key}")"><b>@t.Name</b><span>@t.Text</span></a>
+        }
+    </div>
+
+    <a class="tl-tool" href="tools"><span class="tl-tool-text"><b>Back to Table Tools</b></span><span class="tl-go">&rsaquo;</span></a>
+</div>

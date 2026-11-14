@@ -95,7 +95,7 @@
         var h = '<div class="lt-home">' +
             '<h1>Table Tools <span>Lite</span></h1>' +
             '<p class="lt-sub">For the training table &middot; Dealer School Trainer</p>' +
-            '<h2 class="lt-h2">Table Screens</h2><div class="lt-tables">';
+            '<h2 class="lt-h2">Table Scenes</h2><div class="lt-tables">';
         TABLES.forEach(function (t, i) {
             h += '<button type="button" class="lt-table" data-act="go" data-v="table:' + i + '"><b>' + esc(t.name) + '</b><span>' + esc(t.text) + '</span></button>';
         });
@@ -245,7 +245,7 @@
             progTouchscreen() + '</div>';
     }
 
-    // The touchscreen itself (also used by the Table Screens)
+    // The touchscreen itself (also used by the Table Scenes)
     function progTouchscreen() {
         var def = PROG[prog.game], body = '', s, w;
         var back = (prog.screen === 'wager' || prog.screen === 'rank' || prog.screen === 'pos' || prog.screen === 'confirm');
@@ -290,7 +290,7 @@
 
             case 'rank':
                 var rw = def.wagers[prog.w];
-                // One column, top to bottom, like the real screen. On a Table Screen a
+                // One column, top to bottom, like the real screen. On a Table Scene a
                 // long table (Pai Gow ET, 8 lines) goes in two columns read top to
                 // bottom (first half down the left) so it fits the panel.
                 var two = rw.rows.length > 5;
@@ -459,7 +459,7 @@
             '<div class="lt-panel">' + timerInner() + '</div></div>';
     }
 
-    // The ring, result and button (also used by the Table Screens)
+    // The ring, result and button (also used by the Table Scenes)
     function timerInner() {
         var t = timer, pct = 0, ringCls = '', sub = '90 s ideal', inner;
         if (t.state === 'countdown') { pct = (5 - t.count) * 20; ringCls = 'tl-ring-gold'; }
@@ -545,7 +545,7 @@
             '<div class="lt-panel lt-pgn">' + pgnInner() + '</div></div>';
     }
 
-    // Mode switch, number or dice, Roll (also used by the Pai Gow Table Screen)
+    // Mode switch, number or dice, Roll (also used by the Pai Gow Table Scene)
     function pgnInner() {
         var g = pgn, body;
         if (!g.dice) {
@@ -741,7 +741,7 @@
         return h + '</div>' + payTabsBody(pay.game) + '</div>';
     }
 
-    // One game's wager tabs and the open table (also used by the Table Screens)
+    // One game's wager tabs and the open table (also used by the Table Scenes)
     function payTabsBody(gi) {
         var g = PAY[gi], tab = g.tabs[pay.tab], h = '<div class="tl-tabs">';
         g.tabs.forEach(function (t, i) {
@@ -762,7 +762,7 @@
         return h + '</div>';
     }
 
-    // ---- Table Screens: ready-made layouts per game ---------------------------
+    // ---- Table Scenes: ready-made layouts per game ---------------------------
     // Left: the table limit ($10 / $300 to start, remembered per screen) and,
     // for Blackjack and Player's Edge-21, the Shuffle Timer (Pai Gow: the
     // Pai Gow Number). Right: the game's progressive touchscreen and its
@@ -803,7 +803,7 @@
             panel('Pay Tables · ' + PAY[t.pay].name, payTabsBody(t.pay), 'lw-pay lw-grow');
 
         return '<div class="tl-stage tl-full lt-stage lw">' +
-            strip(t.name + ' Table', 'Table screen: tap any panel to use it') +
+            strip(t.name + ' Table', 'Table scene: tap any panel to use it') +
             '<div class="lw-grid"><div class="lw-col1">' + left + '</div><div class="lw-col2">' + right + '</div></div></div>';
     }
 
@@ -819,7 +819,7 @@
             case 'home': go('home'); return;
             case 'go': go(el.getAttribute('data-v')); return;
 
-            // Table Screens: the screen's own limit
+            // Table Scenes: the screen's own limit
             case 'lock':
                 var lk = el.getAttribute('data-key');
                 save('dst-lock-' + lk, isLocked(lk) ? '0' : '1');

@@ -4,7 +4,7 @@
 
 <PageTitle>@(_screen?.Name ?? "Table") Table</PageTitle>
 
-@* Table Screens: ready-made layouts for the training table, one per game.
+@* Table Scenes: ready-made layouts for the training table, one per game.
    Left: the table limit ($10 / $300 to start, with a lock; remembered per
    screen) and, for Blackjack and Player's Edge-21, the Shuffle Timer
    (Pai Gow: the Pai Gow Number; blank for the others). Right: the game's
@@ -15,18 +15,18 @@
 @if (_screen is null)
 {
     <div class="start-screen tl-hub">
-        <h1>TABLE SCREENS</h1>
-        <p class="tl-intro">That table screen wasn't found.</p>
-        <a class="tl-tool" href="tools"><span class="tl-tool-text"><b>Back to Table Tools</b></span><span class="tl-go">&rsaquo;</span></a>
+        <h1>TABLE SCENES</h1>
+        <p class="tl-intro">That table scene wasn't found.</p>
+        <a class="tl-tool" href="tools/scenes"><span class="tl-tool-text"><b>Back to Table Scenes</b></span><span class="tl-go">&rsaquo;</span></a>
     </div>
 }
 else
 {
     <div class="ts-stage">
         <div class="tl-strip">
-            <button type="button" class="tl-exit" @onclick='() => Nav.NavigateTo("tools")'>&lsaquo; Exit</button>
+            <button type="button" class="tl-exit" @onclick='() => Nav.NavigateTo("tools/scenes")'>&lsaquo; Scenes</button>
             <b>@_screen.Name Table</b>
-            <span>Table screen: tap any panel to use it</span>
+            <span>Table scene: tap any panel to use it</span>
         </div>
 
         <div class="ts-grid">
