@@ -74,6 +74,9 @@
             case 'pay': html = payView(); break;
             default: html = view.indexOf('table:') === 0 ? tableView(parseInt(view.slice(6), 10)) : homeView();
         }
+        // Every tool screen carries the training disclaimer along the bottom
+        // (Home has it in full at the foot of the page)
+        if (view !== 'home') html += '<p class="lt-disc">Training simulation only &middot; Not a real gaming system &middot; Not affiliated with or endorsed by any game or equipment manufacturer</p>';
         app.innerHTML = html;
     }
 

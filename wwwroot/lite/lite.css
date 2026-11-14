@@ -887,3 +887,23 @@ body.lite {
     min-height: 30px;
     font-size: 0.82rem;
 }
+
+/* Training disclaimer along the bottom of every tool screen */
+.lt-stage.tl-full {
+    padding-bottom: max(26px, env(safe-area-inset-bottom, 0px));
+}
+
+.lt-disc {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1600;
+    margin: 0;
+    padding: 0 12px 6px;
+    color: rgba(207, 216, 220, 0.6);
+    font-size: 11px;
+    line-height: 16px;
+    text-align: center;
+    pointer-events: none;
+}
