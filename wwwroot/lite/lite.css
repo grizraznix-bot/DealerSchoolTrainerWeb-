@@ -687,12 +687,34 @@ body.lite {
 }
 
 /* Touchscreen panel: chips sized to fit above the pay tables */
-.lw-ts .pr-sim {
+/* Fixed height, so moving through the touchscreen's screens (sensors,
+   pay tables, wager, rank, position, confirm) never resizes the panels;
+   the buttons stay in the same place at the bottom */
+.lw-p.lw-ts {
     flex: none;
+    height: 360px;
+}
+
+.lw-ts .pr-sim {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     min-height: 0;
     margin: 6px 8px 8px;
     padding-top: 0.3rem;
     padding-bottom: 0.6rem;
+    overflow: auto;
+}
+
+.lw-ts .pr-ts-btns {
+    margin-top: auto;
+}
+
+/* Rank list in two columns so 8 lines fit */
+.lw-ts .pr-ranks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 0.5rem;
 }
 
 .lw-ts .pr-grid,
@@ -727,11 +749,20 @@ body.lite {
 }
 
 .lw-ts .pr-pt-row {
-    padding: 0.08rem 0;
+    padding: 0;
+}
+
+.lw-ts .pr-ts-top {
+    min-height: 26px;
+    margin-bottom: 0;
+}
+
+.lw-ts .pr-back {
+    height: 26px;
 }
 
 .lw-ts .pr-rank {
-    min-height: 36px;
+    min-height: 34px;
     margin-bottom: 0.2rem;
     font-size: 0.95rem;
 }
