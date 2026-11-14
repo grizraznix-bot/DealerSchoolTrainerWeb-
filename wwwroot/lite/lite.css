@@ -474,3 +474,287 @@ body.lite {
 .lt-pgn .tl-total b {
     font-size: 6rem;
 }
+
+/* ---- Home: Table Screens row ------------------------------------------- */
+.lt-h2 {
+    margin: 0 0 10px;
+    color: #f2d27a;
+    font-size: 15px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.lt-tables {
+    display: flex;
+    margin: 0 -6px 20px;
+}
+
+.lt-table {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 96px;
+    margin: 0 6px;
+    padding: 12px 14px;
+    border: 2px solid #c9a227;
+    border-radius: 14px;
+    background-color: #fff3cf;
+    color: #1b2530;
+    text-align: left;
+}
+
+.lt-table b {
+    font-size: 19px;
+}
+
+.lt-table span {
+    margin-top: 4px;
+    color: #4a5560;
+    font-size: 12.5px;
+    line-height: 1.3;
+}
+
+.lt-home .lt-tile {
+    height: 150px;
+    padding: 16px 20px;
+}
+
+/* ---- Table Screens: limit + tool on the left, touchscreen + pay tables
+   on the right ------------------------------------------------------------ */
+.lw-grid {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.lw-col1 {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    width: 330px;
+    margin-right: 8px;
+}
+
+.lw-col2 {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.lw-p {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin-bottom: 8px;
+    overflow: hidden;
+    border-radius: 12px;
+    background-color: #1a2428;
+}
+
+.lw-p:last-child {
+    margin-bottom: 0;
+}
+
+.lw-p.lw-grow {
+    flex: 1;
+}
+
+.lw-hd {
+    padding: 6px 10px;
+    overflow: hidden;
+    background-color: #141c1f;
+    color: #cfd8dc;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lw-hd b {
+    color: white;
+}
+
+.lw-b {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.lw-limit {
+    display: flex;
+    align-items: stretch;
+    height: 110px;
+    margin: 8px;
+    border: 4px solid #c9a227;
+    border-radius: 12px;
+    background: radial-gradient(ellipse at center, #14824a, #0b5c33);
+}
+
+.lw-limit button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: white;
+    text-align: center;
+}
+
+.lw-limit small {
+    display: block;
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+}
+
+.lw-limit b {
+    font-weight: 900;
+    font-size: 44px;
+    line-height: 1.1;
+}
+
+.lw-limit i {
+    width: 2px;
+    margin: 12px 0;
+    background-color: rgba(242, 210, 122, 0.6);
+}
+
+.lw-white {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 8px;
+    padding: 8px;
+    border-radius: 10px;
+    background-color: white;
+    color: #1b2530;
+}
+
+.lw-white .tl-timer {
+    width: 100%;
+    margin: 0;
+}
+
+.lw-white .tl-ring {
+    width: 190px;
+    height: 190px;
+}
+
+.lw-white .tl-time {
+    font-size: 3rem;
+}
+
+.lw-white .tl-big {
+    width: 85%;
+    min-height: 54px;
+    margin-top: 10px;
+}
+
+.lw-white .tl-result {
+    width: 90%;
+    font-size: 0.95rem;
+}
+
+.lw-white.lt-pgn .tl-seg {
+    width: 90%;
+    min-width: 0;
+    margin: 0 0 8px;
+}
+
+.lw-white.lt-pgn .tl-num {
+    width: 140px;
+    height: 140px;
+}
+
+.lw-white.lt-pgn .tl-num b {
+    font-size: 5rem;
+}
+
+.lw-white.lt-pgn .tl-die {
+    width: 72px;
+    height: 72px;
+}
+
+.lw-white.lt-pgn .tl-total b {
+    font-size: 3.5rem;
+}
+
+.lw-white.lt-pgn .tl-hist {
+    margin: 6px 0 0;
+}
+
+/* Touchscreen panel: chips sized to fit above the pay tables */
+.lw-ts .pr-sim {
+    flex: none;
+    min-height: 0;
+    margin: 6px 8px 8px;
+    padding-top: 0.3rem;
+    padding-bottom: 0.6rem;
+}
+
+.lw-ts .pr-grid,
+.lw-ts .pr-posnums {
+    gap: 12px;
+    margin-left: 1.5rem;
+    margin-right: 1.5rem;
+}
+
+.lw-ts .pr-chip {
+    width: 62px;
+    height: 62px;
+    font-size: 1.1rem;
+}
+
+.lw-ts .pr-chip.pr-chip-long {
+    font-size: 0.95rem;
+}
+
+.lw-ts .pr-btn {
+    min-height: 48px;
+    font-size: 1.15rem;
+}
+
+.lw-ts .pr-ts-btns {
+    padding-top: 0.5rem;
+}
+
+.lw-ts .pr-pts {
+    gap: 2rem;
+    font-size: 0.95rem;
+}
+
+.lw-ts .pr-pt-row {
+    padding: 0.08rem 0;
+}
+
+.lw-ts .pr-rank {
+    min-height: 36px;
+    margin-bottom: 0.2rem;
+    font-size: 0.95rem;
+}
+
+.lw-ts .pr-wline-pill {
+    min-height: 48px;
+    font-size: 1.05rem;
+}
+
+/* Pay tables panel */
+.lw-pay .tl-tabs {
+    flex: none;
+    margin: 6px 8px 0;
+    border-radius: 8px 8px 0 0;
+}
+
+.lw-pay .tl-pt-body {
+    flex: 1;
+    margin: 0 8px 8px;
+    overflow: auto;
+    border-radius: 0 0 10px 10px;
+}
+
+.lw-pay .tl-pt td {
+    padding: 0.38rem 0.6rem;
+}

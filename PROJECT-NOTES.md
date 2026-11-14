@@ -180,7 +180,13 @@ Cards Numbers Only.
 - **Table Tools Lite** (`.../lite/`) covers the training-table tools on
   older iPads: Limit Sign, Progressive Touchscreen (all five games), Player
   Tracking, Shuffle Timer, Pai Gow Number, Pay Tables. iPad sideways only.
-  The old-device notice links to it. **Any change to a Table Tool, or to a
+  The old-device notice links to it. Lite also has five ready-made
+  **Table Screens** (Blackjack, Three Card Prime, Pai Gow, Heads-Up
+  Hold'em, Player's Edge-21): table limit ($10 / $300 to start, remembered
+  per screen) top left; under it the Shuffle Timer (Blackjack, Player's
+  Edge-21) or the Pai Gow Number (Pai Gow), blank for the others; that
+  game's progressive touchscreen and pay tables on the right. Planned for
+  the main site's Table Tools too. **Any change to a Table Tool, or to a
   pay table shown in one, must be repeated in `wwwroot/lite/lite.js`.**
 - A native Android / iOS app was considered and set aside: staying a website.
 

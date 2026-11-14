@@ -50,6 +50,14 @@
         stopTimers();
         view = v;
         if (v === 'prog') prog.game = -1;
+        if (v === 'pay') pay.tab = 0;
+        if (v.indexOf('table:') === 0) {
+            var ti = parseInt(v.slice(6), 10);
+            prog.game = TABLES[ti].game;
+            progClear();
+            pay.tab = 0;
+            if (timer.state !== 'done') timer.state = 'ready';
+        }
         if (v === 'timer' && timer.state !== 'done') timer.state = 'ready';
         render();
         window.scrollTo(0, 0);
@@ -64,7 +72,7 @@
             case 'timer': html = timerView(); break;
             case 'pgn': html = pgnView(); break;
             case 'pay': html = payView(); break;
-            default: html = homeView();
+            default: html = view.indexOf('table:') === 0 ? tableView(parseInt(view.slice(6), 10)) : homeView();
         }
         app.innerHTML = html;
     }
@@ -84,7 +92,11 @@
         var h = '<div class="lt-home">' +
             '<h1>Table Tools <span>Lite</span></h1>' +
             '<p class="lt-sub">For the training table &middot; Dealer School Trainer</p>' +
-            '<div class="lt-grid">';
+            '<h2 class="lt-h2">Table Screens</h2><div class="lt-tables">';
+        TABLES.forEach(function (t, i) {
+            h += '<button type="button" class="lt-table" data-act="go" data-v="table:' + i + '"><b>' + esc(t.name) + '</b><span>' + esc(t.text) + '</span></button>';
+        });
+        h += '</div><h2 class="lt-h2">Tools</h2><div class="lt-grid">';
         TOOLS.forEach(function (t) {
             h += '<button type="button" class="lt-tile' + (t.gold ? ' lt-gold' : '') + '" data-act="go" data-v="' + t.v + '">' +
                 '<span class="lt-ic">' + esc(t.ic) + '</span>' +
@@ -210,6 +222,14 @@
             return h + '</div></div>';
         }
 
+        var def = PROG[prog.game];
+        return '<div class="tl-stage tl-full lt-stage lt-prog">' +
+            strip(def.name + ' · Touchscreen', progInstruction(), '<button type="button" class="lt-strip-btn" data-act="pgames">Game</button>') +
+            progTouchscreen() + '</div>';
+    }
+
+    // The touchscreen itself (also used by the Table Screens)
+    function progTouchscreen() {
         var def = PROG[prog.game], body = '', s, w;
         var back = (prog.screen === 'wager' || prog.screen === 'rank' || prog.screen === 'pos' || prog.screen === 'confirm');
 
@@ -275,11 +295,9 @@
                 body += '<div class="pr-ts-btns"><button type="button" class="pr-btn pr-next" data-act="confirm">CONFIRM</button></div>';
         }
 
-        return '<div class="tl-stage tl-full lt-stage lt-prog">' +
-            strip(def.name + ' · Touchscreen', progInstruction(), '<button type="button" class="lt-strip-btn" data-act="pgames">Game</button>') +
-            '<div class="pr-ts pr-sim"><div class="pr-ts-top">' +
+        return '<div class="pr-ts pr-sim"><div class="pr-ts-top">' +
             (back ? '<button type="button" class="pr-back" aria-label="Back" data-act="pback">&lsaquo;</button>' : '') +
-            '</div>' + body + '</div></div>';
+            '</div>' + body + '</div>';
     }
 
     // ---- Player Tracking (ToolPlayerTracking.razor) -------------------------
@@ -415,8 +433,29 @@
         var intro = t.state === 'countdown' ? 'Get ready…' : t.state === 'running' ? 'Shuffling. Tap Stop when the shuffle is done.' :
             t.state === 'done' ? 'Done.' : '6-deck shuffle. Ideal time: 90 seconds.';
 
-        var h = '<div class="tl-stage tl-full lt-stage lt-light">' + strip('Shuffle Timer', intro) +
-            '<div class="lt-panel"><div class="tl-timer">' +
+        return '<div class="tl-stage tl-full lt-stage lt-light">' + strip('Shuffle Timer', intro) +
+            '<div class="lt-panel">' + timerInner() + '</div></div>';
+    }
+
+    // The ring, result and button (also used by the Table Screens)
+    function timerInner() {
+        var t = timer, pct = 0, ringCls = '', sub = '90 s ideal', inner;
+        if (t.state === 'countdown') { pct = (5 - t.count) * 20; ringCls = 'tl-ring-gold'; }
+        else if (t.state === 'running' || t.state === 'done') {
+            pct = Math.min(100, t.elapsed / IDEAL * 100);
+            if (t.elapsed > IDEAL) ringCls = 'tl-ring-over';
+        }
+        if (t.state === 'running') sub = t.elapsed > IDEAL ? 'over 1:30' : 'of 1:30';
+        if (t.state === 'done') {
+            var d = Math.round(t.elapsed) - IDEAL;
+            sub = d === 0 ? 'right on 90' : d < 0 ? (-d) + ' s under 90' : d + ' s over 90';
+        }
+        inner = t.state === 'countdown'
+            ? '<span class="tl-count' + (t.count === 0 ? ' tl-go-txt' : '') + '">' + (t.count === 0 ? 'GO' : t.count) + '</span>'
+            : '<span class="tl-time">' + clock(t.elapsed) + '</span><span class="tl-ring-sub">' + sub + '</span>';
+        var label = t.state === 'countdown' ? 'Cancel' : t.state === 'running' ? 'Stop' : t.state === 'done' ? 'Again' : 'Start';
+
+        var h = '<div class="tl-timer">' +
             '<div class="tl-ring ' + ringCls + '" style="--pct:' + pct + '"><div class="tl-ring-in">' + inner + '</div></div>';
         if (t.state === 'done') {
             var secs = Math.round(t.elapsed);
@@ -425,7 +464,7 @@
         }
         h += '<button type="button" class="tl-big' + (t.state === 'countdown' || t.state === 'running' ? ' tl-big-red' : '') + '" data-act="timer">' + label + '</button>';
         if (t.best !== null) h += '<p class="tl-best">Best today: ' + clock(t.best) + '</p>';
-        return h + '</div></div></div>';
+        return h + '</div>';
     }
 
     function timerMain() {
@@ -480,6 +519,12 @@
     }
 
     function pgnView() {
+        return '<div class="tl-stage tl-full lt-stage lt-light">' + strip('Pai Gow Number', 'Tap Roll for a new one') +
+            '<div class="lt-panel lt-pgn">' + pgnInner() + '</div></div>';
+    }
+
+    // Mode switch, number or dice, Roll (also used by the Pai Gow Table Screen)
+    function pgnInner() {
         var g = pgn, body;
         if (!g.dice) {
             body = '<div class="tl-num' + (g.flash ? ' tl-flash' : '') + '"><small>NUMBER</small><b>' + (g.number || '?') + '</b></div>';
@@ -493,14 +538,11 @@
             body += '</div><p class="tl-total">Total<b>' + (g.die[0] ? g.die[0] + g.die[1] + g.die[2] : '?') + '</b></p>';
         }
         var hist = g.dice ? g.diceHist : g.numHist;
-        return '<div class="tl-stage tl-full lt-stage lt-light">' + strip('Pai Gow Number', 'Tap Roll for a new one') +
-            '<div class="lt-panel lt-pgn">' +
-            '<div class="tl-seg"><button type="button" class="' + (!g.dice ? 'tl-on' : '') + '" data-act="pgnmode" data-d="0">Number 1-7</button>' +
+        return '<div class="tl-seg"><button type="button" class="' + (!g.dice ? 'tl-on' : '') + '" data-act="pgnmode" data-d="0">Number 1-7</button>' +
             '<button type="button" class="' + (g.dice ? 'tl-on' : '') + '" data-act="pgnmode" data-d="1">3 Dice</button></div>' +
             body +
             '<button type="button" class="tl-big" data-act="roll">Roll</button>' +
-            (hist.length ? '<p class="tl-hist">Last: ' + hist.join(' · ') + '</p>' : '') +
-            '</div></div>';
+            (hist.length ? '<p class="tl-hist">Last: ' + hist.join(' · ') + '</p>' : '');
     }
 
     function roll() {
@@ -515,7 +557,7 @@
         // A short flash so a repeat of the same number still shows it rolled
         g.flash = true;
         render();
-        timers.push(setTimeout(function () { g.flash = false; if (view === 'pgn') render(); }, 250));
+        timers.push(setTimeout(function () { g.flash = false; render(); }, 250));
     }
 
     // ---- Pay Tables (ToolPayTables.razor) ------------------------------------
@@ -652,7 +694,12 @@
         PAY.forEach(function (pg, i) {
             h += '<button type="button" class="tl-game' + (i === pay.game ? ' tl-on' : '') + '" data-act="pgame2" data-i="' + i + '">' + esc(pg.name) + '</button>';
         });
-        h += '</div><div class="tl-tabs">';
+        return h + '</div>' + payTabsBody(pay.game) + '</div>';
+    }
+
+    // One game's wager tabs and the open table (also used by the Table Screens)
+    function payTabsBody(gi) {
+        var g = PAY[gi], tab = g.tabs[pay.tab], h = '<div class="tl-tabs">';
         g.tabs.forEach(function (t, i) {
             h += '<button type="button" class="tl-tab' + (i === pay.tab ? ' tl-on' : '') + '" data-act="ptab" data-i="' + i + '">' + esc(t.short) + '</button>';
         });
@@ -668,7 +715,52 @@
             });
             h += '</div>' + (tab.note ? '<p class="tl-note">' + esc(tab.note) + '</p>' : '');
         }
-        return h + '</div></div>';
+        return h + '</div>';
+    }
+
+    // ---- Table Screens: ready-made layouts per game ---------------------------
+    // Left: the table limit ($10 / $300 to start, remembered per screen) and,
+    // for Blackjack and Player's Edge-21, the Shuffle Timer (Pai Gow: the
+    // Pai Gow Number). Right: the game's progressive touchscreen and its
+    // pay tables.
+
+    var TABLES = [
+        { key: 'bj', name: 'Blackjack', text: 'Limit, Shuffle Timer, 21+3 progressive, pay tables', game: 0, pay: 0, side: 'timer' },
+        { key: 'tc', name: 'Three Card Prime', text: 'Limit, Mini Royal progressive, pay tables', game: 1, pay: 1, side: '' },
+        { key: 'pg', name: 'Pai Gow', text: 'Limit, Pai Gow Number, ET / INS progressives, pay tables', game: 2, pay: 2, side: 'pgn' },
+        { key: 'hd', name: "Heads-Up Hold'em", text: 'Limit, progressive, pay tables', game: 4, pay: 4, side: '' },
+        { key: 'pe', name: "Player's Edge-21", text: 'Limit, Shuffle Timer, Monster Match progressive, pay tables', game: 3, pay: 3, side: 'timer' }
+    ];
+
+    // Each screen's limit: indexes into MINS / MAXES ($10 / $300 to start)
+    function tableLimit(key) {
+        var p = (load('dst-table-limit-' + key) || '').split(',');
+        var a = parseInt(p[0], 10), b = parseInt(p[1], 10);
+        if (p.length === 2 && a >= 0 && a < MINS.length && b >= 0 && b < MAXES.length) return { min: a, max: b };
+        return { min: 1, max: 1 };
+    }
+
+    function panel(title, body, cls) {
+        return '<div class="lw-p ' + (cls || '') + '"><div class="lw-hd"><b>' + esc(title) + '</b></div><div class="lw-b">' + body + '</div></div>';
+    }
+
+    function tableView(ti) {
+        var t = TABLES[ti], lim = tableLimit(t.key);
+        var limitBody = '<div class="lw-limit">' +
+            '<button type="button" data-act="tmin" data-key="' + t.key + '"><small>MINIMUM</small><b>$' + MINS[lim.min] + '</b></button>' +
+            '<i></i>' +
+            '<button type="button" data-act="tmax" data-key="' + t.key + '"><small>MAXIMUM</small><b>$' + MAXES[lim.max] + '</b></button></div>';
+
+        var left = panel('Table Limit', limitBody, 'lw-lim');
+        if (t.side === 'timer') left += panel('Shuffle Timer', '<div class="lw-white">' + timerInner() + '</div>', 'lw-grow');
+        if (t.side === 'pgn') left += panel('Pai Gow Number', '<div class="lw-white lt-pgn">' + pgnInner() + '</div>', 'lw-grow');
+
+        var right = panel('Progressive Touchscreen · ' + PROG[t.game].name + ' — ' + progInstruction(), progTouchscreen(), 'lw-ts') +
+            panel('Pay Tables · ' + PAY[t.pay].name, payTabsBody(t.pay), 'lw-pay lw-grow');
+
+        return '<div class="tl-stage tl-full lt-stage lw">' +
+            strip(t.name + ' Table', 'Table screen: tap any panel to use it') +
+            '<div class="lw-grid"><div class="lw-col1">' + left + '</div><div class="lw-col2">' + right + '</div></div></div>';
     }
 
     // ---- Taps --------------------------------------------------------------
@@ -682,6 +774,14 @@
         switch (a) {
             case 'home': go('home'); return;
             case 'go': go(el.getAttribute('data-v')); return;
+
+            // Table Screens: the screen's own limit
+            case 'tmin':
+            case 'tmax':
+                var tk = el.getAttribute('data-key'), tl = tableLimit(tk);
+                if (a === 'tmin') tl.min = (tl.min + 1) % MINS.length; else tl.max = (tl.max + 1) % MAXES.length;
+                save('dst-table-limit-' + tk, tl.min + ',' + tl.max);
+                break;
 
             // Limit Sign
             case 'min': limit.min = (limit.min + 1) % MINS.length; save('dst-limit-sign', limit.min + ',' + limit.max); break;
